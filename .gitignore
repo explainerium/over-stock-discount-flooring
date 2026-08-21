@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +40,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# prisma agent skills — vendor documentation dropped in by `prisma init`.
+# Useful locally for AI tooling, no reason to be in the repo. Scoped to the
+# prisma-* entries so .claude/ stays free for real project config later.
+/.agents/
+/.claude/skills/prisma-*
+/skills-lock.json
