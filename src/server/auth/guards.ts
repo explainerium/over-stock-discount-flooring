@@ -1,5 +1,7 @@
 import "server-only"
-import { forbidden, unauthorized } from "next/navigation"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
+import { PATHNAME_HEADER } from "@/constants/auth"
 import { resolveSession, type SessionUser } from "./session"
 
 /**
@@ -12,10 +14,16 @@ import { resolveSession, type SessionUser } from "./session"
  * the id to filter on, and repositories take that scope as an argument rather
  * than deriving it themselves.
  *
- * These run in server components and server actions, on the Node runtime.
- * Middleware cannot call them: it runs on the Edge runtime where Prisma is not
- * available, so middleware checks only whether a session cookie is present and
- * the real decision is made here.
+ * These run in server components and server actions, on the Node runtime. The
+ * proxy cannot call them: it runs on the Edge runtime where Prisma is not
+ * available, so it checks only whether a session cookie is present and the real
+ * decision is made here.
+ *
+ * Failures redirect rather than raising Next's `unauthorized()` / `forbidden()`
+ * interrupts. Those are still behind an experimental flag, and the security
+ * path of a client project is the wrong place to depend on one. It also reads
+ * better here: there are exactly two audiences and each has a home, so sending
+ * an owner who lands on /portal to /admin beats showing them a 403.
  */
 
 export type StaffRole = "OWNER" | "ADMIN"
@@ -26,29 +34,48 @@ export function isStaff(user: SessionUser | null): boolean {
 	return user != null && STAFF_ROLES.includes(user.role as StaffRole)
 }
 
+/** Where a signed-in user belongs. */
+export function homeFor(user: SessionUser): string {
+	return user.role === "DEALER_USER" ? "/portal" : "/admin"
+}
+
+/**
+ * Sends the user to sign in, remembering where they were headed.
+ *
+ * The proxy already catches the common case — no cookie at all. This one fires
+ * when a cookie exists but the session behind it does not: expired, revoked, or
+ * belonging to an account that has since been disabled. Rare, but it is exactly
+ * the moment a suspended dealer finds out, so it should land somewhere sensible
+ * rather than on an error.
+ */
+async function toLogin(): Promise<never> {
+	const pathname = (await headers()).get(PATHNAME_HEADER)
+	redirect(pathname ? `/login?redirectTo=${encodeURIComponent(pathname)}` : "/login")
+}
+
 /** The current user, or null. For pages that render differently when signed in. */
 export async function getCurrentUser(): Promise<SessionUser | null> {
 	return resolveSession()
 }
 
-/** Any signed-in user. Throws into Next's 401 boundary otherwise. */
+/** Any signed-in user. */
 export async function requireUser(): Promise<SessionUser> {
 	const user = await resolveSession()
-	if (!user) unauthorized()
-	return user
+	if (!user) await toLogin()
+	return user!
 }
 
 /** Owner or admin. Everything under /admin goes through this. */
 export async function requireStaff(): Promise<SessionUser> {
 	const user = await requireUser()
-	if (!isStaff(user)) forbidden()
+	if (!isStaff(user)) redirect(homeFor(user))
 	return user
 }
 
 /** Owner only — for actions an admin should not perform, such as removing another admin. */
 export async function requireOwner(): Promise<SessionUser> {
 	const user = await requireUser()
-	if (user.role !== "OWNER") forbidden()
+	if (user.role !== "OWNER") redirect(homeFor(user))
 	return user
 }
 
@@ -68,7 +95,7 @@ export interface DealerScope {
 
 export async function requireDealerScope(): Promise<DealerScope> {
 	const user = await requireUser()
-	if (user.role !== "DEALER_USER" || !user.dealerId) forbidden()
+	if (user.role !== "DEALER_USER" || !user.dealerId) redirect(homeFor(user))
 	return { user, dealerId: user.dealerId }
 }
 

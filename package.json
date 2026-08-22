@@ -15,7 +15,8 @@
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:seed:owner": "tsx prisma/seed-owner.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

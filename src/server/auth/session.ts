@@ -2,6 +2,7 @@ import "server-only"
 import { cookies } from "next/headers"
 import { db } from "@/server/db/client"
 import type { User } from "@/generated/prisma/client"
+import { SESSION_COOKIE } from "@/constants/auth"
 import { expiresAt, generateToken, hashToken, TOKEN_TTL } from "./tokens"
 
 /**
@@ -17,7 +18,7 @@ import { expiresAt, generateToken, hashToken, TOKEN_TTL } from "./tokens"
  * This module is the only place that touches the session cookie.
  */
 
-export const SESSION_COOKIE = "odf_session"
+export { SESSION_COOKIE }
 
 function ttlMs(): number {
 	const days = Number(process.env.AUTH_SESSION_DAYS)
