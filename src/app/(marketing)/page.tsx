@@ -1,5 +1,10 @@
 import Link from "next/link"
-import { COLOUR_COUNT, FACTS, SHOWROOM } from "@/constants/catalog"
+import { FACTS, SHOWROOM } from "@/constants/catalog"
+import {
+	countPublicColours,
+	listPublicProducts,
+	listPublicSeries,
+} from "@/server/repositories/catalog"
 import { CoverageCalculator } from "./_components/CoverageCalculator"
 import { SeriesCards } from "./_components/SeriesCards"
 import { SwatchGrid } from "./_components/SwatchGrid"
@@ -25,7 +30,36 @@ const RIGID_CORE = [
 	"Fire resistant. Won't help a fire spread.",
 ]
 
-export default function HomePage() {
+export default async function HomePage() {
+	// One fetch at the page, handed down. The calculator is a client component
+	// and cannot query; the cards and the grid could, but three round trips for
+	// one screen is three round trips.
+	const [series, products, colourCount] = await Promise.all([
+		listPublicSeries(),
+		listPublicProducts({ take: 12 }),
+		countPublicColours(),
+	])
+
+	const seriesCards = series
+		.filter((s) => s.sqFtPerBox)
+		.map((s) => ({
+			slug: s.slug,
+			name: s.name,
+			colourCount: s._count.products,
+			wearLayerMil: s.wearLayerMil,
+			sqFtPerBox: s.sqFtPerBox?.toString() ?? null,
+			image: s.products[0]?.images[0] ?? null,
+		}))
+
+	const calculatorSeries = series
+		.filter((s) => s.sqFtPerBox && s.boxesPerPallet)
+		.map((s) => ({
+			slug: s.slug,
+			name: s.name,
+			sqFtPerBox: s.sqFtPerBox!.toString(),
+			boxesPerPallet: s.boxesPerPallet!,
+		}))
+
 	return (
 		<>
 			{/* ---------------------------------------------------------------- */}
@@ -68,7 +102,7 @@ export default function HomePage() {
 						the surface is.
 					</p>
 					<div className="mt-14">
-						<SeriesCards />
+						<SeriesCards series={seriesCards} />
 					</div>
 				</div>
 			</section>
@@ -81,16 +115,16 @@ export default function HomePage() {
 						<span className="font-bold">Colours</span>
 					</h2>
 					<p className="text-muted-foreground mt-3 text-sm">
-						{COLOUR_COUNT} on the shelf today. Come and stand on any of them.
+						{colourCount} on the shelf today. Come and stand on any of them.
 					</p>
 
 					<div className="mt-12">
-						<SwatchGrid limit={12} />
+						<SwatchGrid products={products.map((p) => ({ slug: p.slug, name: p.name, sku: p.sku, image: p.images[0] ?? null }))} />
 					</div>
 
 					<div className="mt-12">
 						<Link href="/products" className="btn bg-ink text-paper">
-							See all {COLOUR_COUNT} colours
+							See all {colourCount} colours
 						</Link>
 					</div>
 				</div>
@@ -117,7 +151,7 @@ export default function HomePage() {
 							installers allow five or ten percent.
 						</p>
 					</div>
-					<CoverageCalculator />
+					<CoverageCalculator series={calculatorSeries} />
 				</div>
 			</section>
 

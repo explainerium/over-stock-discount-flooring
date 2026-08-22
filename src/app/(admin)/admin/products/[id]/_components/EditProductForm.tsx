@@ -1,0 +1,123 @@
+"use client"
+
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useState } from "react"
+import { toast } from "sonner"
+import {
+	FormError,
+	ProCheckbox,
+	ProCheckboxGroup,
+	ProForm,
+	ProInput,
+	ProSelect,
+	ProSubmit,
+	ProTextarea,
+} from "@/components/form"
+import { updateProductSchema, type UpdateProductInput } from "@/lib/validation/catalog"
+import { updateProductAction } from "../../_actions"
+
+const PRICING_UOM = [
+	{ value: "SQFT", label: "Per square foot" },
+	{ value: "LF", label: "Per linear foot" },
+	{ value: "EACH", label: "Each" },
+	{ value: "ROLL", label: "Per roll" },
+]
+
+/**
+ * Every unit a dealer might pick. Which ones make sense depends on the product:
+ * flooring is sq ft / box / pallet, trim is linear feet and sticks. The schema
+ * only insists that at least one is chosen.
+ */
+const ORDER_UOMS = [
+	{ value: "SQFT", label: "Sq ft" },
+	{ value: "BOX", label: "Box" },
+	{ value: "PALLET", label: "Pallet" },
+	{ value: "LF", label: "Linear ft" },
+	{ value: "STICK", label: "Stick" },
+	{ value: "BUNDLE", label: "Bundle" },
+	{ value: "EACH", label: "Each" },
+	{ value: "ROLL", label: "Roll" },
+]
+
+const STOCK = [
+	{ value: "IN_STOCK", label: "In stock" },
+	{ value: "LOW", label: "Low" },
+	{ value: "OUT", label: "Out of stock" },
+	{ value: "SPECIAL_ORDER", label: "Special order" },
+]
+
+export function EditProductForm({
+	defaults,
+	seriesOptions,
+}: {
+	defaults: UpdateProductInput
+	seriesOptions: { value: string; label: string; hint?: string }[]
+}) {
+	const [error, setError] = useState<string | null>(null)
+
+	async function onSubmit(values: UpdateProductInput) {
+		setError(null)
+		const result = await updateProductAction(values)
+		if (result.ok) toast.success(result.message ?? "Saved.")
+		else setError(result.message)
+	}
+
+	return (
+		<ProForm<UpdateProductInput>
+			onSubmit={onSubmit}
+			resolver={zodResolver(updateProductSchema)}
+			defaultValues={defaults}
+			className="grid gap-5"
+		>
+			<FormError message={error} />
+
+			<div className="grid gap-4 sm:grid-cols-2">
+				<ProInput name="name" label="Colour name" required />
+				<ProInput name="sku" label="SKU" required />
+			</div>
+
+			<ProSelect name="seriesId" label="Series" options={seriesOptions} required />
+
+			<ProInput
+				name="designName"
+				label="Design name"
+				description="Groups the same print film across formats — Brookfield appears in both Gold and Gold W."
+			/>
+
+			<ProTextarea name="description" label="Description" rows={4} />
+
+			<div className="grid gap-4 sm:grid-cols-2">
+				<ProSelect name="pricingUom" label="Priced in" options={PRICING_UOM} required />
+				<ProSelect name="stockStatus" label="Stock" options={STOCK} required />
+			</div>
+
+			<ProInput
+				name="listPrice"
+				label="List price"
+				description="In the unit above. Dealer pricing overrides this."
+			/>
+
+			<ProCheckboxGroup
+				name="orderUoms"
+				label="Dealers can order by"
+				options={ORDER_UOMS}
+				required
+			/>
+
+			<div className="grid gap-3 border-t pt-5">
+				<ProCheckbox
+					name="isPublic"
+					label="Show on the public catalogue"
+					description="Prices stay hidden publicly either way."
+				/>
+				<ProCheckbox
+					name="isActive"
+					label="Available to order"
+					description="Turn off to retire a colour without deleting its order history."
+				/>
+			</div>
+
+			<ProSubmit className="justify-self-start">Save product</ProSubmit>
+		</ProForm>
+	)
+}

@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils"
 const LINKS = [
 	{ href: "/admin", label: "Overview", exact: true },
 	{ href: "/admin/dealers", label: "Dealers" },
+	{ href: "/admin/products", label: "Products" },
+	{ href: "/admin/series", label: "Series" },
 ]
 
 export function AdminNav() {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { SERIES } from "@/constants/catalog"
+
 import { formatCoverage } from "@/lib/format/coverage"
 import { resolve } from "@/server/domain/uom"
 
@@ -23,14 +23,27 @@ import { resolve } from "@/server/domain/uom"
  * imports, which is what lets a client component call it directly; nothing in
  * `server/domain/` may take that away.
  */
-export function CoverageCalculator() {
+export interface CalculatorSeries {
+	slug: string
+	name: string
+	/** As a string: it crosses the server/client boundary and must not become a float. */
+	sqFtPerBox: string
+	boxesPerPallet: number
+}
+
+export function CoverageCalculator({ series: SERIES }: { series: CalculatorSeries[] }) {
 	const [input, setInput] = useState("1200")
-	const [seriesSlug, setSeriesSlug] = useState(SERIES[2].slug)
+	// Defaults to the last series, which is the top of the ladder — most visitors
+	// are looking at Gold. Falls back to an empty string so the hooks below run
+	// unconditionally even when nothing has been published yet.
+	const [seriesSlug, setSeriesSlug] = useState(SERIES.at(-1)?.slug ?? "")
 	const [waste, setWaste] = useState(0)
 
-	const series = SERIES.find((s) => s.slug === seriesSlug) ?? SERIES[2]
+	const series = SERIES.find((s) => s.slug === seriesSlug) ?? SERIES.at(-1)
 
 	const result = useMemo(() => {
+		if (!series) return null
+
 		const sqFt = Number(input)
 		if (!Number.isFinite(sqFt) || sqFt <= 0) return null
 
@@ -50,6 +63,10 @@ export function CoverageCalculator() {
 			return null
 		}
 	}, [input, series, waste])
+
+	// Guarded after the hooks, never before: an early return above a useState is
+	// a rules-of-hooks violation waiting for the first empty catalogue.
+	if (!series) return null
 
 	return (
 		<div className="bg-band text-ink">

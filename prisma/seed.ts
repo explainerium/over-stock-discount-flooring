@@ -287,7 +287,7 @@ async function main() {
 					// Groups the same print film across formats: "Brookfield" is one
 					// design in both Gold and Gold W.
 					designName: color,
-					images: [`/products/${series.legacyPath}/${slugify(color)}.jpg`],
+					images: [`/swatches/${series.legacyPath}-${slugify(color)}.jpg`],
 					pricingUom: "SQFT",
 					orderUoms: ["SQFT", "BOX", "PALLET"],
 					isPublic: series.active,
