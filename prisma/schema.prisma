@@ -1,7 +1,17 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Overstock Discount Flooring — dealer ordering system.
+//
+// Verified product data behind the spec choices here lives in the project's
+// content-inventory.md. Two facts from it shape the whole schema:
+//
+//   1. There are FIVE spec groups, not three. Bronze, Silver, Silver W, Gold
+//      and Gold W differ on sq ft/box, boxes/pallet and lb/box, so a colour
+//      cannot inherit "its series" without saying which format it is.
+//   2. Accessories are priced per LINEAR FOOT and have no boxes, pallets or
+//      square footage at all. Nothing may assume square feet.
+//
+// Money: every amount is `Decimal`, never Float. Postgres numeric is exact and
+// Prisma surfaces it as Decimal.js, so per-sq-ft prices multiplied by
+// fractional coverage cannot drift away from the QuickBooks invoice.
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +20,706 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  OWNER
+  ADMIN
+  DEALER_USER
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+}
+
+enum DealerStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+/// How a product is PRICED. Flooring is per square foot; trim is per linear
+/// foot; underlayment is per roll. The "always per sq ft" rule in the original
+/// brief does not survive contact with the accessories.
+enum PricingUom {
+  SQFT
+  LF
+  EACH
+  ROLL
+}
+
+/// What a dealer may choose to ORDER in. A Gold colour is priced per sq ft but
+/// orderable by the box or the pallet; baseboard is priced and ordered per LF.
+enum OrderUom {
+  SQFT
+  BOX
+  PALLET
+  LF
+  STICK
+  BUNDLE
+  EACH
+  ROLL
+}
+
+enum StockStatus {
+  IN_STOCK
+  LOW
+  OUT
+  SPECIAL_ORDER
+}
+
+/// Certification vs lab test result. Both render as spec-table rows on a
+/// product page; separating them lets the page group them.
+enum SeriesFactKind {
+  CERTIFICATION
+  TEST_RESULT
+}
+
+/// Ten states. `REJECTED` is separate from `CANCELLED` on purpose: rejected is
+/// the owner refusing an order, cancelled is it being withdrawn after the fact.
+/// Losing that distinction loses the reason, which is what the dealer asks about.
+enum OrderStatus {
+  DRAFT
+  SUBMITTED
+  CHANGES_REQUESTED
+  APPROVED
+  INVOICED
+  SHIPPED
+  DELIVERED
+  CLOSED
+  REJECTED
+  CANCELLED
+}
+
+/// Per dealer. Some pay a flat rate, some the live rate — the client's own
+/// arrangement, and it is deliberately not all-or-nothing.
+enum FreightMode {
+  ZONE
+  FLAT
+  LIVE
+  MANUAL
+}
+
+/// Where the freight figure on a given order actually came from. Recorded per
+/// order because the owner adjusts it at approval and we need to know whether
+/// a number was quoted or typed.
+enum FreightSource {
+  ZONE
+  FLAT
+  MANUAL
+  TQL
+}
+
+enum PaymentTerms {
+  PREPAY
+  COD
+  NET_15
+  NET_30
+  NET_60
+}
+
+enum LeadSource {
+  CONTACT_FORM
+  COVERAGE_CALCULATOR
+  SAMPLE_REQUEST
+  DEALER_APPLICATION
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  DONE
+  FAILED
+}
+
+// ---------------------------------------------------------------------------
+// Auth
+//
+// Self-hosted. Passwords are bcrypt hashes in our own table; there is no
+// third-party identity provider. Registration is possible only against a valid
+// invite token, so "dealers set up their own account" and "dealers cannot
+// self-register" are both true.
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String?
+  firstName    String?
+  lastName     String?
+  phone        String?
+  role         UserRole   @default(DEALER_USER)
+  status       UserStatus @default(INVITED)
+
+  /// Null for OWNER and ADMIN. Every dealer user belongs to exactly one dealer.
+  dealerId String?
+  dealer   Dealer? @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+
+  lastLoginAt DateTime?
+
+  /// Per-account lockout. Rate limiting by IP needs shared state to survive a
+  /// serverless deployment, and account lockout is the protection that actually
+  /// matters against credential stuffing aimed at named businesses.
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions      Session[]
+  invitesSent   Invite[]             @relation("InviteAuthor")
+  resetTokens   PasswordResetToken[]
+  statusChanges OrderStatusHistory[]
+  auditEntries  AuditLog[]
+
+  @@index([dealerId])
+  @@index([role, status])
+}
+
+/// Sessions are rows, not stateless tokens.
+///
+/// This is a requirement, not a preference: deactivating a dealer has to remove
+/// their access to pricing *immediately*, and a signed token cannot be revoked
+/// before it expires. A row can be deleted.
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  userAgent String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// Single-use and expiring. The token is stored hashed — a leaked database
+/// backup should not hand someone a working invite link.
+model Invite {
+  id        String   @id @default(cuid())
+  email     String
+  tokenHash String   @unique
+  dealerId  String?
+  dealer    Dealer?  @relation(fields: [dealerId], references: [id], onDelete: SetNull)
+  role      UserRole @default(DEALER_USER)
+
+  invitedById String?
+  invitedBy   User?   @relation("InviteAuthor", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email])
+  @@index([dealerId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Dealers
+// ---------------------------------------------------------------------------
+
+model Dealer {
+  id           String       @id @default(cuid())
+  companyName  String
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+  status       DealerStatus @default(PENDING)
+
+  /// Pricing resolves per dealer at request time. The engine supports a flat
+  /// discount, per-product overrides and tiers together, so the client's answer
+  /// on which model he uses changes the admin UI, not the build.
+  discountPct Decimal? @db.Decimal(5, 2)
+  priceTier   String?
+
+  freightMode     FreightMode @default(ZONE)
+  flatFreightRate Decimal?    @db.Decimal(10, 2)
+
+  /// Flooring dealers are usually resale-exempt — but not all, and not in every
+  /// state. The expiry drives a renewal reminder job; an expired certificate on
+  /// file is the same as no certificate.
+  taxExempt           Boolean   @default(false)
+  resaleCertUrl       String?
+  resaleCertExpiresAt DateTime?
+
+  /// Maps to the QBO terms field on the invoice. Pending client confirmation of
+  /// which dealers are on terms at all.
+  paymentTerms  PaymentTerms @default(NET_30)
+  minOrderValue Decimal?     @db.Decimal(10, 2)
+
+  /// Match target in the client's existing QuickBooks file. Set during
+  /// onboarding by a match-and-confirm step, never auto-created, so we do not
+  /// duplicate customers he already has.
+  qboCustomerId String?
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     User[]
+  invites   Invite[]
+  addresses Address[]
+  prices    DealerPrice[]
+  orders    Order[]
+
+  @@index([status])
+  @@index([companyName])
+}
+
+/// Freight depends entirely on the destination, so this table is mandatory
+/// regardless of whether a dealer "needs" more than one address.
+model Address {
+  id       String @id @default(cuid())
+  dealerId String
+  dealer   Dealer @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+
+  label String?
+  line1 String
+  line2 String?
+  city  String
+  state String
+  zip   String
+
+  /// Accessorials live on the address, not the order form, because they are a
+  /// property of the place. A jobsite and a dealer's own warehouse are
+  /// different prices — liftgate plus residential routinely adds $100–200.
+  isResidential Boolean @default(false)
+  needsLiftgate Boolean @default(false)
+  limitedAccess Boolean @default(false)
+
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([dealerId])
+}
+
+model DealerPrice {
+  id        String  @id @default(cuid())
+  dealerId  String
+  dealer    Dealer  @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  /// Either an absolute price in the product's pricing UOM, or a percentage off
+  /// list. Both are allowed so a dealer can be on a blanket discount with a
+  /// handful of negotiated exceptions.
+  price       Decimal? @db.Decimal(12, 4)
+  discountPct Decimal? @db.Decimal(5, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([dealerId, productId])
+  @@index([dealerId])
+  @@index([productId])
+}
+
+// ---------------------------------------------------------------------------
+// Catalog
+// ---------------------------------------------------------------------------
+
+/// Specs live here, not on products.
+///
+/// Every colour inside a series shares identical dimensions and packaging.
+/// Putting them on Product would mean up to 62 copies of the same numbers and
+/// 62 edits to correct one of them. It is also what makes adding a colour a
+/// four-field job: name, SKU, image, pick a series.
+model Series {
+  id    String  @id @default(cuid())
+  name  String  @unique
+  slug  String  @unique
+  blurb String?
+
+  lengthIn     Decimal? @db.Decimal(8, 2)
+  widthIn      Decimal? @db.Decimal(8, 2)
+  thicknessMm  Decimal? @db.Decimal(5, 2)
+  wearLayerMil Int?
+  finishing    String?
+  edgeProfile  String?
+
+  /// Packaging, and the numbers the UOM engine runs on. Nullable because
+  /// accessory "series" have no boxes at all.
+  sqFtPerBox     Decimal? @db.Decimal(8, 2)
+  boxesPerPallet Int?
+  lbPerBox       Decimal? @db.Decimal(8, 2)
+  lbPerPallet    Decimal? @db.Decimal(10, 2)
+  palletsPerFtl  Int?
+
+  /// Not on the current site and not yet supplied by the client. No LTL rate —
+  /// TQL's or anyone else's — can be quoted without them.
+  palletLengthIn Decimal? @db.Decimal(8, 2)
+  palletWidthIn  Decimal? @db.Decimal(8, 2)
+  palletHeightIn Decimal? @db.Decimal(8, 2)
+  freightClass   String?
+  nmfcCode       String?
+
+  warrantyPdfUrl     String?
+  installationPdfUrl String?
+
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+  facts    SeriesFact[]
+
+  @@index([isActive, sortOrder])
+}
+
+/// FloorScore, Greenguard Gold, CE, the ASTM results — all of it already exists
+/// on the current site and none of it was previously modelled. It is the trust
+/// content a product page is built around.
+model SeriesFact {
+  id       String         @id @default(cuid())
+  seriesId String
+  series   Series         @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  kind     SeriesFactKind
+
+  label       String
+  standard    String?
+  requirement String?
+  result      String?
+
+  sortOrder Int @default(0)
+
+  @@index([seriesId, kind, sortOrder])
+}
+
+model Product {
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+  sku  String @unique
+
+  seriesId String
+  series   Series @relation(fields: [seriesId], references: [id], onDelete: Restrict)
+
+  /// Groups the same print film across formats. "Brookfield" exists in both
+  /// Gold (7.09") and Gold W (7.17") with different sq ft/box.
+  ///
+  /// This is what lets the model stay correct while the client's answer on the
+  /// hidden W series is outstanding: if they are dead it is simply unused; if
+  /// they are live the product page offers both widths under one name.
+  designName String?
+
+  description String?
+  images      String[]
+
+  pricingUom PricingUom @default(SQFT)
+  orderUoms  OrderUom[]
+
+  /// List price in `pricingUom`. Four decimals because per-square-foot pricing
+  /// genuinely runs to three or four.
+  listPrice Decimal? @db.Decimal(12, 4)
+
+  stockStatus StockStatus @default(IN_STOCK)
+  qtyOnHand   Decimal?    @db.Decimal(12, 2)
+
+  /// Per-product overrides of the series spec. Almost always null — they exist
+  /// so one odd colour never forces a whole new series.
+  sqFtPerBoxOverride     Decimal? @db.Decimal(8, 2)
+  boxesPerPalletOverride Int?
+
+  /// Public visibility is per product and configurable, not a fixed count.
+  /// Prices stay hidden publicly regardless of this flag.
+  isPublic  Boolean @default(false)
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  /// The QBO item this maps to. An unmapped SKU must fail loudly at invoice
+  /// time rather than silently invoice as something else.
+  qboItemId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  conversions UomConversion[]
+  prices      DealerPrice[]
+  orderItems  OrderItem[]
+  leads       Lead[]
+
+  @@index([seriesId])
+  @@index([isPublic, isActive])
+  @@index([designName])
+  @@index([stockStatus])
+}
+
+/// Conversions that are NOT inherent to a flooring series.
+///
+/// Flooring needs none of these — sq ft ↔ box ↔ pallet comes off the series
+/// spec. This table carries the accessory cases: linear feet per stick, sticks
+/// per bundle, square feet per roll. Keeping them apart avoids storing
+/// sqFtPerBox in two places and letting the two drift.
+model UomConversion {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  fromUom OrderUom
+  toUom   OrderUom
+  factor  Decimal  @db.Decimal(12, 4)
+
+  @@unique([productId, fromUom, toUom])
+  @@index([productId])
+}
+
+// ---------------------------------------------------------------------------
+// Orders
+//
+// There is no payment in this system by design. An order is a request, the
+// owner approves it, and QuickBooks issues the invoice. Money never touches
+// the site — no gateway, no card storage, no PCI scope.
+// ---------------------------------------------------------------------------
+
+model Order {
+  id          String      @id @default(cuid())
+  orderNumber Int         @unique @default(autoincrement())
+  status      OrderStatus @default(DRAFT)
+
+  dealerId String
+  dealer   Dealer @relation(fields: [dealerId], references: [id], onDelete: Restrict)
+
+  shipToAddressId String?
+  shipToAddress   Address? @relation(fields: [shipToAddressId], references: [id], onDelete: SetNull)
+
+  subtotal Decimal @default(0) @db.Decimal(12, 2)
+  freight  Decimal @default(0) @db.Decimal(12, 2)
+  tax      Decimal @default(0) @db.Decimal(12, 2)
+  total    Decimal @default(0) @db.Decimal(12, 2)
+
+  freightSource FreightSource?
+  /// Denormalised from the line items because freight is quoted on the whole
+  /// shipment, and because the figures must stay as they were when the order
+  /// was priced even if a series spec is corrected later.
+  totalWeightLb Decimal?       @db.Decimal(12, 2)
+  palletCount   Int?
+  accessorials  String[]
+
+  qboInvoiceId String?
+  /// Whether the QuickBooks invoice has been settled. Populated from the QBO
+  /// webhook. Pending the client's answer on whether he wants paid/unpaid
+  /// surfaced in admin — the column is cheap now and a migration later is not.
+  paidAt       DateTime?
+
+  bolNumber   String?
+  proNumber   String?
+  trackingUrl String?
+  shippedAt   DateTime?
+  deliveredAt DateTime?
+
+  dealerNotes   String?
+  internalNotes String?
+
+  submittedAt DateTime?
+  approvedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items   OrderItem[]
+  history OrderStatusHistory[]
+
+  @@index([dealerId, status])
+  @@index([status, submittedAt])
+}
+
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  /// What the dealer typed, and in which unit. Kept verbatim so the order can
+  /// be shown back the way it was entered — someone who ordered "1200 sq ft"
+  /// should not be shown "51 boxes" and left wondering.
+  unitSelected OrderUom
+  qtyEntered   Decimal  @db.Decimal(12, 2)
+
+  /// The resolved quantity after conversion and rounding up to whole sellable
+  /// units, in the product's base unit.
+  qtyBase Decimal  @db.Decimal(12, 2)
+  uomBase OrderUom
+
+  boxes    Int?
+  sqFt     Decimal? @db.Decimal(12, 2)
+  weightLb Decimal? @db.Decimal(12, 2)
+
+  /// Snapshotted at submit. Because the owner may edit before approving, the
+  /// submitted price is kept alongside the current one — every change is also
+  /// written to the audit log with actor and timestamp.
+  unitPrice         Decimal  @db.Decimal(12, 4)
+  unitPriceAtSubmit Decimal? @db.Decimal(12, 4)
+  lineTotal         Decimal  @db.Decimal(12, 2)
+
+  /// Denormalised so an order still reads correctly if a product is later
+  /// renamed or its SKU scheme changes.
+  productNameSnapshot String
+  productSkuSnapshot  String
+
+  sortOrder Int @default(0)
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+/// Every transition, with who did it and why. This is what answers "why was my
+/// order rejected" and "who changed that price" without anyone guessing.
+model OrderStatusHistory {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Freight
+// ---------------------------------------------------------------------------
+
+/// Phase 1 is a zone table the owner maintains. TQL live rates drop in behind
+/// the same interface later, if they grant API access.
+model FreightZone {
+  id     String   @id @default(cuid())
+  name   String   @unique
+  states String[]
+  zips   String[]
+
+  perPalletRate Decimal? @db.Decimal(10, 2)
+  perBoxRate    Decimal? @db.Decimal(10, 2)
+  minCharge     Decimal? @db.Decimal(10, 2)
+
+  /// Past roughly 8–10 pallets a shipment stops being LTL, and a linear
+  /// per-pallet rate badly overquotes it. Above this the engine switches to the
+  /// FTL rate or routes the order to a manual quote — otherwise the owner
+  /// overrides the number on every large order and the automation earns nothing.
+  ftlThresholdPallets Int?
+  ftlRate             Decimal? @db.Decimal(10, 2)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AccessorialRate {
+  id    String  @id @default(cuid())
+  code  String  @unique
+  label String
+  rate  Decimal @db.Decimal(10, 2)
+
+  isActive Boolean @default(true)
+}
+
+// ---------------------------------------------------------------------------
+// Leads, jobs, audit, settings
+// ---------------------------------------------------------------------------
+
+/// One inbox for every public capture point: the contact form, the coverage
+/// calculator, sample requests and dealer applications. A dealer application
+/// is a lead the owner converts into an invite — it feeds invite-only rather
+/// than bypassing it.
+model Lead {
+  id      String     @id @default(cuid())
+  source  LeadSource
+  name    String?
+  email   String?
+  phone   String?
+  company String?
+  message String?
+
+  /// Set when the lead came from a product page or the calculator.
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  /// Calculator captures are worth far more with the number they typed.
+  calculatorSqFt Decimal? @db.Decimal(12, 2)
+
+  handledAt DateTime?
+  notes     String?
+  createdAt DateTime  @default(now())
+
+  @@index([source, createdAt])
+  @@index([handledAt])
+}
+
+/// Retryable background work.
+///
+/// A serverless function can die mid-flight and Intuit can be unavailable, so
+/// the QBO push cannot be fire-and-forget on approval. A row is written, a
+/// cron-driven route drains it. Same mechanism covers token refresh, the QBO
+/// connection health check and resale-certificate expiry reminders.
+model Job {
+  id        String    @id @default(cuid())
+  type      String
+  payload   Json
+  status    JobStatus @default(PENDING)
+  attempts  Int       @default(0)
+  lastError String?
+  runAfter  DateTime  @default(now())
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([status, runAfter])
+  @@index([type])
+}
+
+model AuditLog {
+  id       String @id @default(cuid())
+  entity   String
+  entityId String
+  action   String
+
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  before Json?
+  after  Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([actorId, createdAt])
+}
+
+/// Key-value settings the owner edits: announcement bar text, standing CC
+/// recipients, default waste factor, the FTL threshold default.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
 }
