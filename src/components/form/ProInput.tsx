@@ -14,6 +14,8 @@ export interface ProInputProps {
 	disabled?: boolean
 	autoComplete?: string
 	autoFocus?: boolean
+	/** -1 takes a field out of the tab order — used for the honeypot. */
+	tabIndex?: number
 	className?: string
 }
 
@@ -35,6 +37,7 @@ export function ProInput({
 	disabled,
 	autoComplete,
 	autoFocus,
+	tabIndex,
 	className,
 }: ProInputProps) {
 	const { control } = useFormContext()
@@ -61,6 +64,7 @@ export function ProInput({
 						disabled={disabled || field.disabled}
 						autoComplete={autoComplete}
 						autoFocus={autoFocus}
+						tabIndex={tabIndex}
 						aria-invalid={fieldState.error ? true : undefined}
 					/>
 				</FieldShell>

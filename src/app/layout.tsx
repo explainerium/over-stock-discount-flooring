@@ -25,6 +25,7 @@ const openSans = Open_Sans({
 })
 
 export const metadata: Metadata = {
+	metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
 	title: {
 		default: "Overstock Discount Flooring — Rigid Core LVP, High Point NC",
 		template: "%s · Overstock Discount Flooring",

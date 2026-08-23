@@ -25,9 +25,23 @@ if (!connectionString) {
 	throw new Error("DATABASE_URL is not set. Copy .env.example to .env and fill it in.")
 }
 
+/**
+ * Pool size, capped.
+ *
+ * With a Prisma 7 driver adapter the connection string goes straight to `pg`,
+ * so `?connection_limit=` — a Prisma-only parameter — is ignored, and the pool
+ * has to be bounded here instead. Left unbounded, `pg` defaults to ten per
+ * client, and a Next build runs several worker processes each holding one:
+ * enough to exhaust a local Postgres and take the build down with it.
+ *
+ * Small on purpose. Serverless gives each invocation its own process, so a
+ * large per-process pool buys nothing and costs connections.
+ */
+const POOL_SIZE = Number(process.env.DATABASE_POOL_SIZE) || 3
+
 const createClient = () =>
 	new PrismaClient({
-		adapter: new PrismaPg({ connectionString }),
+		adapter: new PrismaPg({ connectionString, max: POOL_SIZE }),
 		log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
 	})
 

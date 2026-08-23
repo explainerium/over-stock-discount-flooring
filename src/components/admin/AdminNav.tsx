@@ -17,6 +17,7 @@ const LINKS = [
 	{ href: "/admin/dealers", label: "Dealers" },
 	{ href: "/admin/products", label: "Products" },
 	{ href: "/admin/series", label: "Series" },
+	{ href: "/admin/leads", label: "Leads" },
 ]
 
 export function AdminNav() {

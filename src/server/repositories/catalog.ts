@@ -324,3 +324,15 @@ export async function countPublicColours(): Promise<number> {
 		where: { isPublic: true, isActive: true, series: { sqFtPerBox: { not: null } } },
 	})
 }
+
+/**
+ * Everything published, including trim.
+ *
+ * Distinct from `countPublicColours`, which is flooring only. The catalogue
+ * filter counts products — a dealer buying baseboard is buying from the same
+ * catalogue — while the "colours in stock" claim on the home page means colours.
+ * Using one number for both made "All (34)" sit above six filters adding to 37.
+ */
+export async function countPublicProducts(): Promise<number> {
+	return db.product.count({ where: { isPublic: true, isActive: true } })
+}
