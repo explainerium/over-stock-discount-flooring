@@ -2,6 +2,7 @@ import { ArrowLeftIcon } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { requireStaff } from "@/server/auth/guards"
 import { getDealer } from "@/server/repositories/dealers"
@@ -43,11 +44,16 @@ export default async function DealerDetailPage({
 						{dealer.taxExempt && <Badge variant="outline">Resale exempt</Badge>}
 					</div>
 				</div>
-				<DealerStatusActions
+				<div className="flex gap-2">
+					<Button variant="outline" asChild>
+						<Link href={`/admin/dealers/${dealer.id}/pricing`}>Pricing</Link>
+					</Button>
+					<DealerStatusActions
 					dealerId={dealer.id}
 					status={dealer.status}
 					activeUsers={activeUsers}
-				/>
+					/>
+				</div>
 			</div>
 
 			<Card>

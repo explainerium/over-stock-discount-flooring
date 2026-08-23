@@ -91,6 +91,16 @@ export const updateSeriesSchema = z.object({
 	isActive: z.boolean(),
 })
 
+/**
+ * Form-level schemas: the fields actually rendered, without the id.
+ * See the note on inviteUserFormSchema — a resolver rejects an unregistered id
+ * before the submit handler ever runs.
+ */
+export const updateProductFormSchema = updateProductSchema.omit({ id: true })
+export const updateSeriesFormSchema = updateSeriesSchema.omit({ id: true })
+export type UpdateProductFormInput = z.infer<typeof updateProductFormSchema>
+export type UpdateSeriesFormInput = z.infer<typeof updateSeriesFormSchema>
+
 export type CreateProductInput = z.infer<typeof createProductSchema>
 export type UpdateProductInput = z.infer<typeof updateProductSchema>
 export type UpdateSeriesInput = z.infer<typeof updateSeriesSchema>

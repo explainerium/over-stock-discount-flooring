@@ -4,7 +4,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { toast } from "sonner"
 import { FormError, ProCheckbox, ProForm, ProInput, ProSubmit, ProTextarea } from "@/components/form"
-import { updateSeriesSchema, type UpdateSeriesInput } from "@/lib/validation/catalog"
+import {
+	updateSeriesFormSchema,
+	type UpdateSeriesFormInput,
+	type UpdateSeriesInput,
+} from "@/lib/validation/catalog"
 import { updateSeriesAction } from "../../../products/_actions"
 
 /**
@@ -23,18 +27,31 @@ export function EditSeriesForm({
 }) {
 	const [error, setError] = useState<string | null>(null)
 
-	async function onSubmit(values: UpdateSeriesInput) {
+	// The id is passed to the action from the closure; the form never renders it,
+	// and the form schema does not know about it.
+	const { id, ...formDefaults } = defaults
+
+	/**
+	 * The id is merged in here rather than carried in defaultValues.
+	 *
+	 * react-hook-form does not submit a default for a field that was never
+	 * registered, so an id sitting only in defaultValues arrives as undefined —
+	 * the schema then fails on a path with no input attached to it, and the form
+	 * silently does nothing. An id is context, not something anybody types, so
+	 * it belongs in the closure.
+	 */
+	async function onSubmit(values: UpdateSeriesFormInput) {
 		setError(null)
-		const result = await updateSeriesAction(values)
+		const result = await updateSeriesAction({ ...values, id })
 		if (result.ok) toast.success(result.message ?? "Saved.")
 		else setError(result.message)
 	}
 
 	return (
-		<ProForm<UpdateSeriesInput>
+		<ProForm<UpdateSeriesFormInput>
 			onSubmit={onSubmit}
-			resolver={zodResolver(updateSeriesSchema)}
-			defaultValues={defaults}
+			resolver={zodResolver(updateSeriesFormSchema)}
+			defaultValues={formDefaults}
 			className="grid gap-6"
 		>
 			<FormError message={error} />

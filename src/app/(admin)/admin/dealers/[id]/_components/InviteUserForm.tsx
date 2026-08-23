@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { FormError, ProForm, ProInput, ProSubmit } from "@/components/form"
-import { inviteUserSchema, type InviteUserInput } from "@/lib/validation/dealers"
+import { inviteUserFormSchema, type InviteUserFormInput } from "@/lib/validation/dealers"
 import { inviteUserAction } from "../../_actions"
 import { InviteLinkPanel } from "../../_components/InviteLinkPanel"
 
@@ -11,9 +11,18 @@ export function InviteUserForm({ dealerId }: { dealerId: string }) {
 	const [error, setError] = useState<string | null>(null)
 	const [issued, setIssued] = useState<{ email: string; link: string } | null>(null)
 
-	async function onSubmit(values: InviteUserInput) {
+	/**
+	 * The id is merged in here rather than carried in defaultValues.
+	 *
+	 * react-hook-form does not submit a default for a field that was never
+	 * registered, so an id sitting only in defaultValues arrives as undefined —
+	 * the schema then fails on a path with no input attached to it, and the form
+	 * silently does nothing. An id is context, not something anybody types, so
+	 * it belongs in the closure.
+	 */
+	async function onSubmit(values: InviteUserFormInput) {
 		setError(null)
-		const result = await inviteUserAction(values)
+		const result = await inviteUserAction({ ...values, dealerId })
 		if (result.ok) setIssued({ email: result.data!.email, link: result.data!.inviteLink })
 		else setError(result.message)
 	}
@@ -34,10 +43,10 @@ export function InviteUserForm({ dealerId }: { dealerId: string }) {
 	}
 
 	return (
-		<ProForm<InviteUserInput>
+		<ProForm<InviteUserFormInput>
 			onSubmit={onSubmit}
-			resolver={zodResolver(inviteUserSchema)}
-			defaultValues={{ dealerId, email: "" }}
+			resolver={zodResolver(inviteUserFormSchema)}
+			defaultValues={{ email: "" }}
 			className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-start"
 		>
 			<div className="grid gap-3 sm:col-span-2">

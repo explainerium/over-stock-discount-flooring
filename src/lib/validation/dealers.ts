@@ -50,6 +50,16 @@ export const inviteUserSchema = z.object({
 	email: z.string().trim().toLowerCase().email("That does not look like an email address."),
 })
 
+/**
+ * What the invite form renders. The dealerId stays on the action schema only.
+ *
+ * A resolver runs before the submit handler, so an id that react-hook-form
+ * never registered fails validation first and the handler is never reached —
+ * from the outside, a button that does nothing.
+ */
+export const inviteUserFormSchema = inviteUserSchema.omit({ dealerId: true })
+export type InviteUserFormInput = z.infer<typeof inviteUserFormSchema>
+
 export const dealerIdSchema = z.object({ id: z.string().min(1) })
 export const inviteIdSchema = z.object({ id: z.string().min(1) })
 export const userIdSchema = z.object({ id: z.string().min(1) })
