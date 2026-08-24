@@ -42,14 +42,17 @@ describe("the client's worked example", () => {
 		{ name: "Gold W", spec: SERIES.goldW, boxes: 51, display: "1,218" },
 	]
 
-	it.each(cases)("$name: 1,200 sq ft → $boxes boxes / $display sq ft", ({ spec, boxes, display }) => {
-		const result = resolve(flooring(spec), "SQFT", 1200)
+	it.each(cases)(
+		"$name: 1,200 sq ft → $boxes boxes / $display sq ft",
+		({ spec, boxes, display }) => {
+			const result = resolve(flooring(spec), "SQFT", 1200)
 
-		expect(result.boxes).toBe(boxes)
-		expect(formatBoxesAndCoverage(result.boxes!, result.coverageSqFt!)).toBe(
-			`${boxes} boxes / ${display} sq ft`,
-		)
-	})
+			expect(result.boxes).toBe(boxes)
+			expect(formatBoxesAndCoverage(result.boxes!, result.coverageSqFt!)).toBe(
+				`${boxes} boxes / ${display} sq ft`,
+			)
+		},
+	)
 
 	it("bills the coverage actually shipped, not the figure typed", () => {
 		const result = resolve(flooring(SERIES.gold), "SQFT", 1200)
@@ -116,6 +119,16 @@ describe("waste factor", () => {
 	it("ignores waste on an explicit box count", () => {
 		// Someone who typed "10 boxes" chose 10 boxes.
 		expect(resolve(flooring(SERIES.gold), "BOX", 10, 10).boxes).toBe(10)
+	})
+
+	it("reports the allowance it applied, not the one it was handed", () => {
+		// This is what gets stored on the line and printed back to the owner.
+		// Reporting 10 on a box count would put "10 boxes + 10% waste" on the
+		// approval screen over an order that had no allowance added at all.
+		expect(resolve(flooring(SERIES.gold), "SQFT", 1200, 10).wasteFactorPct).toBe(10)
+		expect(resolve(flooring(SERIES.gold), "BOX", 10, 10).wasteFactorPct).toBe(0)
+		expect(resolve(flooring(SERIES.gold), "PALLET", 2, 10).wasteFactorPct).toBe(0)
+		expect(resolve(baseboard, "LF", 100, 10).wasteFactorPct).toBe(10)
 	})
 })
 

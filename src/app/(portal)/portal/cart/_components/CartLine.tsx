@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { formatCoverage } from "@/lib/format/coverage"
+import { differs } from "@/lib/format/dirty"
 import { formatMoney, formatUnitPrice } from "@/lib/format/money"
 import { removeLineAction, updateLineAction } from "../../_actions"
 
@@ -24,6 +25,7 @@ export interface CartLineData {
 	pricingUom: string
 	lineTotal: string
 	orderUoms: string[]
+	wasteFactorPct: number
 }
 
 const UNIT_LABEL: Record<string, string> = {
@@ -48,13 +50,27 @@ const UNIT_LABEL: Record<string, string> = {
 export function CartLine({ line }: { line: CartLineData }) {
 	const [unit, setUnit] = useState(line.unitSelected)
 	const [quantity, setQuantity] = useState(line.qtyEntered)
+	const [waste, setWaste] = useState(line.wasteFactorPct)
 	const [pending, startTransition] = useTransition()
 
-	const dirty = unit !== line.unitSelected || quantity !== line.qtyEntered
+	// Waste is a square-footage idea. Ordering by the box means counting boxes,
+	// and offering an allowance on top of a box count would just be confusing.
+	const showsWaste = line.orderUoms.includes("SQFT") && unit === "SQFT"
 
-	function save() {
+	const dirty =
+		unit !== line.unitSelected ||
+		differs(quantity, line.qtyEntered) ||
+		waste !== line.wasteFactorPct
+
+	function save(override?: { waste: number }) {
+		const next = override?.waste ?? waste
 		startTransition(async () => {
-			const result = await updateLineAction({ itemId: line.id, unit, quantity })
+			const result = await updateLineAction({
+				itemId: line.id,
+				unit,
+				quantity,
+				wasteFactorPct: next,
+			})
 			if (result.ok) toast.success(result.message)
 			else toast.error(result.message)
 		})
@@ -106,17 +122,46 @@ export function CartLine({ line }: { line: CartLineData }) {
 						))}
 					</select>
 					{dirty && (
-						<Button type="button" size="sm" onClick={save} disabled={pending}>
+						<Button type="button" size="sm" onClick={() => save()} disabled={pending}>
 							Update
 						</Button>
 					)}
 				</div>
 
+				{showsWaste && (
+					<div className="text-muted-foreground mt-2 flex items-center gap-3 text-xs">
+						<span>Waste</span>
+						{[0, 5, 10].map((option) => (
+							<button
+								key={option}
+								type="button"
+								onClick={() => {
+									setWaste(option)
+									// Saved on the tap rather than waiting for Update:
+									// the number below it changes, and a stale box
+									// count next to a highlighted 10% reads as broken.
+									save({ waste: option })
+								}}
+								aria-pressed={waste === option}
+								disabled={pending}
+								className={
+									waste === option
+										? "text-foreground underline underline-offset-4"
+										: "hover:text-foreground"
+								}
+							>
+								{option}%
+							</button>
+						))}
+					</div>
+				)}
+
 				{(line.boxes !== null || line.sqFt) && (
 					<p className="text-muted-foreground mt-2 text-xs">
 						Ships as{" "}
 						<span className="text-foreground">
-							{line.boxes !== null && `${line.boxes} ${line.boxes === 1 ? "box" : "boxes"}`}
+							{line.boxes !== null &&
+								`${line.boxes} ${line.boxes === 1 ? "box" : "boxes"}`}
 						</span>
 						{line.sqFt && <> · {formatCoverage(line.sqFt)} sq ft covered</>}
 					</p>

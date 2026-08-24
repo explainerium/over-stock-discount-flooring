@@ -14,13 +14,19 @@ import { cn } from "@/lib/utils"
  */
 const LINKS = [
 	{ href: "/admin", label: "Overview", exact: true },
+	{ href: "/admin/orders", label: "Orders" },
 	{ href: "/admin/dealers", label: "Dealers" },
 	{ href: "/admin/products", label: "Products" },
 	{ href: "/admin/series", label: "Series" },
 	{ href: "/admin/leads", label: "Leads" },
 ]
 
-export function AdminNav() {
+/**
+ * @param awaiting how many orders are sitting unanswered. Shown on the tab
+ * rather than only on the page, because an order the owner has not opened is
+ * exactly the one he needs telling about.
+ */
+export function AdminNav({ awaiting = 0 }: { awaiting?: number }) {
 	const pathname = usePathname()
 
 	return (
@@ -40,6 +46,16 @@ export function AdminNav() {
 						)}
 					>
 						{link.label}
+						{link.href === "/admin/orders" && awaiting > 0 && (
+							<span
+								className={cn(
+									"ml-1.5 rounded-full px-1.5 py-0.5 text-xs tabular-nums",
+									active ? "bg-background/20" : "bg-foreground text-background",
+								)}
+							>
+								{awaiting}
+							</span>
+						)}
 					</Link>
 				)
 			})}

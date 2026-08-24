@@ -9,16 +9,7 @@ import { z } from "zod"
  * depends on.
  */
 
-const ORDER_UOMS = [
-	"SQFT",
-	"BOX",
-	"PALLET",
-	"LF",
-	"STICK",
-	"BUNDLE",
-	"EACH",
-	"ROLL",
-] as const
+const ORDER_UOMS = ["SQFT", "BOX", "PALLET", "LF", "STICK", "BUNDLE", "EACH", "ROLL"] as const
 
 const quantity = z
 	.string()
@@ -52,3 +43,94 @@ export const addLineFormSchema = addLineSchema.omit({ productId: true })
 export type AddLineInput = z.infer<typeof addLineSchema>
 export type AddLineFormInput = z.infer<typeof addLineFormSchema>
 export type UpdateLineInput = z.infer<typeof updateLineSchema>
+
+export const submitOrderSchema = z.object({
+	notes: z.string().trim().max(2000).optional(),
+	/** Omitted for the cart. Supplied when sending back an order after changes. */
+	orderId: z.string().min(1).optional(),
+})
+
+/**
+ * What staff send when they move an order.
+ *
+ * The note is required or optional depending on the transition — rejecting
+ * without a reason is a phone call later — but that rule lives in the lifecycle
+ * table, not here, so there is one place to read it.
+ */
+export const transitionOrderSchema = z.object({
+	orderId: z.string().min(1),
+	to: z.enum([
+		"SUBMITTED",
+		"CHANGES_REQUESTED",
+		"APPROVED",
+		"INVOICED",
+		"SHIPPED",
+		"DELIVERED",
+		"CLOSED",
+		"REJECTED",
+		"CANCELLED",
+	]),
+	note: z.string().trim().max(2000).optional(),
+})
+
+export type SubmitOrderInput = z.infer<typeof submitOrderSchema>
+export type TransitionOrderInput = z.infer<typeof transitionOrderSchema>
+
+/**
+ * What the owner may change on a submitted order.
+ *
+ * Money arrives as a string for the same reason quantities do — the pricing
+ * engine takes `Decimal.Value`, and a unit price that has been through
+ * `Number()` is no longer the figure that was typed.
+ */
+/**
+ * Precision is matched to the column, not to a general idea of money.
+ *
+ * A unit price is numeric(12,4), because per-square-foot pricing runs to four
+ * places in this trade. Freight and tax are numeric(12,2). Accepting four
+ * places on a two-place column does not fail — Postgres rounds it and stores
+ * a figure the owner did not type, which is worse than being told.
+ */
+const unitPriceInput = z
+	.string()
+	.trim()
+	.regex(/^\d+(\.\d{1,4})?$/, "Enter a price, like 1.86 or 1.8615")
+
+const chargeInput = z
+	.string()
+	.trim()
+	.regex(/^\d+(\.\d{1,2})?$/, "Enter an amount, like 450 or 486.50")
+
+export const staffLineSchema = z.object({
+	orderId: z.string().min(1),
+	itemId: z.string().min(1),
+	quantity,
+	unitPrice: unitPriceInput,
+})
+
+/** The id fields come from the page, so the form itself never registers them. */
+export const staffLineFormSchema = staffLineSchema.omit({
+	orderId: true,
+	itemId: true,
+})
+
+export const staffLineIdSchema = z.object({
+	orderId: z.string().min(1),
+	itemId: z.string().min(1),
+})
+
+export const orderChargesSchema = z.object({
+	orderId: z.string().min(1),
+	freight: chargeInput,
+	tax: chargeInput,
+	internalNotes: z.string().trim().max(2000).optional(),
+})
+
+export const orderChargesFormSchema = orderChargesSchema.omit({
+	orderId: true,
+})
+
+export type StaffLineInput = z.infer<typeof staffLineSchema>
+export type StaffLineFormInput = z.infer<typeof staffLineFormSchema>
+export type OrderChargesInput = z.infer<typeof orderChargesSchema>
+export type OrderChargesFormInput = z.infer<typeof orderChargesFormSchema>

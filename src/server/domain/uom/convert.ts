@@ -74,10 +74,7 @@ export function resolve(
 		throw new UomError("Quantity must be greater than zero.", "QUANTITY_INVALID")
 	}
 	if (!spec.orderUoms.includes(enteredUom)) {
-		throw new UomError(
-			`This product cannot be ordered by ${enteredUom}.`,
-			"UOM_NOT_ALLOWED",
-		)
+		throw new UomError(`This product cannot be ordered by ${enteredUom}.`, "UOM_NOT_ALLOWED")
 	}
 	if (wasteFactorPct < 0 || wasteFactorPct > 100) {
 		throw new UomError("Waste factor must be between 0 and 100 percent.", "QUANTITY_INVALID")
@@ -86,10 +83,21 @@ export function resolve(
 	const withWaste = enteredQty.times(new Decimal(100).plus(wasteFactorPct)).dividedBy(100)
 	const family = familyOf(spec)
 
+	/**
+	 * The allowance that was actually applied, which is not always the one that
+	 * was asked for.
+	 *
+	 * A waste factor is a coverage idea: it means "give me enough to cover this
+	 * area with some to spare". Someone who orders 51 boxes has already done
+	 * that arithmetic, so the branches below that start from a chosen count
+	 * ignore it — and this is what they report, so that nothing downstream
+	 * prints "51 boxes + 10% waste" over an order where no allowance was added.
+	 */
+	const applied = (used: boolean) => (used ? wasteFactorPct : 0)
+
 	const base = {
 		enteredQty,
 		enteredUom,
-		wasteFactorPct,
 		billableUom: spec.pricingUom,
 	}
 
@@ -114,10 +122,7 @@ export function resolve(
 				break
 			case "PALLET": {
 				if (!spec.boxesPerPallet) {
-					throw new UomError(
-						"Product is missing boxes per pallet.",
-						"SPEC_INCOMPLETE",
-					)
+					throw new UomError("Product is missing boxes per pallet.", "SPEC_INCOMPLETE")
 				}
 				boxes = ceil(enteredQty.times(spec.boxesPerPallet))
 				break
@@ -133,6 +138,7 @@ export function resolve(
 
 		return {
 			...base,
+			wasteFactorPct: applied(enteredUom === "SQFT"),
 			sellableUom: "BOX",
 			sellableQty: boxes,
 			billableQty: coverageSqFt,
@@ -159,6 +165,7 @@ export function resolve(
 			}
 			return {
 				...base,
+				wasteFactorPct: applied(true),
 				sellableUom: "LF",
 				sellableQty: withWaste,
 				billableQty: withWaste,
@@ -175,10 +182,7 @@ export function resolve(
 				break
 			case "BUNDLE": {
 				if (!spec.sticksPerBundle) {
-					throw new UomError(
-						"Product is missing sticks per bundle.",
-						"SPEC_INCOMPLETE",
-					)
+					throw new UomError("Product is missing sticks per bundle.", "SPEC_INCOMPLETE")
 				}
 				sticks = ceil(enteredQty.times(spec.sticksPerBundle))
 				break
@@ -192,6 +196,7 @@ export function resolve(
 
 		return {
 			...base,
+			wasteFactorPct: applied(enteredUom === "LF"),
 			sellableUom: "STICK",
 			sellableQty: sticks,
 			billableQty: sticks.times(lfPerStick),
@@ -208,10 +213,7 @@ export function resolve(
 				break
 			case "SQFT": {
 				if (sqFtPerRoll == null || sqFtPerRoll.lessThanOrEqualTo(0)) {
-					throw new UomError(
-						"Product is missing sq ft per roll.",
-						"SPEC_INCOMPLETE",
-					)
+					throw new UomError("Product is missing sq ft per roll.", "SPEC_INCOMPLETE")
 				}
 				rolls = ceil(withWaste.dividedBy(sqFtPerRoll))
 				break
@@ -225,11 +227,13 @@ export function resolve(
 
 		return {
 			...base,
+			wasteFactorPct: applied(enteredUom === "SQFT"),
 			sellableUom: "ROLL",
 			sellableQty: rolls,
 			// Priced per roll unless the product is quoted per square foot, in
 			// which case the covered area is what gets billed.
-			billableQty: spec.pricingUom === "SQFT" && sqFtPerRoll ? rolls.times(sqFtPerRoll) : rolls,
+			billableQty:
+				spec.pricingUom === "SQFT" && sqFtPerRoll ? rolls.times(sqFtPerRoll) : rolls,
 			coverageSqFt: sqFtPerRoll ? rolls.times(sqFtPerRoll) : undefined,
 		}
 	}
@@ -241,6 +245,7 @@ export function resolve(
 	const units = ceil(enteredQty)
 	return {
 		...base,
+		wasteFactorPct: applied(false),
 		sellableUom: "EACH",
 		sellableQty: units,
 		billableQty: units,

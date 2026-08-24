@@ -4,6 +4,7 @@ import { AdminNav } from "@/components/admin/AdminNav"
 import { SignOutButton } from "@/components/shared/SignOutButton"
 import { Toaster } from "@/components/ui/sonner"
 import { requireStaff } from "@/server/auth/guards"
+import { countAwaitingApproval } from "@/server/repositories/orders"
 
 export const metadata: Metadata = { robots: { index: false, follow: false } }
 
@@ -17,6 +18,7 @@ export const metadata: Metadata = { robots: { index: false, follow: false } }
  */
 export default async function AdminLayout({ children }: { children: ReactNode }) {
 	const user = await requireStaff()
+	const awaiting = await countAwaitingApproval()
 
 	return (
 		<div className="flex min-h-svh flex-col">
@@ -32,7 +34,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 					</div>
 					<SignOutButton />
 					<div className="w-full">
-						<AdminNav />
+						<AdminNav awaiting={awaiting} />
 					</div>
 				</div>
 			</header>

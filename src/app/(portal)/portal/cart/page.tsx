@@ -7,6 +7,7 @@ import { formatMoney } from "@/lib/format/money"
 import { requireDealerScope } from "@/server/auth/guards"
 import { getDraft } from "@/server/repositories/orders"
 import { CartLine } from "./_components/CartLine"
+import { SubmitOrder } from "./_components/SubmitOrder"
 
 export const metadata = { title: "Your Order" }
 
@@ -28,7 +29,10 @@ export default async function CartPage() {
 		return (
 			<Card>
 				<CardContent className="py-16 text-center">
-					<ShoppingCartIcon className="text-muted-foreground mx-auto size-8" aria-hidden />
+					<ShoppingCartIcon
+						className="text-muted-foreground mx-auto size-8"
+						aria-hidden
+					/>
 					<p className="mt-5 font-medium">Nothing on this order yet</p>
 					<p className="text-muted-foreground mx-auto mt-2 max-w-sm text-sm">
 						Add colours from the catalogue. Type a square footage and we will round it
@@ -69,6 +73,7 @@ export default async function CartPage() {
 							pricingUom: item.product.pricingUom,
 							lineTotal: item.lineTotal.toString(),
 							orderUoms: item.product.orderUoms,
+							wasteFactorPct: item.wasteFactorPct,
 						}}
 					/>
 				))}
@@ -78,7 +83,9 @@ export default async function CartPage() {
 				<CardContent className="grid gap-3 py-6">
 					<div className="flex justify-between text-sm">
 						<span className="text-muted-foreground">Subtotal</span>
-						<span className="font-medium">{formatMoney(draft!.subtotal.toString())}</span>
+						<span className="font-medium">
+							{formatMoney(draft!.subtotal.toString())}
+						</span>
 					</div>
 
 					{/* Freight is quoted at approval in Phase 1, so the order says so
@@ -93,7 +100,9 @@ export default async function CartPage() {
 							<span>Shipment</span>
 							<span>
 								{formatCoverage(draft!.totalWeightLb.toString())} lb
-								{draft!.palletCount ? ` · ${draft!.palletCount} pallet${draft!.palletCount === 1 ? "" : "s"}` : ""}
+								{draft!.palletCount
+									? ` · ${draft!.palletCount} pallet${draft!.palletCount === 1 ? "" : "s"}`
+									: ""}
 							</span>
 						</div>
 					)}
@@ -107,17 +116,16 @@ export default async function CartPage() {
 				</CardContent>
 			</Card>
 
-			<div className="flex flex-wrap gap-3">
-				<Button size="lg" disabled>
-					Submit for approval
-				</Button>
+			<SubmitOrder />
+
+			<div>
 				<Button variant="outline" asChild>
 					<Link href="/portal/catalog">Keep adding</Link>
 				</Button>
 			</div>
 			<p className="text-muted-foreground text-xs">
-				Nothing is charged here. We review the order, confirm freight, and invoice
-				through QuickBooks once it is approved.
+				Nothing is charged here. We review the order, confirm freight, and invoice through
+				QuickBooks once it is approved.
 			</p>
 		</div>
 	)

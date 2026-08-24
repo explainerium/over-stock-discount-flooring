@@ -575,6 +575,11 @@ model OrderItem {
   sqFt     Decimal? @db.Decimal(12, 2)
   weightLb Decimal? @db.Decimal(12, 2)
 
+  /// The waste allowance the dealer asked for, kept so the line can be
+  /// recalculated later without losing it. Without this column an edit to the
+  /// quantity silently drops the allowance and ships short.
+  wasteFactorPct Int @default(0)
+
   /// Snapshotted at submit. Because the owner may edit before approving, the
   /// submitted price is kept alongside the current one — every change is also
   /// written to the audit log with actor and timestamp.

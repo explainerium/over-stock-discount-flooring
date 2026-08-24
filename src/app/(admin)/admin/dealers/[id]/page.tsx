@@ -1,4 +1,5 @@
 import { ArrowLeftIcon } from "lucide-react"
+import { formatTerms } from "@/lib/format/terms"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
@@ -69,7 +70,7 @@ export default async function DealerDetailPage({
 						<dt className="text-muted-foreground">Phone</dt>
 						<dd>{dealer.contactPhone ?? "—"}</dd>
 						<dt className="text-muted-foreground">Payment terms</dt>
-						<dd>{dealer.paymentTerms.replace("_", " ")}</dd>
+						<dd>{formatTerms(dealer.paymentTerms)}</dd>
 						<dt className="text-muted-foreground">Freight</dt>
 						<dd>{dealer.freightMode}</dd>
 					</dl>
