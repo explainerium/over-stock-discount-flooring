@@ -121,6 +121,32 @@ describe("fitness to submit", () => {
 		)
 	})
 
+	it("refuses an order under the dealer's minimum", () => {
+		// Checked on goods, not on the total: freight is not quoted yet, and a
+		// minimum a dealer only clears once delivery is added is not a minimum.
+		const under = canSubmit({
+			lineCount: 1,
+			total: "900.00",
+			hasShipTo: true,
+			minOrderValue: "1500",
+		})
+		expect(under.reason).toContain("start at $1500.00")
+
+		expect(
+			canSubmit({ lineCount: 1, total: "1500.00", hasShipTo: true, minOrderValue: "1500" })
+				.ok,
+		).toBe(true)
+	})
+
+	it("treats no minimum and a zero minimum the same way", () => {
+		for (const minimum of [null, undefined, "0"]) {
+			expect(
+				canSubmit({ lineCount: 1, total: "10.00", hasShipTo: true, minOrderValue: minimum })
+					.ok,
+			).toBe(true)
+		}
+	})
+
 	it("accepts a real one", () => {
 		expect(canSubmit({ lineCount: 1, total: "2244.30", hasShipTo: true }).ok).toBe(true)
 	})

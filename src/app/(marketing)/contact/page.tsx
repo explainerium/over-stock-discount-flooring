@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { SHOWROOM } from "@/constants/catalog"
 import { PageHeader } from "../_components/PageHeader"
 import { ContactForm } from "./_components/ContactForm"
+import { ShowroomMap } from "./_components/ShowroomMap"
 
 export const metadata: Metadata = {
 	title: "Contact Us",
@@ -51,7 +52,11 @@ const jsonLd = {
 }
 
 const DETAILS = [
-	{ Icon: MapPinIcon, label: "Showroom", lines: [SHOWROOM.street, `${SHOWROOM.city}, ${SHOWROOM.state} ${SHOWROOM.zip}`] },
+	{
+		Icon: MapPinIcon,
+		label: "Showroom",
+		lines: [SHOWROOM.street, `${SHOWROOM.city}, ${SHOWROOM.state} ${SHOWROOM.zip}`],
+	},
 	{ Icon: ClockIcon, label: "Open", lines: [SHOWROOM.weekdays, SHOWROOM.saturday] },
 	{ Icon: PhoneIcon, label: "Phone", lines: [SHOWROOM.phone], href: SHOWROOM.phoneHref },
 ]
@@ -85,7 +90,10 @@ export default function ContactPage() {
 						<dl className="grid gap-8">
 							{DETAILS.map(({ Icon, label, lines, href }) => (
 								<div key={label} className="flex gap-4">
-									<Icon className="text-muted-foreground mt-0.5 size-5 shrink-0" aria-hidden />
+									<Icon
+										className="text-muted-foreground mt-0.5 size-5 shrink-0"
+										aria-hidden
+									/>
 									<div>
 										<dt className="display text-muted-foreground text-xs uppercase">
 											{label}
@@ -102,7 +110,10 @@ export default function ContactPage() {
 							))}
 
 							<div className="flex gap-4">
-								<MailIcon className="text-muted-foreground mt-0.5 size-5 shrink-0" aria-hidden />
+								<MailIcon
+									className="text-muted-foreground mt-0.5 size-5 shrink-0"
+									aria-hidden
+								/>
 								<div>
 									<dt className="display text-muted-foreground text-xs uppercase">
 										Email
@@ -118,6 +129,15 @@ export default function ContactPage() {
 							</div>
 						</dl>
 					</div>
+				</div>
+			</section>
+
+			{/* Last, because somebody who has decided to visit has already read
+			    the rest. The address is printed above it, so the page still works
+			    if the frame is blocked. */}
+			<section className="bg-paper">
+				<div className="mx-auto max-w-[1280px] px-5 pb-24 md:pb-32">
+					<ShowroomMap />
 				</div>
 			</section>
 		</>

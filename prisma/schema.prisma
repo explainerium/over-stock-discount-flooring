@@ -542,6 +542,10 @@ model Order {
   /// surfaced in admin — the column is cheap now and a migration later is not.
   paidAt       DateTime?
 
+  /// Who is actually bringing it. Recorded because the dealer's first question
+  /// is which truck to expect, and because a PRO number means nothing without
+  /// the carrier it belongs to.
+  carrier     String?
   bolNumber   String?
   proNumber   String?
   trackingUrl String?
@@ -689,6 +693,10 @@ model Lead {
 
   /// Calculator captures are worth far more with the number they typed.
   calculatorSqFt Decimal? @db.Decimal(12, 2)
+
+  /// Where to post a sample. Its own column rather than buried in `message`,
+  /// because the owner has to read it off the screen and write it on a package.
+  shipTo String?
 
   handledAt DateTime?
   notes     String?

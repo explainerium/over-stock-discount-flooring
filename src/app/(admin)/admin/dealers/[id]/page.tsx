@@ -10,6 +10,7 @@ import { listAllAddresses } from "@/server/repositories/addresses"
 import { getDealer } from "@/server/repositories/dealers"
 import { DealerStatusBadge } from "../_components/DealerStatusBadge"
 import { DealerAddresses } from "./_components/DealerAddresses"
+import { DealerTermsForm } from "./_components/DealerTermsForm"
 import { DealerStatusActions } from "./_components/DealerStatusActions"
 import { InviteUserForm } from "./_components/InviteUserForm"
 import { RevokeInviteButton } from "./_components/RevokeInviteButton"
@@ -79,6 +80,31 @@ export default async function DealerDetailPage({ params }: { params: Promise<{ i
 							{dealer.notes}
 						</p>
 					)}
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>Terms</CardTitle>
+					<CardDescription>
+						How {dealer.companyName} buys. These drive the invoice and the freight
+						quote.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<DealerTermsForm
+						terms={{
+							dealerId: dealer.id,
+							paymentTerms: dealer.paymentTerms,
+							freightMode: dealer.freightMode,
+							flatFreightRate: dealer.flatFreightRate?.toString() ?? "",
+							minOrderValue: dealer.minOrderValue?.toString() ?? "",
+							taxExempt: dealer.taxExempt,
+							// The input is a date field, so it wants yyyy-mm-dd.
+							resaleCertExpiresAt:
+								dealer.resaleCertExpiresAt?.toISOString().slice(0, 10) ?? "",
+						}}
+					/>
 				</CardContent>
 			</Card>
 

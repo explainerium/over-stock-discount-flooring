@@ -14,11 +14,7 @@ import { z } from "zod"
  */
 
 const name = z.string().trim().min(1, "Your name, please.").max(120)
-const email = z
-	.string()
-	.trim()
-	.toLowerCase()
-	.email("That does not look like an email address.")
+const email = z.string().trim().toLowerCase().email("That does not look like an email address.")
 const phone = z.string().trim().max(40).optional()
 
 export const contactSchema = z.object({
@@ -43,6 +39,29 @@ export const dealerApplicationSchema = z.object({
 	message: z.string().trim().max(4000).optional(),
 	website: z.string().max(0).optional(),
 })
+
+/**
+ * A sample request.
+ *
+ * Asks where to send it, because a sample has to go somewhere and collecting
+ * the address afterwards costs an email and a day. Fulfilment stays manual in
+ * Phase 1 — this creates a lead the owner works from, nothing more.
+ */
+export const sampleRequestSchema = z.object({
+	name,
+	email,
+	phone,
+	productId: z.string().min(1),
+	address: z.string().trim().min(1, "Where should we send it?").max(300),
+	message: z.string().trim().max(1000).optional(),
+	website: z.string().max(0).optional(),
+})
+
+/** The product id comes from the page, so the form never registers it. */
+export const sampleRequestFormSchema = sampleRequestSchema.omit({ productId: true })
+
+export type SampleRequestInput = z.infer<typeof sampleRequestSchema>
+export type SampleRequestFormInput = z.infer<typeof sampleRequestFormSchema>
 
 export type ContactInput = z.infer<typeof contactSchema>
 export type DealerApplicationInput = z.infer<typeof dealerApplicationSchema>

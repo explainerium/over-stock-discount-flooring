@@ -43,7 +43,14 @@ const SERIES = [
 		legacyPath: "bronze",
 		active: true,
 		sortOrder: 1,
-		colors: ["Avalon", "Golden Coast", "Harmony", "Laurel Springs", "Redwood Falls", "Timber Lake"],
+		colors: [
+			"Avalon",
+			"Golden Coast",
+			"Harmony",
+			"Laurel Springs",
+			"Redwood Falls",
+			"Timber Lake",
+		],
 	},
 	{
 		name: "Silver Series",
@@ -113,10 +120,27 @@ const SERIES = [
 		active: true,
 		sortOrder: 4,
 		colors: [
-			"Brookfield", "Charleston", "Classic Lodge", "Everstill Forest", "Fountain Hills",
-			"Golden Pine", "Houston", "Kaneohe Bay", "Lake Lanier", "Mesa", "Natural Oak",
-			"Nightfall Hills", "Northshire", "Olympia", "Petrified Forest", "Phoenix",
-			"Placid Cabin", "Providence", "River View", "Rock Creek", "Vintage Cabin",
+			"Brookfield",
+			"Charleston",
+			"Classic Lodge",
+			"Everstill Forest",
+			"Fountain Hills",
+			"Golden Pine",
+			"Houston",
+			"Kaneohe Bay",
+			"Lake Lanier",
+			"Mesa",
+			"Natural Oak",
+			"Nightfall Hills",
+			"Northshire",
+			"Olympia",
+			"Petrified Forest",
+			"Phoenix",
+			"Placid Cabin",
+			"Providence",
+			"River View",
+			"Rock Creek",
+			"Vintage Cabin",
 		],
 	},
 	{
@@ -135,25 +159,71 @@ const SERIES = [
 		active: false,
 		sortOrder: 5,
 		colors: [
-			"Brookfield", "Charleston", "Classic Lodge", "Everstill Forest", "Fountain Hills",
-			"Golden Pine", "Houston", "Kaneohe Bay", "Lake Lanier", "Mesa", "Natural Oak",
-			"Nightfall Hills", "Northshire", "Olympia", "Petrified Forest", "Phoenix",
-			"Placid Cabin", "Providence", "River View", "Rock Creek", "Vintage Cabin",
+			"Brookfield",
+			"Charleston",
+			"Classic Lodge",
+			"Everstill Forest",
+			"Fountain Hills",
+			"Golden Pine",
+			"Houston",
+			"Kaneohe Bay",
+			"Lake Lanier",
+			"Mesa",
+			"Natural Oak",
+			"Nightfall Hills",
+			"Northshire",
+			"Olympia",
+			"Petrified Forest",
+			"Phoenix",
+			"Placid Cabin",
+			"Providence",
+			"River View",
+			"Rock Creek",
+			"Vintage Cabin",
 		],
 	},
 ] as const
 
 /** Shared by every series — the certifications printed on all five spec sheets. */
 const CERTIFICATIONS = [
-	{ label: "FloorScore", standard: "SCS-EC10.3-2014v3.0", requirement: "Refer to Standards", result: "Pass" },
-	{ label: "Greenguard Gold", standard: "CDPH Standard Method V1.2-2017", requirement: "Refer to Standards", result: "Pass" },
-	{ label: "CE Certification", standard: "EN14041", requirement: "Refer to Standards", result: "Pass" },
-	{ label: "Fire resistance", standard: "EN 13501-1", requirement: "Refer to Standards", result: "Pass" },
+	{
+		label: "FloorScore",
+		standard: "SCS-EC10.3-2014v3.0",
+		requirement: "Refer to Standards",
+		result: "Pass",
+	},
+	{
+		label: "Greenguard Gold",
+		standard: "CDPH Standard Method V1.2-2017",
+		requirement: "Refer to Standards",
+		result: "Pass",
+	},
+	{
+		label: "CE Certification",
+		standard: "EN14041",
+		requirement: "Refer to Standards",
+		result: "Pass",
+	},
+	{
+		label: "Fire resistance",
+		standard: "EN 13501-1",
+		requirement: "Refer to Standards",
+		result: "Pass",
+	},
 ]
 
 const TEST_RESULTS = [
-	{ label: "Static Coefficient of Friction", standard: "ASTM C1028", result: "Dry 0.69 / Wet 0.56" },
-	{ label: "Peel Strength of Adhesive Bonds", standard: "ASTM D903", requirement: "≥5.5 lbs/inch", result: "10.3 lbs/inch" },
+	{
+		label: "Static Coefficient of Friction",
+		standard: "ASTM C1028",
+		result: "Dry 0.69 / Wet 0.56",
+	},
+	{
+		label: "Peel Strength of Adhesive Bonds",
+		standard: "ASTM D903",
+		requirement: "≥5.5 lbs/inch",
+		result: "10.3 lbs/inch",
+	},
 	{ label: "Abrasion Resistance", standard: "ASTM D4060", result: "14,000 cycles" },
 	{ label: "Critical Radiant Flux", standard: "ASTM E648", result: "Exceeds Class 1" },
 	{ label: "Resistance to Chemicals", standard: "ASTM F925", result: "0 — No change" },
@@ -175,9 +245,24 @@ const TEST_RESULTS = [
  * linear feet continuous until the client says how these are bundled.
  */
 const ACCESSORIES = [
-	{ name: '5-¼" Primed White Pine Baseboard', slug: "baseboard-5-25", sku: "ACC-BB-525", listPrice: "1.09" },
-	{ name: '3-¼" Primed White Pine Baseboard', slug: "baseboard-3-25", sku: "ACC-BB-325", listPrice: "0.69" },
-	{ name: '11/16" × 11/16" Primed White Pine Quarter Round', slug: "quarter-round", sku: "ACC-QR-1116", listPrice: "0.41" },
+	{
+		name: '5-¼" Primed White Pine Baseboard',
+		slug: "baseboard-5-25",
+		sku: "ACC-BB-525",
+		listPrice: "1.09",
+	},
+	{
+		name: '3-¼" Primed White Pine Baseboard',
+		slug: "baseboard-3-25",
+		sku: "ACC-BB-325",
+		listPrice: "0.69",
+	},
+	{
+		name: '11/16" × 11/16" Primed White Pine Quarter Round',
+		slug: "quarter-round",
+		sku: "ACC-QR-1116",
+		listPrice: "0.41",
+	},
 ]
 
 const slugify = (value: string) =>
@@ -247,8 +332,13 @@ async function main() {
 				lbPerBox: series.lbPerBox,
 				lbPerPallet: series.lbPerPallet,
 				palletsPerFtl: series.palletsPerFtl,
-				warrantyPdfUrl: `/docs/${series.legacyPath}/warranty.pdf`,
-				installationPdfUrl: `/docs/${series.legacyPath}/installation.pdf`,
+				// One warranty and one installation guide, not one per series. The
+				// current site serves five copies of each under /upload/prod/{series}/,
+				// but they are byte-identical — verified by checksum. Pointing every
+				// series at the same file is what is actually true, and the redirect
+				// map keeps all ten old URLs working.
+				warrantyPdfUrl: "/documents/warranty.pdf",
+				installationPdfUrl: "/documents/installation-instructions.pdf",
 				isActive: series.active,
 				sortOrder: series.sortOrder,
 			},

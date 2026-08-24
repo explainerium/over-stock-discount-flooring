@@ -19,6 +19,7 @@ export async function createLead(data: {
 	message?: string
 	productId?: string
 	calculatorSqFt?: string
+	shipTo?: string
 }) {
 	return db.lead.create({
 		data: {
@@ -30,6 +31,7 @@ export async function createLead(data: {
 			message: data.message ?? null,
 			productId: data.productId ?? null,
 			calculatorSqFt: data.calculatorSqFt ?? null,
+			shipTo: data.shipTo ?? null,
 		},
 		select: { id: true, source: true },
 	})
@@ -37,7 +39,10 @@ export async function createLead(data: {
 
 export async function listLeads(options: { handled?: boolean } = {}) {
 	return db.lead.findMany({
-		where: options.handled === undefined ? {} : { handledAt: options.handled ? { not: null } : null },
+		where:
+			options.handled === undefined
+				? {}
+				: { handledAt: options.handled ? { not: null } : null },
 		select: {
 			id: true,
 			source: true,
@@ -47,6 +52,7 @@ export async function listLeads(options: { handled?: boolean } = {}) {
 			company: true,
 			message: true,
 			calculatorSqFt: true,
+			shipTo: true,
 			handledAt: true,
 			createdAt: true,
 			product: { select: { name: true, slug: true } },

@@ -19,6 +19,7 @@ const LINKS = [
 	{ href: "/admin/products", label: "Products" },
 	{ href: "/admin/series", label: "Series" },
 	{ href: "/admin/leads", label: "Leads" },
+	{ href: "/admin/settings", label: "Settings" },
 ]
 
 /**

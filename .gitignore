@@ -49,3 +49,6 @@ next-env.d.ts
 /.agents/
 /.claude/skills/prisma-*
 /skills-lock.json
+
+# Transactional email written to disk by the development sink.
+.mail/

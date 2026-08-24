@@ -1,4 +1,5 @@
 import type { NextConfig } from "next"
+import { ALL_REDIRECTS } from "./src/constants/redirects"
 
 /**
  * Product imagery is served from whatever NEXT_PUBLIC_MEDIA_URL points at —
@@ -34,6 +35,14 @@ const nextConfig: NextConfig = {
 				pathname: "/**",
 			},
 		],
+	},
+
+	/**
+	 * The old site's URLs, kept alive. The map itself is in
+	 * src/constants/redirects.ts so the cutover checklist has one file to read.
+	 */
+	async redirects() {
+		return ALL_REDIRECTS
 	},
 
 	async headers() {

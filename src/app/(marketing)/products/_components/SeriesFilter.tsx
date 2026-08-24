@@ -18,11 +18,16 @@ export function SeriesFilter({
 	series,
 	active,
 	total,
+	keep,
 }: {
 	series: FilterSeries[]
 	active?: string
 	total: number
+	/** The other filters, so choosing a series does not silently drop a search. */
+	keep?: string
 }) {
+	const suffix = keep ? `&${keep}` : ""
+	const allHref = keep ? `/products?${keep}` : "/products"
 	const base = "display px-4 py-2 text-xs uppercase transition-colors"
 
 	return (
@@ -30,7 +35,7 @@ export function SeriesFilter({
 			<span className="display text-muted-foreground text-xs uppercase">Filter by</span>
 			<div className="flex flex-wrap gap-2">
 				<Link
-					href="/products"
+					href={allHref}
 					className={cn(
 						base,
 						!active ? "bg-ink text-paper" : "border-rule text-ink border hover:bg-band",
@@ -41,7 +46,7 @@ export function SeriesFilter({
 				{series.map((item) => (
 					<Link
 						key={item.slug}
-						href={`/products?series=${item.slug}`}
+						href={`/products?series=${item.slug}${suffix}`}
 						className={cn(
 							base,
 							active === item.slug

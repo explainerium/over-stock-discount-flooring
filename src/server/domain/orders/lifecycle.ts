@@ -204,6 +204,8 @@ export function canSubmit(order: {
 	lineCount: number
 	total: string | number
 	hasShipTo: boolean
+	/** The dealer's minimum, if they have one. */
+	minOrderValue?: string | number | null
 }): TransitionCheck {
 	if (order.lineCount === 0) {
 		return { ok: false, reason: "There is nothing on this order yet." }
@@ -217,6 +219,17 @@ export function canSubmit(order: {
 	if (!order.hasShipTo) {
 		return { ok: false, reason: "Choose where this is going before you send it." }
 	}
+
+	// Checked on goods only. Freight is not quoted yet at this point, and a
+	// minimum that a dealer clears on delivery charges is not a minimum.
+	const minimum = order.minOrderValue == null ? 0 : Number(order.minOrderValue)
+	if (minimum > 0 && Number(order.total) < minimum) {
+		return {
+			ok: false,
+			reason: `Orders start at $${minimum.toFixed(2)} of goods on your account.`,
+		}
+	}
+
 	return { ok: true }
 }
 

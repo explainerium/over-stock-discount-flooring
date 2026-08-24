@@ -1,18 +1,13 @@
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { formatDiscount, formatUnitPrice } from "@/lib/format/money"
+import { stockLabel } from "@/lib/format/stock"
 import { requireDealerScope } from "@/server/auth/guards"
-import { listPricedProducts } from "@/server/repositories/pricing"
+import { countOrderableProducts, listPricedProducts } from "@/server/repositories/pricing"
 import { AddToOrder } from "./_components/AddToOrder"
+import { CatalogSearch } from "./_components/CatalogSearch"
 
 export const metadata = { title: "Catalog" }
-
-const STOCK_LABEL: Record<string, string> = {
-	IN_STOCK: "In stock",
-	LOW: "Low stock",
-	OUT: "Out of stock",
-	SPECIAL_ORDER: "Special order",
-}
 
 /**
  * The dealer catalogue: everything, at their prices.
@@ -21,9 +16,18 @@ const STOCK_LABEL: Record<string, string> = {
  * dealer — the price comes from the pricing engine at their rate, and the box
  * count comes from the UOM engine as they type.
  */
-export default async function PortalCatalogPage() {
+export default async function PortalCatalogPage({
+	searchParams,
+}: {
+	searchParams: Promise<{ q?: string }>
+}) {
 	const { dealerId, user } = await requireDealerScope()
-	const products = await listPricedProducts(dealerId)
+	const { q } = await searchParams
+
+	const [products, total] = await Promise.all([
+		listPricedProducts(dealerId, q),
+		countOrderableProducts(),
+	])
 
 	const unpriced = products.filter((product) => !product.price).length
 
@@ -32,10 +36,21 @@ export default async function PortalCatalogPage() {
 			<div>
 				<h1 className="text-xl font-semibold tracking-wide uppercase">Catalog</h1>
 				<p className="text-muted-foreground text-sm">
-					{products.length} products at {user.dealerName}&rsquo;s pricing.
+					{/* The catalogue total, not the filtered one. What the search is
+					    showing is said next to the search, where it belongs. */}
+					{total} {total === 1 ? "product" : "products"} at {user.dealerName}&rsquo;s
+					pricing.
 					{unpriced > 0 && ` ${unpriced} not priced yet.`}
 				</p>
 			</div>
+
+			<CatalogSearch resultCount={products.length} total={total} />
+
+			{products.length === 0 && (
+				<p className="text-muted-foreground py-12 text-center text-sm">
+					Nothing matches &ldquo;{q}&rdquo;. Try part of a colour name, or a SKU.
+				</p>
+			)}
 
 			<ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				{products.map((product) => (
@@ -61,8 +76,14 @@ export default async function PortalCatalogPage() {
 									</p>
 								</div>
 								{product.stockStatus !== "IN_STOCK" && (
-									<Badge variant={product.stockStatus === "OUT" ? "destructive" : "outline"}>
-										{STOCK_LABEL[product.stockStatus]}
+									<Badge
+										variant={
+											product.stockStatus === "OUT"
+												? "destructive"
+												: "outline"
+										}
+									>
+										{stockLabel(product.stockStatus)}
 									</Badge>
 								)}
 							</div>
@@ -70,7 +91,10 @@ export default async function PortalCatalogPage() {
 							{product.price && (
 								<p className="mt-2 text-sm">
 									<span className="font-medium">
-										{formatUnitPrice(product.price.unitPrice, product.pricingUom)}
+										{formatUnitPrice(
+											product.price.unitPrice,
+											product.pricingUom,
+										)}
 									</span>
 									{formatDiscount(product.price.discountPct) && (
 										<span className="text-muted-foreground ml-2 text-xs">

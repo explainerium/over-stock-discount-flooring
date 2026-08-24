@@ -10,6 +10,7 @@ import {
 	resetPasswordSchema,
 	type ActionResult,
 } from "@/lib/validation/auth"
+import { passwordResetEmail, sendEmail } from "@/server/integrations/email"
 import { hashPassword, verifyPassword } from "./password"
 import { createSession, destroySession, resolveSession, revokeAllSessions } from "./session"
 import { expiresAt, generateToken, hashToken, isExpired, TOKEN_TTL } from "./tokens"
@@ -79,7 +80,8 @@ export async function login(input: unknown): Promise<ActionResult> {
 	if (user.lockedUntil && !isExpired(user.lockedUntil)) {
 		return {
 			ok: false,
-			message: "Too many failed attempts. Try again in a few minutes, or reset your password.",
+			message:
+				"Too many failed attempts. Try again in a few minutes, or reset your password.",
 		}
 	}
 
@@ -144,12 +146,15 @@ export async function requestPasswordReset(input: unknown): Promise<ActionResult
 			data: { userId: user.id, tokenHash, expiresAt: expiresAt(TOKEN_TTL.passwordReset) },
 		})
 
-		// TODO: send the email once the domain mailbox and SPF/DKIM/DMARC exist.
-		// Order mail cannot be sent from the gmail.com address on the current
-		// site, so this is blocked on the client, not on us.
-		if (process.env.NODE_ENV !== "production") {
-			console.info(`[dev] password reset link: /reset-password/${token}`)
-		}
+		// Never copied to the office: a reset link CC'd to staff is a reset
+		// link staff can use.
+		await sendEmail(
+			passwordResetEmail({
+				token,
+				expiresInHours: Math.round(TOKEN_TTL.passwordReset / (60 * 60 * 1000)),
+			}),
+			{ to: user.email },
+		)
 	}
 
 	return {

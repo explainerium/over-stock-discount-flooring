@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { formatCoverage } from "@/lib/format/coverage"
+import { isStockNotable, stockLabel } from "@/lib/format/stock"
 import { differs } from "@/lib/format/dirty"
 import { formatMoney, formatUnitPrice } from "@/lib/format/money"
 import { removeLineAction, updateLineAction } from "../../_actions"
@@ -26,6 +27,7 @@ export interface CartLineData {
 	lineTotal: string
 	orderUoms: string[]
 	wasteFactorPct: number
+	stockStatus: string
 }
 
 const UNIT_LABEL: Record<string, string> = {
@@ -98,6 +100,12 @@ export function CartLine({ line }: { line: CartLineData }) {
 					{line.sku} · {line.seriesName} ·{" "}
 					{formatUnitPrice(line.unitPrice, line.pricingUom)}
 				</p>
+
+				{/* Said on the line rather than only in the catalogue: a dealer
+				    who added this a week ago has not looked at the badge since. */}
+				{isStockNotable(line.stockStatus) && (
+					<p className="mt-1 text-xs">{stockLabel(line.stockStatus)}</p>
+				)}
 
 				<div className="mt-3 flex flex-wrap items-center gap-2">
 					<Input

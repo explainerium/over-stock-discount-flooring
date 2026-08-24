@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import type { ActionResult } from "@/lib/validation/dealers"
 import {
 	orderChargesSchema,
+	shipOrderSchema,
 	staffLineIdSchema,
 	staffLineSchema,
 	transitionOrderSchema,
@@ -12,6 +13,7 @@ import { requireStaff } from "@/server/auth/guards"
 import { TERMINAL, TRANSITIONS, canTransition, label } from "@/server/domain/orders"
 import { PricingError } from "@/server/domain/pricing"
 import { UomError } from "@/server/domain/uom"
+import { notifyOrderDecision } from "@/server/notifications/orders"
 import { audit } from "@/server/repositories/audit"
 import {
 	OrderError,
@@ -112,9 +114,10 @@ export async function transitionOrderAction(input: unknown): Promise<ActionResul
 		after: { status: parsed.data.to, note: note || null },
 	})
 
-	// TODO: tell the dealer. Email needs a mailbox on the business domain, which
-	// is still outstanding — until it exists the dealer finds out by looking,
-	// which means they have to think to look.
+	// Told rather than left to notice. A dealer who has to think to check the
+	// portal is a dealer who rings up instead.
+	await notifyOrderDecision(order.id, parsed.data.to, note || null)
+
 	refresh(order.id)
 
 	return {
@@ -174,6 +177,67 @@ export async function removeOrderLineAction(input: unknown): Promise<ActionResul
 
 	refresh(parsed.data.orderId)
 	return { ok: true, message: "Line removed." }
+}
+
+/**
+ * Marking an order shipped.
+ *
+ * Separate from the general transition because it carries the shipment with it.
+ * The plan singles this notification out as the one that removes "where's my
+ * order?" calls, and it only does that if it has something to say — so the
+ * details are collected in the same step that sends it, not left to be filled
+ * in afterwards by somebody who has moved on.
+ */
+export async function shipOrderAction(input: unknown): Promise<ActionResult> {
+	const staff = await requireStaff()
+
+	const parsed = shipOrderSchema.safeParse(input)
+	if (!parsed.success) {
+		const issue = parsed.error.issues[0]
+		return { ok: false, message: issue.message, field: issue.path[0]?.toString() }
+	}
+
+	const order = await getOrderForStaff(parsed.data.orderId)
+	if (!order) return { ok: false, message: "That order does not exist." }
+
+	const allowed = canTransition(order.status, "SHIPPED", "STAFF")
+	if (!allowed.ok) return { ok: false, message: allowed.reason! }
+
+	const shipment = {
+		carrier: parsed.data.carrier,
+		proNumber: parsed.data.proNumber || null,
+		bolNumber: parsed.data.bolNumber || null,
+		trackingUrl: parsed.data.trackingUrl || null,
+	}
+
+	try {
+		await transitionOrder({
+			orderId: order.id,
+			to: "SHIPPED",
+			actorId: staff.id,
+			// The carrier and PRO go in the history note as well as the columns,
+			// so the timeline reads as a record of what happened rather than a
+			// bare status somebody has to cross-reference.
+			note: [shipment.carrier, shipment.proNumber].filter(Boolean).join(" · "),
+			data: { ...shipment, shippedAt: new Date() },
+		})
+	} catch (error) {
+		return { ok: false, message: explain(error) }
+	}
+
+	await audit({
+		entity: "Order",
+		entityId: order.id,
+		action: "status:shipped",
+		actorId: staff.id,
+		before: { status: order.status },
+		after: shipment,
+	})
+
+	await notifyOrderDecision(order.id, "SHIPPED", null)
+
+	refresh(order.id)
+	return { ok: true, message: `Order #${order.orderNumber} is on its way.` }
 }
 
 /** Freight, tax, and the note the dealer never sees. */

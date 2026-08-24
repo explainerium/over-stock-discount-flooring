@@ -1,9 +1,10 @@
-import { ShoppingCartIcon } from "lucide-react"
+import { AlertTriangleIcon, ShoppingCartIcon } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCoverage } from "@/lib/format/coverage"
 import { formatMoney } from "@/lib/format/money"
+import { stockWarning } from "@/lib/format/stock"
 import { requireDealerScope } from "@/server/auth/guards"
 import { listAddresses } from "@/server/repositories/addresses"
 import { getDraft } from "@/server/repositories/orders"
@@ -26,6 +27,8 @@ export default async function CartPage() {
 	const [draft, addresses] = await Promise.all([getDraft(dealerId), listAddresses(dealerId)])
 
 	const lines = draft?.items ?? []
+
+	const stockNote = stockWarning(lines.map((item) => item.product.stockStatus))
 
 	// Only what is actually stored. A radio that looks chosen while the order
 	// has no destination is how a dealer ends up staring at a disabled Submit
@@ -81,6 +84,7 @@ export default async function CartPage() {
 							lineTotal: item.lineTotal.toString(),
 							orderUoms: item.product.orderUoms,
 							wasteFactorPct: item.wasteFactorPct,
+							stockStatus: item.product.stockStatus,
 						}}
 					/>
 				))}
@@ -122,6 +126,15 @@ export default async function CartPage() {
 					</div>
 				</CardContent>
 			</Card>
+
+			{stockNote && (
+				<Card>
+					<CardContent className="flex items-start gap-2 py-5 text-sm">
+						<AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+						<span>{stockNote}</span>
+					</CardContent>
+				</Card>
+			)}
 
 			<Card>
 				<CardHeader>

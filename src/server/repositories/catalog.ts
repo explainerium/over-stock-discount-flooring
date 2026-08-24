@@ -58,17 +58,87 @@ export async function listPublicSeries() {
 	})
 }
 
-export async function listPublicProducts(options: { seriesSlug?: string; take?: number } = {}) {
+/**
+ * How the catalogue can be ordered.
+ *
+ * The default is the owner's own arrangement — series order, then his sort
+ * order within it. That is a merchandising decision he makes in admin, and
+ * alphabetical would quietly override it.
+ */
+export type CatalogSort = "curated" | "name" | "series"
+
+const SORTS: Record<CatalogSort, Prisma.ProductOrderByWithRelationInput[]> = {
+	curated: [{ series: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+	name: [{ name: "asc" }],
+	series: [{ series: { sortOrder: "asc" } }, { name: "asc" }],
+}
+
+export interface CatalogFilters {
+	seriesSlug?: string
+	/** Matches a colour name or a SKU. Dealers know both; the public knows one. */
+	search?: string
+	/** Series-level specs. A buyer matching a commercial spec knows the number,
+	 *  not which series happens to carry it. */
+	wearLayerMil?: number
+	thicknessMm?: string
+	sort?: CatalogSort
+	take?: number
+}
+
+export async function listPublicProducts(options: CatalogFilters = {}) {
+	const search = options.search?.trim()
+
 	return db.product.findMany({
 		where: {
 			isPublic: true,
 			isActive: true,
 			...(options.seriesSlug ? { series: { slug: options.seriesSlug } } : {}),
+			...(options.wearLayerMil || options.thicknessMm
+				? {
+						series: {
+							...(options.seriesSlug ? { slug: options.seriesSlug } : {}),
+							...(options.wearLayerMil ? { wearLayerMil: options.wearLayerMil } : {}),
+							...(options.thicknessMm ? { thicknessMm: options.thicknessMm } : {}),
+						},
+					}
+				: {}),
+			...(search
+				? {
+						OR: [
+							{ name: { contains: search, mode: "insensitive" as const } },
+							{ sku: { contains: search, mode: "insensitive" as const } },
+						],
+					}
+				: {}),
 		},
 		select: productCard,
-		orderBy: [{ series: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+		orderBy: SORTS[options.sort ?? "curated"],
 		...(options.take ? { take: options.take } : {}),
 	})
+}
+
+/**
+ * The spec values actually present in the catalogue.
+ *
+ * Read from the data rather than hardcoded, so a filter never offers "20 mil"
+ * when nothing on the site has it — an empty result the visitor asked for is
+ * worse than not offering the choice.
+ */
+export async function listSpecFacets() {
+	const series = await db.series.findMany({
+		where: { isActive: true, products: { some: { isPublic: true, isActive: true } } },
+		select: { wearLayerMil: true, thicknessMm: true },
+	})
+
+	const wearLayers = [
+		...new Set(series.map((s) => s.wearLayerMil).filter((v): v is number => v != null)),
+	].sort((a, b) => a - b)
+
+	const thicknesses = [
+		...new Set(series.map((s) => s.thicknessMm?.toString()).filter((v): v is string => !!v)),
+	].sort((a, b) => Number(a) - Number(b))
+
+	return { wearLayers, thicknesses }
 }
 
 export async function getPublicProduct(slug: string) {
@@ -335,4 +405,19 @@ export async function countPublicColours(): Promise<number> {
  */
 export async function countPublicProducts(): Promise<number> {
 	return db.product.count({ where: { isPublic: true, isActive: true } })
+}
+
+/**
+ * Just the name, and only if it is published.
+ *
+ * Used by the sample request. Checking `isActive` here is what stops somebody
+ * posting a product id for a colour that was pulled from the catalogue and
+ * getting a sample request logged against it.
+ */
+export async function getProductName(productId: string): Promise<string | null> {
+	const product = await db.product.findFirst({
+		where: { id: productId, isActive: true },
+		select: { name: true },
+	})
+	return product?.name ?? null
 }

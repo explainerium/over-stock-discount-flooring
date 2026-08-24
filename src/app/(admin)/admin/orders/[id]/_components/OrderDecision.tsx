@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { transitionOrderAction } from "../../_actions"
+import { ShipmentPanel } from "./ShipmentPanel"
 
 export interface DecisionOption {
 	to: string
@@ -15,6 +16,11 @@ export interface DecisionOption {
 	noteRequired: boolean
 	/** Whether this move ends the order. Those are set apart and made quieter. */
 	ends: boolean
+	/**
+	 * What the panel asks for. Most moves want a reason; shipping wants the
+	 * shipment, because that is what the dealer is actually waiting to hear.
+	 */
+	collects: "note" | "shipping"
 	prompt: string
 }
 
@@ -69,6 +75,19 @@ export function OrderDecision({
 	}
 
 	if (options.length === 0) return null
+
+	if (open?.collects === "shipping") {
+		return (
+			<div className="grid gap-3">
+				<p className="text-sm font-medium">{open.prompt}</p>
+				<ShipmentPanel
+					orderId={orderId}
+					onDone={() => setOpen(null)}
+					onCancel={() => setOpen(null)}
+				/>
+			</div>
+		)
+	}
 
 	if (open) {
 		return (

@@ -1,11 +1,11 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 import {
 	blank,
 	createDealerSchema,
 	dealerIdSchema,
+	dealerTermsSchema,
 	inviteIdSchema,
 	inviteUserSchema,
 	updateDealerSchema,
@@ -13,10 +13,14 @@ import {
 } from "@/lib/validation/dealers"
 import { revokeDealerSessions } from "@/server/auth/session"
 import { requireStaff } from "@/server/auth/guards"
+import { inviteEmail as renderInvite, sendEmail } from "@/server/integrations/email"
+import { TOKEN_TTL } from "@/server/auth/tokens"
 import { audit } from "@/server/repositories/audit"
 import {
 	createDealer,
+	getDealer,
 	setDealerStatus,
+	setDealerTerms,
 	updateDealer,
 } from "@/server/repositories/dealers"
 import { emailIsTaken, issueInvite, revokeInvite } from "@/server/repositories/invites"
@@ -33,10 +37,45 @@ import { emailIsTaken, issueInvite, revokeInvite } from "@/server/repositories/i
  * a guard.
  */
 
+/** Just the name, for the invite. The full record is more than this needs. */
+async function getDealerName(dealerId: string): Promise<string | null> {
+	const dealer = await getDealer(dealerId)
+	return dealer?.companyName ?? null
+}
+
+/** Who the invite is from, as the recipient would recognise them. */
+function staffName(staff: { firstName?: string | null; lastName?: string | null }): string | null {
+	return [staff.firstName, staff.lastName].filter(Boolean).join(" ") || null
+}
+
 /** The invite URL as the owner will paste it. */
 function inviteUrl(token: string): string {
 	const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
 	return `${base}/invite/${token}`
+}
+
+/**
+ * Sends the invite, and still hands the link back.
+ *
+ * Both, not either. The owner knows these dealers personally and will often
+ * want to send the link himself with a note attached — and until the domain
+ * mailbox exists, the copyable link is the only one that actually arrives.
+ */
+async function deliverInvite(params: {
+	email: string
+	companyName: string
+	token: string
+	invitedBy?: string | null
+}) {
+	await sendEmail(
+		renderInvite({
+			companyName: params.companyName,
+			inviterName: params.invitedBy,
+			token: params.token,
+			expiresInDays: Math.round(TOKEN_TTL.invite / (24 * 60 * 60 * 1000)),
+		}),
+		{ to: params.email },
+	)
 }
 
 export async function createDealerAction(
@@ -85,6 +124,12 @@ export async function createDealerAction(
 			invitedById: staff.id,
 		})
 		inviteLink = inviteUrl(invite.token)
+		await deliverInvite({
+			email: invite.email,
+			companyName: dealer.companyName,
+			token: invite.token,
+			invitedBy: staffName(staff),
+		})
 		await audit({
 			entity: "Invite",
 			entityId: invite.id,
@@ -213,6 +258,16 @@ export async function inviteUserAction(
 		invitedById: staff.id,
 	})
 
+	const dealer = await getDealerName(parsed.data.dealerId)
+	if (dealer) {
+		await deliverInvite({
+			email: invite.email,
+			companyName: dealer,
+			token: invite.token,
+			invitedBy: staffName(staff),
+		})
+	}
+
 	await audit({
 		entity: "Invite",
 		entityId: invite.id,
@@ -246,8 +301,51 @@ export async function revokeInviteAction(input: unknown): Promise<ActionResult> 
 	return { ok: true, message: "Invitation withdrawn. The link no longer works." }
 }
 
-/** Convenience for the create form, which lands on the new dealer's page. */
-export async function goToDealer(id: string): Promise<never> {
-	await requireStaff()
-	redirect(`/admin/dealers/${id}`)
+/**
+ * The commercial terms on an account.
+ *
+ * Every field here was already a column with no way to edit it, which meant the
+ * system behaved as though every dealer were on the defaults — net 30, zone
+ * freight, taxable, no minimum. For some of them that was simply wrong.
+ */
+export async function setDealerTermsAction(input: unknown): Promise<ActionResult> {
+	const staff = await requireStaff()
+
+	const parsed = dealerTermsSchema.safeParse(input)
+	if (!parsed.success) {
+		const issue = parsed.error.issues[0]
+		return { ok: false, message: issue.message, field: issue.path[0]?.toString() }
+	}
+
+	const { dealerId, ...terms } = parsed.data
+	const before = await getDealer(dealerId)
+	if (!before) return { ok: false, message: "That dealer does not exist." }
+
+	const after = await setDealerTerms(dealerId, terms)
+
+	await audit({
+		entity: "Dealer",
+		entityId: dealerId,
+		action: "terms:update",
+		actorId: staff.id,
+		before: {
+			paymentTerms: before.paymentTerms,
+			freightMode: before.freightMode,
+			flatFreightRate: before.flatFreightRate?.toString() ?? null,
+			minOrderValue: before.minOrderValue?.toString() ?? null,
+			taxExempt: before.taxExempt,
+			resaleCertExpiresAt: before.resaleCertExpiresAt?.toISOString() ?? null,
+		},
+		after: {
+			paymentTerms: after.paymentTerms,
+			freightMode: after.freightMode,
+			flatFreightRate: after.flatFreightRate?.toString() ?? null,
+			minOrderValue: after.minOrderValue?.toString() ?? null,
+			taxExempt: after.taxExempt,
+			resaleCertExpiresAt: after.resaleCertExpiresAt?.toISOString() ?? null,
+		},
+	})
+
+	revalidatePath(`/admin/dealers/${dealerId}`)
+	return { ok: true, message: "Terms updated." }
 }

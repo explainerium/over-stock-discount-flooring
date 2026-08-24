@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { OrderLines } from "@/components/shared/OrderLines"
 import { OrderStatusBadge } from "@/components/shared/OrderStatusBadge"
 import { OrderTimeline } from "@/components/shared/OrderTimeline"
+import { ShipmentSummary } from "@/components/shared/ShipmentSummary"
 import { ShipToSummary } from "@/components/shared/ShipToSummary"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatMoney } from "@/lib/format/money"
@@ -28,6 +29,7 @@ const PROMPTS: Record<string, string> = {
 	REJECTED: "Why can't we take this order?",
 	CANCELLED: "Why is this being cancelled?",
 	APPROVED: "Anything to tell the dealer?",
+	SHIPPED: "Who is bringing it, and what should the dealer quote?",
 }
 
 export default async function AdminOrderPage({ params }: { params: Promise<{ id: string }> }) {
@@ -48,9 +50,12 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
 		label: move.staffLabel ?? move.label,
 		// Anything that ends an order asks for confirmation, whether or not the
 		// table compels a reason. A tap that cannot be undone should cost two.
-		confirms: move.note === "required" || TERMINAL.includes(move.to),
+		confirms: move.note === "required" || TERMINAL.includes(move.to) || move.to === "SHIPPED",
 		noteRequired: move.note === "required",
 		ends: TERMINAL.includes(move.to),
+		// Shipping asks for the shipment rather than for a note. Without it the
+		// dealer gets "your order shipped" and nothing they can act on.
+		collects: move.to === "SHIPPED" ? ("shipping" as const) : ("note" as const),
 		prompt: PROMPTS[move.to] ?? "Add a note",
 	}))
 
@@ -207,6 +212,23 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
 					</dl>
 				</CardContent>
 			</Card>
+
+			{order.carrier && (
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-base">Shipment</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<ShipmentSummary
+							carrier={order.carrier}
+							proNumber={order.proNumber}
+							bolNumber={order.bolNumber}
+							trackingUrl={order.trackingUrl}
+							shippedAt={order.shippedAt}
+						/>
+					</CardContent>
+				</Card>
+			)}
 
 			<Card>
 				<CardHeader>

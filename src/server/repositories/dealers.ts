@@ -70,7 +70,10 @@ export async function getDealer(id: string) {
 			status: true,
 			paymentTerms: true,
 			freightMode: true,
+			flatFreightRate: true,
+			minOrderValue: true,
 			taxExempt: true,
+			resaleCertExpiresAt: true,
 			createdAt: true,
 			users: { select: publicUserSelect, orderBy: { createdAt: "asc" } },
 			invites: {
@@ -131,4 +134,52 @@ export async function setDealerStatus(id: string, status: DealerStatus) {
 /** Used to decide whether activating a dealer is even meaningful yet. */
 export async function countActiveUsers(dealerId: string): Promise<number> {
 	return db.user.count({ where: { dealerId, status: "ACTIVE" } })
+}
+
+/**
+ * The commercial terms on an account.
+ *
+ * Empty strings become nulls rather than zeros. A dealer with no minimum order
+ * and a dealer with a minimum of zero are the same thing in practice, but only
+ * one of them reads as "nobody has set this yet" when the owner looks at it.
+ */
+export async function setDealerTerms(
+	dealerId: string,
+	terms: {
+		paymentTerms: "PREPAY" | "COD" | "NET_15" | "NET_30" | "NET_60"
+		freightMode: "ZONE" | "FLAT" | "LIVE" | "MANUAL"
+		flatFreightRate?: string
+		minOrderValue?: string
+		taxExempt: boolean
+		resaleCertExpiresAt?: string
+	},
+) {
+	return db.dealer.update({
+		where: { id: dealerId },
+		data: {
+			paymentTerms: terms.paymentTerms,
+			freightMode: terms.freightMode,
+			// A rate left over from a previous FLAT setting would sit there
+			// looking authoritative while the mode ignores it.
+			flatFreightRate:
+				terms.freightMode === "FLAT" && terms.flatFreightRate
+					? terms.flatFreightRate
+					: null,
+			minOrderValue: terms.minOrderValue || null,
+			taxExempt: terms.taxExempt,
+			resaleCertExpiresAt:
+				terms.taxExempt && terms.resaleCertExpiresAt
+					? new Date(`${terms.resaleCertExpiresAt}T00:00:00Z`)
+					: null,
+		},
+		select: {
+			id: true,
+			paymentTerms: true,
+			freightMode: true,
+			flatFreightRate: true,
+			minOrderValue: true,
+			taxExempt: true,
+			resaleCertExpiresAt: true,
+		},
+	})
 }

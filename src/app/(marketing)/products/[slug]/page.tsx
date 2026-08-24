@@ -7,6 +7,7 @@ import { SHOWROOM } from "@/constants/catalog"
 import { getPublicProduct } from "@/server/repositories/catalog"
 import { Breadcrumbs } from "../../_components/Breadcrumbs"
 import { CoverageCalculator } from "../../_components/CoverageCalculator"
+import { SampleRequest } from "./_components/SampleRequest"
 
 /**
  * One URL per colour.
@@ -155,7 +156,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 							{series.name}
 						</p>
 						<h1 className="display text-ink mt-2 text-4xl uppercase">{product.name}</h1>
-						<p className="text-muted-foreground mt-2 font-mono text-sm">{product.sku}</p>
+						<p className="text-muted-foreground mt-2 font-mono text-sm">
+							{product.sku}
+						</p>
 
 						{product.description && (
 							<p className="mt-6 text-sm leading-relaxed">{product.description}</p>
@@ -167,7 +170,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 							<p className="display text-ink text-sm uppercase">Pricing</p>
 							<p className="text-muted-foreground mt-2 text-sm">
 								Dealer pricing is shown after you sign in.{" "}
-								<Link href="/login" className="text-ink underline underline-offset-4">
+								<Link
+									href="/login"
+									className="text-ink underline underline-offset-4"
+								>
 									Sign in
 								</Link>{" "}
 								or{" "}
@@ -235,14 +241,31 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 							</h2>
 							<p className="text-muted-foreground mt-4 max-w-lg text-sm leading-relaxed">
 								{series.name} ships {series.sqFtPerBox?.toString()} square feet to a
-								box, so the answer is never quite the number you measured. Enter your
-								square footage and we round up to whole boxes.
+								box, so the answer is never quite the number you measured. Enter
+								your square footage and we round up to whole boxes.
 							</p>
 						</div>
 						<CoverageCalculator series={calculatorSeries} />
 					</div>
 				</section>
 			)}
+
+			{/* A colour is hard to judge on a screen, and this is the cheapest
+			    way for somebody to be sure before they order a pallet of it. */}
+			<section className="bg-band">
+				<div className="mx-auto max-w-[1280px] px-5 py-20">
+					<h2 className="display text-ink text-2xl uppercase sm:text-3xl">
+						See it in person
+					</h2>
+					<p className="text-muted-foreground mt-4 max-w-lg text-sm leading-relaxed">
+						Screens lie about colour. We will post you a piece of {product.name} so you
+						can hold it against the cabinets before you commit to a floor.
+					</p>
+					<div className="mt-8">
+						<SampleRequest productId={product.id} productName={product.name} />
+					</div>
+				</div>
+			</section>
 
 			{series.facts.length > 0 && (
 				<section className="bg-paper">

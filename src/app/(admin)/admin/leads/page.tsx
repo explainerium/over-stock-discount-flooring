@@ -81,12 +81,16 @@ export default async function LeadsPage() {
 
 												<p className="text-muted-foreground mt-1 text-sm">
 													{lead.email && (
-														<a href={`mailto:${lead.email}`}>{lead.email}</a>
+														<a href={`mailto:${lead.email}`}>
+															{lead.email}
+														</a>
 													)}
 													{lead.phone && (
 														<>
 															{lead.email && " · "}
-															<a href={`tel:${lead.phone}`}>{lead.phone}</a>
+															<a href={`tel:${lead.phone}`}>
+																{lead.phone}
+															</a>
 														</>
 													)}
 												</p>
@@ -95,6 +99,19 @@ export default async function LeadsPage() {
 													<p className="mt-3 text-sm whitespace-pre-wrap">
 														{lead.message}
 													</p>
+												)}
+
+												{/* A sample cannot be posted without this, so it gets its
+											    own block rather than sitting inside the message. */}
+												{lead.shipTo && (
+													<div className="mt-3">
+														<p className="text-muted-foreground text-xs tracking-widest uppercase">
+															Post it to
+														</p>
+														<address className="mt-1 text-sm whitespace-pre-wrap not-italic">
+															{lead.shipTo}
+														</address>
+													</div>
 												)}
 
 												{lead.product && (

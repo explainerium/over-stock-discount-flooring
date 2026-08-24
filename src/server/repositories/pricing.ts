@@ -68,11 +68,27 @@ const catalogSelect = {
  * fails to render because one colour has not been priced yet would be worse
  * than one that shows the colour and says so.
  */
-export async function listPricedProducts(dealerId: string): Promise<PricedProduct[]> {
+export async function listPricedProducts(
+	dealerId: string,
+	/** Matches a colour name or a SKU. Both are how a dealer refers to one. */
+	search?: string,
+): Promise<PricedProduct[]> {
+	const q = search?.trim()
+
 	const [pricing, products, overrides] = await Promise.all([
 		pricingFor(dealerId),
 		db.product.findMany({
-			where: { isActive: true },
+			where: {
+				isActive: true,
+				...(q
+					? {
+							OR: [
+								{ name: { contains: q, mode: "insensitive" as const } },
+								{ sku: { contains: q, mode: "insensitive" as const } },
+							],
+						}
+					: {}),
+			},
 			select: catalogSelect,
 			orderBy: [{ series: { sortOrder: "asc" } }, { sortOrder: "asc" }],
 		}),
@@ -239,4 +255,15 @@ export async function listPriceTiers() {
 		select: { id: true, name: true, discountPct: true, _count: { select: { dealers: true } } },
 		orderBy: { sortOrder: "asc" },
 	})
+}
+
+/**
+ * How many products a dealer can see at all.
+ *
+ * Used next to a filtered list — "12 of 65" — so the search says what it is
+ * hiding. A count rather than a second `listPricedProducts` call: the total
+ * does not need every price resolved to be a number.
+ */
+export async function countOrderableProducts(): Promise<number> {
+	return db.product.count({ where: { isActive: true } })
 }

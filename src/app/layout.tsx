@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Open_Sans, Poppins } from "next/font/google"
+import { Analytics } from "@/components/shared/Analytics"
 import "./globals.css"
 
 /**
@@ -36,11 +37,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
 	return (
-		<html
-			lang="en"
-			className={`${poppins.variable} ${openSans.variable} h-full antialiased`}
-		>
-			<body className="flex min-h-full flex-col">{children}</body>
+		<html lang="en" className={`${poppins.variable} ${openSans.variable} h-full antialiased`}>
+			<body className="flex min-h-full flex-col">
+				{children}
+				<Analytics />
+			</body>
 		</html>
 	)
 }

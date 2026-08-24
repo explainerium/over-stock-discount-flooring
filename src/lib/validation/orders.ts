@@ -134,3 +134,33 @@ export type StaffLineInput = z.infer<typeof staffLineSchema>
 export type StaffLineFormInput = z.infer<typeof staffLineFormSchema>
 export type OrderChargesInput = z.infer<typeof orderChargesSchema>
 export type OrderChargesFormInput = z.infer<typeof orderChargesFormSchema>
+
+/**
+ * What goes on an order when it ships.
+ *
+ * The carrier is the one required field. Everything else a carrier gives you is
+ * optional — the owner sometimes runs a local delivery in his own truck, and
+ * there is no PRO number for that — but "your order shipped" with nothing
+ * attached is the message that causes the call it was meant to prevent.
+ */
+export const shipOrderSchema = z.object({
+	orderId: z.string().min(1),
+	carrier: z.string().trim().min(1, "Who is bringing it? Your own truck counts.").max(80),
+	proNumber: z.string().trim().max(60).optional(),
+	bolNumber: z.string().trim().max(60).optional(),
+	trackingUrl: z
+		.string()
+		.trim()
+		.url("That does not look like a link — paste the whole URL.")
+		.max(500)
+		.optional()
+		.or(z.literal("")),
+})
+
+/** The id comes from the page, so the form never registers it. */
+export const shipOrderFormSchema = shipOrderSchema.omit({ orderId: true })
+
+export type ShipOrderInput = z.infer<typeof shipOrderSchema>
+export type ShipOrderFormInput = z.infer<typeof shipOrderFormSchema>
+
+export const reorderSchema = z.object({ orderId: z.string().min(1) })

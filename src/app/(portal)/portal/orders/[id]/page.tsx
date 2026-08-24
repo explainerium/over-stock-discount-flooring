@@ -6,6 +6,8 @@ import { SubmitOrder } from "@/app/(portal)/portal/cart/_components/SubmitOrder"
 import { OrderLines } from "@/components/shared/OrderLines"
 import { OrderStatusBadge } from "@/components/shared/OrderStatusBadge"
 import { OrderTimeline } from "@/components/shared/OrderTimeline"
+import { ShipmentSummary } from "@/components/shared/ShipmentSummary"
+import { Reorder } from "./_components/Reorder"
 import { ShipToSummary } from "@/components/shared/ShipToSummary"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCoverage } from "@/lib/format/coverage"
@@ -46,6 +48,14 @@ export default async function DealerOrderPage({ params }: { params: Promise<{ id
 				<OrderStatusBadge status={order.status} />
 			</div>
 
+			{/* Only once the order is settled. Offering it on an order still being
+			    decided invites a dealer to send the same thing twice. */}
+			{!editable && (
+				<div>
+					<Reorder orderId={order.id} />
+				</div>
+			)}
+
 			<Card>
 				<CardHeader>
 					<CardTitle className="text-base">
@@ -79,6 +89,7 @@ export default async function DealerOrderPage({ params }: { params: Promise<{ id
 										pricingUom: item.product.pricingUom,
 										lineTotal: item.lineTotal.toString(),
 										orderUoms: item.product.orderUoms,
+										stockStatus: item.product.stockStatus,
 									}}
 								/>
 							))}
@@ -141,6 +152,23 @@ export default async function DealerOrderPage({ params }: { params: Promise<{ id
 					</CardHeader>
 					<CardContent>
 						<SubmitOrder orderId={order.id} disabled={order.items.length === 0} />
+					</CardContent>
+				</Card>
+			)}
+
+			{order.carrier && (
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-base">Shipment</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<ShipmentSummary
+							carrier={order.carrier}
+							proNumber={order.proNumber}
+							bolNumber={order.bolNumber}
+							trackingUrl={order.trackingUrl}
+							shippedAt={order.shippedAt}
+						/>
 					</CardContent>
 				</Card>
 			)}

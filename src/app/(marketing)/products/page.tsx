@@ -3,11 +3,13 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { SwatchGrid } from "../_components/SwatchGrid"
 import { Breadcrumbs } from "../_components/Breadcrumbs"
+import { CatalogControls } from "./_components/CatalogControls"
 import { SeriesFilter } from "./_components/SeriesFilter"
 import {
 	countPublicColours,
 	countPublicProducts,
 	listPublicProducts,
+	listSpecFacets,
 	listPublicSeries,
 } from "@/server/repositories/catalog"
 
@@ -32,14 +34,21 @@ export async function generateMetadata({
 export default async function ProductsPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ series?: string }>
+	searchParams: Promise<{
+		series?: string
+		q?: string
+		wear?: string
+		thickness?: string
+		sort?: string
+	}>
 }) {
-	const { series: seriesSlug } = await searchParams
+	const { series: seriesSlug, q, wear, thickness, sort } = await searchParams
 
-	const [allSeries, total, colours] = await Promise.all([
+	const [allSeries, total, colours, facets] = await Promise.all([
 		listPublicSeries(),
 		countPublicProducts(),
 		countPublicColours(),
+		listSpecFacets(),
 	])
 
 	// An unknown series in the query string is a 404 rather than a silent
@@ -47,8 +56,26 @@ export default async function ProductsPage({
 	// something else and get itself indexed.
 	if (seriesSlug && !allSeries.some((s) => s.slug === seriesSlug)) notFound()
 
-	const products = await listPublicProducts({ seriesSlug })
+	const products = await listPublicProducts({
+		seriesSlug,
+		search: q,
+		// Anything unparseable in the query string is ignored rather than
+		// erroring: a filter is not worth a 500, and the unfiltered list is a
+		// sensible thing to show somebody who mangled a URL.
+		wearLayerMil: wear && /^\d+$/.test(wear) ? Number(wear) : undefined,
+		thicknessMm: thickness && /^\d+(\.\d+)?$/.test(thickness) ? thickness : undefined,
+		sort: sort === "name" || sort === "series" ? sort : "curated",
+	})
 	const active = allSeries.find((s) => s.slug === seriesSlug)
+
+	// Carried onto the series links so choosing one keeps whatever search or
+	// spec filter is already on. Series is excluded — that is what the link sets.
+	const keep = new URLSearchParams(
+		Object.entries({ q, wear, thickness, sort }).filter(([, v]) => Boolean(v)) as [
+			string,
+			string,
+		][],
+	).toString()
 
 	return (
 		<>
@@ -97,7 +124,10 @@ export default async function ProductsPage({
 							<>
 								{colours} colours in stock in High Point, plus trim. Prices are for
 								dealers —{" "}
-								<Link href="/login" className="text-ink underline underline-offset-4">
+								<Link
+									href="/login"
+									className="text-ink underline underline-offset-4"
+								>
 									sign in
 								</Link>{" "}
 								or{" "}
@@ -113,7 +143,16 @@ export default async function ProductsPage({
 					</p>
 
 					<div className="mt-10">
+						<CatalogControls
+							wearLayers={facets.wearLayers}
+							thicknesses={facets.thicknesses}
+							resultCount={products.length}
+						/>
+					</div>
+
+					<div className="mt-6">
 						<SeriesFilter
+							keep={keep}
 							total={total}
 							active={seriesSlug}
 							series={allSeries.map((s) => ({
@@ -127,7 +166,9 @@ export default async function ProductsPage({
 					<div className="mt-12">
 						{products.length === 0 ? (
 							<p className="text-muted-foreground py-16 text-center text-sm">
-								Nothing published in this series yet.
+								{q || wear || thickness
+									? "Nothing matches that. Try clearing a filter."
+									: "Nothing published in this series yet."}
 							</p>
 						) : (
 							<SwatchGrid

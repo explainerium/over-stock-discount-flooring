@@ -561,6 +561,7 @@ export async function submitOrder(params: {
 			id: true,
 			total: true,
 			_count: { select: { items: true } },
+			dealer: { select: { minOrderValue: true } },
 			shipToAddress: {
 				select: {
 					id: true,
@@ -583,6 +584,7 @@ export async function submitOrder(params: {
 		lineCount: order._count.items,
 		total: order.total.toString(),
 		hasShipTo: order.shipToAddress != null,
+		minOrderValue: order.dealer.minOrderValue?.toString() ?? null,
 	})
 	if (!fitness.ok) throw new OrderError(fitness.reason!, "NOT_SUBMITTABLE")
 
@@ -631,6 +633,11 @@ const orderDetailSelect = {
 	palletCount: true,
 	dealerNotes: true,
 	internalNotes: true,
+	carrier: true,
+	proNumber: true,
+	bolNumber: true,
+	trackingUrl: true,
+	shippedAt: true,
 	submittedAt: true,
 	approvedAt: true,
 	createdAt: true,
@@ -919,4 +926,80 @@ export async function setOrderCharges(
 			internalNotes: updated.internalNotes,
 		},
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Reordering
+// ---------------------------------------------------------------------------
+
+export interface ReorderResult {
+	orderId: string
+	added: number
+	/** Products that could not be added, and why, in words a dealer can act on. */
+	skipped: string[]
+}
+
+/**
+ * Builds a new draft from a past order.
+ *
+ * Lines are re-priced and re-converted at today's figures rather than copied.
+ * A price the dealer paid in March is not a price we are offering in August,
+ * and a box count depends on specs the owner can correct — so what is reused
+ * is the intent (this colour, this much, in this unit), not the arithmetic.
+ *
+ * Anything that cannot be added is named rather than silently dropped. A dealer
+ * who reorders six lines and gets five has to be told which one is missing, or
+ * they find out when the pallet arrives short.
+ */
+export async function reorder(dealerId: string, sourceOrderId: string): Promise<ReorderResult> {
+	const source = await db.order.findFirst({
+		where: { id: sourceOrderId, dealerId },
+		select: {
+			id: true,
+			shipToAddressId: true,
+			items: {
+				select: {
+					productId: true,
+					unitSelected: true,
+					qtyEntered: true,
+					wasteFactorPct: true,
+					productNameSnapshot: true,
+				},
+				orderBy: { sortOrder: "asc" },
+			},
+		},
+	})
+	if (!source) throw new OrderError("That order is not yours.", "NOT_FOUND")
+
+	const orderId = await getOrCreateDraft(dealerId)
+	const skipped: string[] = []
+	let added = 0
+
+	for (const item of source.items) {
+		try {
+			await addLine({
+				dealerId,
+				productId: item.productId,
+				unit: item.unitSelected,
+				quantity: item.qtyEntered.toString(),
+				wasteFactorPct: item.wasteFactorPct,
+			})
+			added++
+		} catch (error) {
+			// One unavailable colour must not lose the other five lines.
+			const reason = error instanceof OrderError ? error.message : "could not be added"
+			skipped.push(`${item.productNameSnapshot} — ${reason.toLowerCase().replace(/\.$/, "")}`)
+		}
+	}
+
+	// The old destination is carried over only if the draft has none: a dealer
+	// mid-order has already chosen where this one goes.
+	if (source.shipToAddressId) {
+		await db.order.updateMany({
+			where: { id: orderId, shipToAddressId: null },
+			data: { shipToAddressId: source.shipToAddressId },
+		})
+	}
+
+	return { orderId, added, skipped }
 }
