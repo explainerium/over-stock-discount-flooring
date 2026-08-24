@@ -4,10 +4,12 @@ import { notFound } from "next/navigation"
 import { OrderLines } from "@/components/shared/OrderLines"
 import { OrderStatusBadge } from "@/components/shared/OrderStatusBadge"
 import { OrderTimeline } from "@/components/shared/OrderTimeline"
+import { ShipToSummary } from "@/components/shared/ShipToSummary"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatMoney } from "@/lib/format/money"
 import { formatTerms } from "@/lib/format/terms"
 import { requireStaff } from "@/server/auth/guards"
+import type { AddressParts } from "@/server/domain/addresses"
 import { TERMINAL, isEditable, label, transitionsFor } from "@/server/domain/orders"
 import { getOrderForStaff } from "@/server/repositories/orders"
 import { ChargesForm } from "./_components/ChargesForm"
@@ -203,6 +205,18 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
 							<dd className="text-lg">{formatMoney(order.total.toString())}</dd>
 						</div>
 					</dl>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle className="text-base">Ship to</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<ShipToSummary
+						snapshot={order.shipToSnapshot as AddressParts | null}
+						current={order.shipToAddress}
+					/>
 				</CardContent>
 			</Card>
 

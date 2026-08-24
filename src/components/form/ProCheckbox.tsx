@@ -35,7 +35,13 @@ export function ProCheckbox({ name, label, description, disabled, className }: P
 							disabled={disabled}
 							aria-invalid={fieldState.error ? true : undefined}
 						/>
-						<Label htmlFor={name} className="font-normal">
+						{/* Clicking the words toggles the box, so they have to look
+						    like a target. The shared Label cannot know this — it is
+						    used for text fields too, where a pointer would be wrong. */}
+						<Label
+							htmlFor={name}
+							className={cn("font-normal", !disabled && "cursor-pointer")}
+						>
 							{label}
 						</Label>
 					</div>

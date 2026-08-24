@@ -312,13 +312,19 @@ model Address {
   needsLiftgate Boolean @default(false)
   limitedAccess Boolean @default(false)
 
-  isDefault Boolean  @default(false)
+  isDefault Boolean @default(false)
+
+  /// Archived rather than deleted. A dealer who ships to jobsites accumulates
+  /// addresses they will never use again, but an address attached to a past
+  /// order is part of that order.
+  isActive Boolean @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   orders Order[]
 
-  @@index([dealerId])
+  @@index([dealerId, isActive])
 }
 
 model DealerPrice {
@@ -510,6 +516,12 @@ model Order {
 
   shipToAddressId String?
   shipToAddress   Address? @relation(fields: [shipToAddressId], references: [id], onDelete: SetNull)
+
+  /// The destination as it stood when the order was submitted, frozen the same
+  /// way the product name and the unit price are. Freight was quoted against
+  /// this place; editing the address afterwards must not rewrite what was
+  /// quoted, and archiving it must not leave the order shipping to nowhere.
+  shipToSnapshot Json?
 
   subtotal Decimal @default(0) @db.Decimal(12, 2)
   freight  Decimal @default(0) @db.Decimal(12, 2)

@@ -6,10 +6,12 @@ import { SubmitOrder } from "@/app/(portal)/portal/cart/_components/SubmitOrder"
 import { OrderLines } from "@/components/shared/OrderLines"
 import { OrderStatusBadge } from "@/components/shared/OrderStatusBadge"
 import { OrderTimeline } from "@/components/shared/OrderTimeline"
+import { ShipToSummary } from "@/components/shared/ShipToSummary"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCoverage } from "@/lib/format/coverage"
 import { formatMoney } from "@/lib/format/money"
 import { requireDealerScope } from "@/server/auth/guards"
+import type { AddressParts } from "@/server/domain/addresses"
 import { dealerExplanation, isEditable } from "@/server/domain/orders"
 import { getDealerOrder } from "@/server/repositories/orders"
 
@@ -142,6 +144,18 @@ export default async function DealerOrderPage({ params }: { params: Promise<{ id
 					</CardContent>
 				</Card>
 			)}
+
+			<Card>
+				<CardHeader>
+					<CardTitle className="text-base">Ship to</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<ShipToSummary
+						snapshot={order.shipToSnapshot as AddressParts | null}
+						current={order.shipToAddress}
+					/>
+				</CardContent>
+			</Card>
 
 			{order.dealerNotes && (
 				<Card>

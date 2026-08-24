@@ -143,6 +143,25 @@
   html {
     @apply font-body;
   }
+  /* Tailwind v4's preflight sets buttons to `cursor: default` to match the
+     browser's own default. That is technically faithful and practically wrong
+     here — every one of these is something a person presses, and the pointer is
+     how they know before they try.
+
+     Disabled buttons are left out: the button component already turns pointer
+     events off on them, so they read as inert rather than as a target that does
+     nothing. Radix renders its checkbox, radio and select triggers as real
+     <button> elements, so those are covered by the first selector; the native
+     controls below are the ones that are not. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  a,
+  label:has(input:not(:disabled)),
+  select:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="checkbox"]:not(:disabled) {
+    cursor: pointer;
+  }
   /* Poppins 700 with a hair of tracking and a 1.2 line — the reference site's
      heading setting, measured rather than approximated. */
   .display {

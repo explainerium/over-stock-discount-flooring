@@ -3,12 +3,20 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import type { ActionResult } from "@/lib/validation/dealers"
-import { addLineSchema, lineIdSchema, submitOrderSchema, updateLineSchema } from "@/lib/validation/orders"
+import { chooseShipToSchema } from "@/lib/validation/addresses"
+import {
+	addLineSchema,
+	lineIdSchema,
+	submitOrderSchema,
+	updateLineSchema,
+} from "@/lib/validation/orders"
 import { requireDealerScope } from "@/server/auth/guards"
 import {
 	OrderError,
 	addLine,
+	getOrCreateDraft,
 	removeLine,
+	setShipTo,
 	submitOrder,
 	updateLine,
 } from "@/server/repositories/orders"
@@ -93,6 +101,30 @@ export async function removeLineAction(input: unknown): Promise<ActionResult> {
 
 	refresh()
 	return { ok: true, message: "Removed." }
+}
+
+/**
+ * Choosing where the order goes.
+ *
+ * Saved the moment it is picked rather than at submission. The freight figure
+ * and the accessorials both follow from this choice, so it should be settled
+ * while the dealer is still looking at the options.
+ */
+export async function setShipToAction(input: unknown): Promise<ActionResult> {
+	const { dealerId } = await requireDealerScope()
+
+	const parsed = chooseShipToSchema.safeParse(input)
+	if (!parsed.success) return { ok: false, message: "Unknown address." }
+
+	try {
+		const orderId = await getOrCreateDraft(dealerId)
+		await setShipTo(dealerId, orderId, parsed.data.addressId)
+	} catch (error) {
+		return { ok: false, message: explain(error) }
+	}
+
+	refresh()
+	return { ok: true, message: "Delivery address set." }
 }
 
 /**

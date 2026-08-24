@@ -1,0 +1,119 @@
+import "server-only"
+import { db } from "@/server/db/client"
+
+/**
+ * What the owner needs to see when he opens the site.
+ *
+ * The queries here cross entities, which is why they live together rather than
+ * in the per-entity repositories: none of them is "list dealers" or "list
+ * products", they are all "what is stuck".
+ *
+ * Only getDashboard is exported. The individual queries are its parts, and a
+ * caller reaching for one of them alone would be building a second dashboard.
+ *
+ * Each one answers a question that otherwise arrives as a phone call. A dealer
+ * with no delivery address cannot submit an order at all and has no way to know
+ * that is why; a series with no freight class cannot be quoted; a product with
+ * no price cannot be ordered. All three are silent until somebody complains.
+ */
+
+/**
+ * Dealers who cannot order.
+ *
+ * Freight is quoted on a destination, so an active dealer with no address is a
+ * dealer whose orders stop at the submit button. This is the newest way for an
+ * account to be quietly unusable, and the owner is the only one who can ring
+ * them about it.
+ */
+async function dealersWithoutAddress() {
+	return db.dealer.findMany({
+		where: { status: "ACTIVE", addresses: { none: { isActive: true } } },
+		select: { id: true, companyName: true },
+		orderBy: { companyName: "asc" },
+	})
+}
+
+/** Accounts invited but never activated — an invite that went nowhere. */
+async function dealersPending() {
+	return db.dealer.findMany({
+		where: { status: "PENDING" },
+		select: { id: true, companyName: true, createdAt: true },
+		orderBy: { createdAt: "asc" },
+	})
+}
+
+/**
+ * Products nobody can buy.
+ *
+ * A product with no list price throws in the pricing engine rather than
+ * quietly selling at zero, which is the right behaviour and a poor discovery
+ * mechanism — the dealer meets it as an error in the catalogue.
+ */
+async function productsWithoutPrice() {
+	return db.product.findMany({
+		where: { isActive: true, listPrice: null },
+		select: { id: true, name: true, sku: true },
+		orderBy: { name: "asc" },
+		take: 10,
+	})
+}
+
+/**
+ * Series that cannot be shipped.
+ *
+ * A carrier needs a freight class and an NMFC code to rate an LTL shipment.
+ * Missing them does not break anything today, because freight is entered by
+ * hand — it breaks the moment rated quoting is switched on, and by then the
+ * gap is eight weeks old.
+ */
+async function seriesMissingFreightData() {
+	return db.series.findMany({
+		where: { OR: [{ freightClass: null }, { nmfcCode: null }] },
+		select: { id: true, name: true, freightClass: true, nmfcCode: true },
+		orderBy: { sortOrder: "asc" },
+	})
+}
+
+/** Orders that have been waiting longest, which is what the owner opens for. */
+async function ordersAwaitingApproval(take = 8) {
+	return db.order.findMany({
+		where: { status: "SUBMITTED" },
+		select: {
+			id: true,
+			orderNumber: true,
+			total: true,
+			submittedAt: true,
+			freight: true,
+			dealer: { select: { companyName: true } },
+			_count: { select: { items: true } },
+		},
+		orderBy: { submittedAt: "asc" },
+		take,
+	})
+}
+
+/**
+ * Everything the overview needs, in one round trip.
+ *
+ * Gathered here rather than in the page so the page stays a layout and the
+ * pool sees one burst of queries instead of a waterfall.
+ */
+export async function getDashboard() {
+	const [awaiting, noAddress, pending, noPrice, noFreightData, unhandledLeads, recentLeads] =
+		await Promise.all([
+			ordersAwaitingApproval(),
+			dealersWithoutAddress(),
+			dealersPending(),
+			productsWithoutPrice(),
+			seriesMissingFreightData(),
+			db.lead.count({ where: { handledAt: null } }),
+			db.lead.findMany({
+				where: { handledAt: null },
+				select: { id: true, source: true, name: true, company: true, createdAt: true },
+				orderBy: { createdAt: "desc" },
+				take: 4,
+			}),
+		])
+
+	return { awaiting, noAddress, pending, noPrice, noFreightData, unhandledLeads, recentLeads }
+}

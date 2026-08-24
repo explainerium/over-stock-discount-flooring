@@ -8,6 +8,7 @@ import {
 	canSubmit,
 	type OrderStatus,
 } from "@/server/domain/orders"
+import { isQuotable } from "@/server/domain/addresses"
 import { lineTotal, resolvePrice, sumLines } from "@/server/domain/pricing"
 import { resolve as resolveUom, type Uom } from "@/server/domain/uom"
 
@@ -67,8 +68,16 @@ export async function getOrCreateDraft(dealerId: string) {
 	})
 	if (existing) return existing.id
 
+	// Started at the dealer's usual place rather than blank. Most orders go
+	// where the last one went, and a dealer with a single address should never
+	// be asked to pick it.
+	const usual = await db.address.findFirst({
+		where: { dealerId, isActive: true, isDefault: true },
+		select: { id: true },
+	})
+
 	const created = await db.order.create({
-		data: { dealerId, status: "DRAFT" },
+		data: { dealerId, status: "DRAFT", shipToAddressId: usual?.id ?? null },
 		select: { id: true },
 	})
 	return created.id
@@ -87,6 +96,21 @@ export async function getDraft(dealerId: string) {
 			palletCount: true,
 			dealerNotes: true,
 			shipToAddressId: true,
+			shipToAddress: {
+				select: {
+					id: true,
+					label: true,
+					line1: true,
+					line2: true,
+					city: true,
+					state: true,
+					zip: true,
+					isResidential: true,
+					needsLiftgate: true,
+					limitedAccess: true,
+					isActive: true,
+				},
+			},
 			items: { select: lineSelect, orderBy: { sortOrder: "asc" } },
 		},
 	})
@@ -411,6 +435,36 @@ export async function recalculate(orderId: string) {
 	})
 }
 
+/**
+ * Points the open order at one of the dealer's addresses.
+ *
+ * Scoped through the dealer on both sides — the order and the address — so an
+ * address id in a request body cannot attach somebody else's warehouse to an
+ * order.
+ */
+export async function setShipTo(dealerId: string, orderId: string, addressId: string) {
+	const [order, address] = await Promise.all([
+		db.order.findFirst({
+			where: { id: orderId, dealerId, status: { in: [...DEALER_EDITABLE] } },
+			select: { id: true },
+		}),
+		db.address.findFirst({
+			where: { id: addressId, dealerId, isActive: true },
+			select: { id: true },
+		}),
+	])
+
+	if (!order) throw new OrderError("That order cannot be changed now.", "NOT_FOUND")
+	if (!address) throw new OrderError("That address is not on your account.", "NOT_FOUND")
+
+	await db.order.update({
+		where: { id: order.id },
+		data: { shipToAddressId: address.id },
+	})
+
+	return order.id
+}
+
 /** How many lines are on the cart, for the header badge. */
 export async function countDraftLines(dealerId: string): Promise<number> {
 	const draft = await db.order.findFirst({
@@ -503,15 +557,41 @@ export async function submitOrder(params: {
 		where: params.orderId
 			? { id: params.orderId, dealerId, status: { in: [...DEALER_EDITABLE] } }
 			: { dealerId, status: "DRAFT" },
-		select: { id: true, total: true, _count: { select: { items: true } } },
+		select: {
+			id: true,
+			total: true,
+			_count: { select: { items: true } },
+			shipToAddress: {
+				select: {
+					id: true,
+					label: true,
+					line1: true,
+					line2: true,
+					city: true,
+					state: true,
+					zip: true,
+					isResidential: true,
+					needsLiftgate: true,
+					limitedAccess: true,
+				},
+			},
+		},
 	})
 	if (!order) throw new OrderError("You have no order to submit.", "NOT_FOUND")
 
 	const fitness = canSubmit({
 		lineCount: order._count.items,
 		total: order.total.toString(),
+		hasShipTo: order.shipToAddress != null,
 	})
 	if (!fitness.ok) throw new OrderError(fitness.reason!, "NOT_SUBMITTABLE")
+
+	if (!isQuotable(order.shipToAddress!)) {
+		throw new OrderError(
+			"That address is missing a state or a ZIP we can rate freight on.",
+			"NOT_SUBMITTABLE",
+		)
+	}
 
 	// Re-stamped on every submit, resubmissions included. If the owner repriced
 	// a line and the dealer is sending it back, the dealer is agreeing to the
@@ -526,7 +606,14 @@ export async function submitOrder(params: {
 		to: "SUBMITTED",
 		actorId,
 		note: notes ?? null,
-		data: { submittedAt: new Date(), dealerNotes: notes ?? null },
+		data: {
+			submittedAt: new Date(),
+			dealerNotes: notes ?? null,
+			// Frozen for the same reason the unit price is. Freight gets quoted
+			// against this place; editing or archiving the address afterwards
+			// must not rewrite what the quote was based on.
+			shipToSnapshot: order.shipToAddress!,
+		},
 	})
 
 	return order.id
@@ -548,6 +635,23 @@ const orderDetailSelect = {
 	approvedAt: true,
 	createdAt: true,
 	dealer: { select: { id: true, companyName: true, paymentTerms: true } },
+	shipToAddressId: true,
+	shipToAddress: {
+		select: {
+			id: true,
+			label: true,
+			line1: true,
+			line2: true,
+			city: true,
+			state: true,
+			zip: true,
+			isResidential: true,
+			needsLiftgate: true,
+			limitedAccess: true,
+			isActive: true,
+		},
+	},
+	shipToSnapshot: true,
 	items: { select: lineSelect, orderBy: { sortOrder: "asc" } },
 	history: {
 		select: {

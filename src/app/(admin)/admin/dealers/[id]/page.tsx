@@ -6,22 +6,22 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { requireStaff } from "@/server/auth/guards"
+import { listAllAddresses } from "@/server/repositories/addresses"
 import { getDealer } from "@/server/repositories/dealers"
 import { DealerStatusBadge } from "../_components/DealerStatusBadge"
+import { DealerAddresses } from "./_components/DealerAddresses"
 import { DealerStatusActions } from "./_components/DealerStatusActions"
 import { InviteUserForm } from "./_components/InviteUserForm"
 import { RevokeInviteButton } from "./_components/RevokeInviteButton"
 
-export default async function DealerDetailPage({
-	params,
-}: {
-	params: Promise<{ id: string }>
-}) {
+export default async function DealerDetailPage({ params }: { params: Promise<{ id: string }> }) {
 	await requireStaff()
 	const { id } = await params
 
 	const dealer = await getDealer(id)
 	if (!dealer) notFound()
+
+	const addresses = await listAllAddresses(dealer.id)
 
 	const activeUsers = dealer.users.filter((user) => user.status === "ACTIVE").length
 
@@ -50,9 +50,9 @@ export default async function DealerDetailPage({
 						<Link href={`/admin/dealers/${dealer.id}/pricing`}>Pricing</Link>
 					</Button>
 					<DealerStatusActions
-					dealerId={dealer.id}
-					status={dealer.status}
-					activeUsers={activeUsers}
+						dealerId={dealer.id}
+						status={dealer.status}
+						activeUsers={activeUsers}
 					/>
 				</div>
 			</div>
@@ -81,6 +81,8 @@ export default async function DealerDetailPage({
 					)}
 				</CardContent>
 			</Card>
+
+			<DealerAddresses addresses={addresses} />
 
 			<Card>
 				<CardHeader>
@@ -113,7 +115,9 @@ export default async function DealerDetailPage({
 												` · last signed in ${user.lastLoginAt.toLocaleDateString("en-US")}`}
 										</p>
 									</div>
-									<Badge variant={user.status === "ACTIVE" ? "default" : "secondary"}>
+									<Badge
+										variant={user.status === "ACTIVE" ? "default" : "secondary"}
+									>
 										{user.status === "ACTIVE" ? "Active" : "Invited"}
 									</Badge>
 								</li>

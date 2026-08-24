@@ -1,12 +1,14 @@
 import { ShoppingCartIcon } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCoverage } from "@/lib/format/coverage"
 import { formatMoney } from "@/lib/format/money"
 import { requireDealerScope } from "@/server/auth/guards"
+import { listAddresses } from "@/server/repositories/addresses"
 import { getDraft } from "@/server/repositories/orders"
 import { CartLine } from "./_components/CartLine"
+import { ShipTo } from "./_components/ShipTo"
 import { SubmitOrder } from "./_components/SubmitOrder"
 
 export const metadata = { title: "Your Order" }
@@ -21,9 +23,14 @@ export const metadata = { title: "Your Order" }
  */
 export default async function CartPage() {
 	const { dealerId, user } = await requireDealerScope()
-	const draft = await getDraft(dealerId)
+	const [draft, addresses] = await Promise.all([getDraft(dealerId), listAddresses(dealerId)])
 
 	const lines = draft?.items ?? []
+
+	// Only what is actually stored. A radio that looks chosen while the order
+	// has no destination is how a dealer ends up staring at a disabled Submit
+	// button with the right address apparently already selected.
+	const shipToId = draft?.shipToAddressId ?? null
 
 	if (lines.length === 0) {
 		return (
@@ -116,7 +123,16 @@ export default async function CartPage() {
 				</CardContent>
 			</Card>
 
-			<SubmitOrder />
+			<Card>
+				<CardHeader>
+					<CardTitle className="text-base">Ship to</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<ShipTo addresses={addresses} selectedId={shipToId} />
+				</CardContent>
+			</Card>
+
+			<SubmitOrder disabled={!draft?.shipToAddressId} />
 
 			<div>
 				<Button variant="outline" asChild>

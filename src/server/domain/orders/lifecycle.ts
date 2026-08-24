@@ -192,11 +192,19 @@ export function isEditable(status: OrderStatus, actor: Actor): boolean {
  * Whether an order is fit to submit.
  *
  * Separate from the transition table because these are facts about the order's
- * contents rather than about who is asking. A ship-to address is not required
- * yet — dealer addresses are not built — but freight cannot be quoted without
- * one, so this is where that check belongs when it lands.
+ * contents rather than about who is asking.
+ *
+ * The destination is checked here rather than at approval because this is the
+ * cheapest moment to fix it. Freight is quoted on a place — a ZIP the carrier
+ * rates on, and whatever that place needs to receive a pallet — so an order
+ * without one cannot be priced, and discovering that at approval is a phone
+ * call rather than a click.
  */
-export function canSubmit(order: { lineCount: number; total: string | number }): TransitionCheck {
+export function canSubmit(order: {
+	lineCount: number
+	total: string | number
+	hasShipTo: boolean
+}): TransitionCheck {
 	if (order.lineCount === 0) {
 		return { ok: false, reason: "There is nothing on this order yet." }
 	}
@@ -205,6 +213,9 @@ export function canSubmit(order: { lineCount: number; total: string | number }):
 			ok: false,
 			reason: "This order adds up to nothing — check the quantities.",
 		}
+	}
+	if (!order.hasShipTo) {
+		return { ok: false, reason: "Choose where this is going before you send it." }
 	}
 	return { ok: true }
 }

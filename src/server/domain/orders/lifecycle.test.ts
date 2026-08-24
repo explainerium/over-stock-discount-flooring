@@ -102,15 +102,27 @@ describe("editing", () => {
 
 describe("fitness to submit", () => {
 	it("refuses an empty order", () => {
-		expect(canSubmit({ lineCount: 0, total: 0 }).reason).toMatch(/nothing on this order/)
+		expect(canSubmit({ lineCount: 0, total: 0, hasShipTo: true }).reason).toMatch(
+			/nothing on this order/,
+		)
 	})
 
 	it("refuses an order that adds up to nothing", () => {
-		expect(canSubmit({ lineCount: 2, total: "0" }).reason).toMatch(/adds up to nothing/)
+		expect(canSubmit({ lineCount: 2, total: "0", hasShipTo: true }).reason).toMatch(
+			/adds up to nothing/,
+		)
+	})
+
+	it("refuses an order with nowhere to go", () => {
+		// Freight is quoted on a destination. Catching this at submission costs
+		// the dealer a click; catching it at approval costs a phone call.
+		expect(canSubmit({ lineCount: 1, total: "2244.30", hasShipTo: false }).reason).toMatch(
+			/where this is going/,
+		)
 	})
 
 	it("accepts a real one", () => {
-		expect(canSubmit({ lineCount: 1, total: "2244.30" }).ok).toBe(true)
+		expect(canSubmit({ lineCount: 1, total: "2244.30", hasShipTo: true }).ok).toBe(true)
 	})
 })
 

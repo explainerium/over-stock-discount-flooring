@@ -9,6 +9,7 @@ const LINKS = [
 	{ href: "/portal/catalog", label: "Catalog" },
 	{ href: "/portal/cart", label: "Your Order" },
 	{ href: "/portal/orders", label: "History" },
+	{ href: "/portal/addresses", label: "Addresses" },
 ]
 
 export function PortalNav({ lineCount }: { lineCount: number }) {

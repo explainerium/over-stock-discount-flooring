@@ -61,7 +61,7 @@ export function ProCheckboxGroup({
 									/>
 									<Label
 										htmlFor={`${name}-${option.value}`}
-										className="font-normal"
+										className="cursor-pointer font-normal"
 									>
 										{option.label}
 									</Label>
