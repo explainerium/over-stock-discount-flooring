@@ -24,6 +24,7 @@ import {
 	updateDealer,
 } from "@/server/repositories/dealers"
 import { emailIsTaken, issueInvite, revokeInvite } from "@/server/repositories/invites"
+import { siteUrl } from "@/constants/site"
 
 /**
  * Dealer administration.
@@ -50,8 +51,7 @@ function staffName(staff: { firstName?: string | null; lastName?: string | null 
 
 /** The invite URL as the owner will paste it. */
 function inviteUrl(token: string): string {
-	const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-	return `${base}/invite/${token}`
+	return siteUrl(`/invite/${token}`)
 }
 
 /**

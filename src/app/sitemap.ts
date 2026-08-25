@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next"
 import { db } from "@/server/db/client"
+import { SITE_URL } from "@/constants/site"
 
 /**
  * Every public URL, including one per colour.
@@ -19,7 +20,7 @@ import { db } from "@/server/db/client"
 export const dynamic = "force-dynamic"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-	const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+	const base = SITE_URL
 
 	const [products, series] = await Promise.all([
 		db.product.findMany({

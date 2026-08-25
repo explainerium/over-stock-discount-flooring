@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next"
+import { SITE_URL } from "@/constants/site"
 
 /**
  * The current site returns 404 for robots.txt. So does its sitemap.
@@ -8,7 +9,7 @@ import type { MetadataRoute } from "next"
  * the one thing on this site that must never be crawled.
  */
 export default function robots(): MetadataRoute.Robots {
-	const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+	const base = SITE_URL
 
 	return {
 		rules: [

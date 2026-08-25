@@ -2,11 +2,34 @@ import type { NextConfig } from "next"
 import { ALL_REDIRECTS } from "./src/constants/redirects"
 
 /**
- * Product imagery is served from whatever NEXT_PUBLIC_MEDIA_URL points at —
- * localhost while developing, the S3-compatible bucket in production.
- * next/image refuses any origin it has not been told about.
+ * Where product imagery is served from.
+ *
+ * Every image path in the database is relative — `/swatches/bronze-avalon.jpg`
+ * — so today they come from `public/` on the site's own origin and `next/image`
+ * needs no permission for them. This is here for the day they move to an
+ * S3-compatible bucket, which is a different origin and would be refused
+ * without it.
+ *
+ * Parsed defensively. `??` only substitutes for undefined, so a variable that
+ * is *set but empty* — which is what a blank field in a hosting dashboard
+ * produces — reaches `new URL("")` and throws at config load, before anything
+ * else in the build has a chance to run.
  */
-const media = new URL(process.env.NEXT_PUBLIC_MEDIA_URL ?? "http://localhost:3000")
+function mediaOrigin(): URL | null {
+	const raw = process.env.NEXT_PUBLIC_MEDIA_URL?.trim()
+	if (!raw) return null
+
+	try {
+		return new URL(raw)
+	} catch {
+		// A typo here must not take the build down. It costs a remote pattern,
+		// and remote images are not in use yet.
+		console.warn(`[config] NEXT_PUBLIC_MEDIA_URL is not a URL: "${raw}" — ignoring it.`)
+		return null
+	}
+}
+
+const media = mediaOrigin()
 
 /**
  * Headers live here rather than in a host-specific config file.
@@ -27,14 +50,18 @@ const nextConfig: NextConfig = {
 	reactCompiler: true,
 
 	images: {
-		remotePatterns: [
-			{
-				protocol: media.protocol.replace(":", "") as "http" | "https",
-				hostname: media.hostname,
-				port: media.port,
-				pathname: "/**",
-			},
-		],
+		// Empty when no media origin is configured, which is the correct answer
+		// for relative paths — an empty list is not a missing one.
+		remotePatterns: media
+			? [
+					{
+						protocol: media.protocol.replace(":", "") as "http" | "https",
+						hostname: media.hostname,
+						port: media.port,
+						pathname: "/**",
+					},
+				]
+			: [],
 	},
 
 	/**

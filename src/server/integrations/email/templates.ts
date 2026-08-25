@@ -15,10 +15,7 @@ import type { RenderedEmail } from "./types"
  * to ask for.
  */
 
-function siteUrl(path: string): string {
-	const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-	return `${base}${path}`
-}
+import { siteUrl } from "@/constants/site"
 
 const SIGN_OFF = "Overstock Discount Flooring, High Point NC"
 

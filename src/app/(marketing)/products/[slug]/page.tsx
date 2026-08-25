@@ -8,6 +8,7 @@ import { getPublicProduct } from "@/server/repositories/catalog"
 import { Breadcrumbs } from "../../_components/Breadcrumbs"
 import { CoverageCalculator } from "../../_components/CoverageCalculator"
 import { SampleRequest } from "./_components/SampleRequest"
+import { SITE_URL } from "@/constants/site"
 
 /**
  * One URL per colour.
@@ -102,7 +103,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 	 * publishing one here would both contradict that and be wrong for most
 	 * visitors.
 	 */
-	const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+	const origin = SITE_URL
 
 	const jsonLd = {
 		"@context": "https://schema.org",

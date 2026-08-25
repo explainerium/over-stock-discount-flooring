@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Open_Sans, Poppins } from "next/font/google"
 import { Analytics } from "@/components/shared/Analytics"
+import { SITE_URL } from "@/constants/site"
 import "./globals.css"
 
 /**
@@ -26,7 +27,7 @@ const openSans = Open_Sans({
 })
 
 export const metadata: Metadata = {
-	metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+	metadataBase: new URL(SITE_URL),
 	title: {
 		default: "Overstock Discount Flooring — Rigid Core LVP, High Point NC",
 		template: "%s · Overstock Discount Flooring",
