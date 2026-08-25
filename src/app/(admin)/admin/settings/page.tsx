@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { requireStaff } from "@/server/auth/guards"
 import { getOrderMailCc } from "@/server/repositories/settings"
+import { AccountSettings } from "@/components/shared/AccountSettings"
 import { OrderMailCcForm } from "./_components/OrderMailCcForm"
 
 export const metadata = { title: "Settings" }
@@ -13,7 +14,7 @@ export const metadata = { title: "Settings" }
  * from being caught rather than live immediately.
  */
 export default async function SettingsPage() {
-	await requireStaff()
+	const user = await requireStaff()
 	const cc = await getOrderMailCc()
 
 	return (
@@ -24,6 +25,8 @@ export default async function SettingsPage() {
 					Changes here take effect immediately.
 				</p>
 			</div>
+
+			<AccountSettings email={user.email} />
 
 			<Card>
 				<CardHeader>

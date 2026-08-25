@@ -82,3 +82,41 @@ export type AcceptInviteInput = z.infer<typeof acceptInviteSchema>
  */
 export type ActionResult =
 	{ ok: true; message?: string } | { ok: false; message: string; field?: string }
+
+/**
+ * Changing your own password.
+ *
+ * The current password is asked for even though the session already proves who
+ * you are. A session is "this browser was logged in once"; a password is "this
+ * is the person". An unattended laptop should not be enough to take an account
+ * over, and this is the cheapest thing standing between the two.
+ */
+export const changePasswordSchema = z
+	.object({
+		currentPassword: z.string().min(1, "Enter your current password."),
+		password,
+		confirmPassword: z.string(),
+	})
+	.refine((values) => values.password === values.confirmPassword, {
+		message: "The two passwords do not match.",
+		path: ["confirmPassword"],
+	})
+	.refine((values) => values.password !== values.currentPassword, {
+		message: "That is the password you already have.",
+		path: ["password"],
+	})
+
+/**
+ * Changing the address you sign in with.
+ *
+ * Also gated on the current password, and for a sharper reason: the email is
+ * the account's identity and the route the password-reset link takes. Somebody
+ * who can change it unchallenged owns the account.
+ */
+export const changeEmailSchema = z.object({
+	currentPassword: z.string().min(1, "Enter your password to confirm."),
+	email,
+})
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
+export type ChangeEmailInput = z.infer<typeof changeEmailSchema>

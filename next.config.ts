@@ -16,7 +16,7 @@ import { ALL_REDIRECTS } from "./src/constants/redirects"
  * else in the build has a chance to run.
  */
 function mediaOrigin(): URL | null {
-	const raw = process.env.NEXT_PUBLIC_MEDIA_URL?.trim()
+	const raw = process.env.MEDIA_URL?.trim()
 	if (!raw) return null
 
 	try {
@@ -24,7 +24,7 @@ function mediaOrigin(): URL | null {
 	} catch {
 		// A typo here must not take the build down. It costs a remote pattern,
 		// and remote images are not in use yet.
-		console.warn(`[config] NEXT_PUBLIC_MEDIA_URL is not a URL: "${raw}" — ignoring it.`)
+		console.warn(`[config] MEDIA_URL is not a URL: "${raw}" — ignoring it.`)
 		return null
 	}
 }

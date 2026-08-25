@@ -5,6 +5,8 @@ import { redirect } from "next/navigation"
 import { db } from "@/server/db/client"
 import {
 	acceptInviteSchema,
+	changeEmailSchema,
+	changePasswordSchema,
 	forgotPasswordSchema,
 	loginSchema,
 	resetPasswordSchema,
@@ -13,6 +15,7 @@ import {
 import { passwordResetEmail, sendEmail } from "@/server/integrations/email"
 import { hashPassword, verifyPassword } from "./password"
 import { createSession, destroySession, resolveSession, revokeAllSessions } from "./session"
+import { requireUser } from "./guards"
 import { expiresAt, generateToken, hashToken, isExpired, TOKEN_TTL } from "./tokens"
 
 /**
@@ -277,4 +280,101 @@ export async function forceSignOut(userId: string): Promise<number> {
 		throw new Error("Not permitted.")
 	}
 	return revokeAllSessions(userId)
+}
+
+/**
+ * Changing your own password.
+ *
+ * Every other session is revoked and this one is reissued. That is the whole
+ * point of the action: somebody changing a password usually believes it is
+ * known, and leaving the other sessions alive would leave whoever knows it
+ * signed in. Keeping this browser signed in is a convenience the person in
+ * front of us has already earned by typing the old password.
+ */
+export async function changePassword(input: unknown): Promise<ActionResult> {
+	const user = await requireUser()
+
+	const parsed = changePasswordSchema.safeParse(input)
+	if (!parsed.success) {
+		const issue = parsed.error.issues[0]
+		return { ok: false, message: issue.message, field: issue.path[0]?.toString() }
+	}
+
+	const record = await db.user.findUnique({
+		where: { id: user.id },
+		select: { id: true, passwordHash: true },
+	})
+	if (!record?.passwordHash) {
+		return { ok: false, message: "That account has no password set." }
+	}
+
+	if (!(await verifyPassword(parsed.data.currentPassword, record.passwordHash))) {
+		return {
+			ok: false,
+			message: "That is not your current password.",
+			field: "currentPassword",
+		}
+	}
+
+	await db.user.update({
+		where: { id: record.id },
+		data: { passwordHash: await hashPassword(parsed.data.password) },
+	})
+
+	// Everything, then a fresh one — rather than sparing the current session,
+	// which would mean identifying it and getting that wrong quietly.
+	await revokeAllSessions(record.id)
+	const headerList = await headers()
+	await createSession(record.id, {
+		userAgent: headerList.get("user-agent"),
+		ip: headerList.get("x-forwarded-for"),
+	})
+
+	return { ok: true, message: "Password changed. Any other browser has been signed out." }
+}
+
+/**
+ * Changing the address you sign in with.
+ *
+ * No confirmation link is sent to the new address, because there is no mailbox
+ * to send it from yet. That means a typo here locks the account out of its own
+ * password reset — which is why the current password is required, and why the
+ * screen says plainly that this is the address you will sign in with.
+ */
+export async function changeEmail(input: unknown): Promise<ActionResult> {
+	const user = await requireUser()
+
+	const parsed = changeEmailSchema.safeParse(input)
+	if (!parsed.success) {
+		const issue = parsed.error.issues[0]
+		return { ok: false, message: issue.message, field: issue.path[0]?.toString() }
+	}
+
+	if (parsed.data.email === user.email) {
+		return { ok: true, message: "That is already your address." }
+	}
+
+	const record = await db.user.findUnique({
+		where: { id: user.id },
+		select: { id: true, passwordHash: true },
+	})
+	if (!record?.passwordHash) {
+		return { ok: false, message: "That account has no password set." }
+	}
+
+	if (!(await verifyPassword(parsed.data.currentPassword, record.passwordHash))) {
+		return { ok: false, message: "That password is not right.", field: "currentPassword" }
+	}
+
+	const taken = await db.user.findUnique({
+		where: { email: parsed.data.email },
+		select: { id: true },
+	})
+	if (taken) {
+		return { ok: false, message: "Another account already uses that address.", field: "email" }
+	}
+
+	await db.user.update({ where: { id: record.id }, data: { email: parsed.data.email } })
+
+	return { ok: true, message: `You will sign in as ${parsed.data.email} from now on.` }
 }

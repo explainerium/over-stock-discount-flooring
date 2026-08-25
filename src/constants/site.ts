@@ -5,7 +5,7 @@
  * it — including code that runs on the Edge and must not drag Prisma in.
  *
  * Read through one function rather than inline in seven places, because the
- * inline version was `process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"`
+ * inline version was `process.env.SITE_URL ?? "http://localhost:3000"`
  * and `??` only substitutes for undefined. A variable that is *set but empty* —
  * exactly what a blank field in a hosting dashboard produces — passes straight
  * through: `new URL("")` throws and takes the build down, and everywhere else
@@ -30,7 +30,7 @@ function present(value: string | undefined): string | null {
  * fall back onto that — a first deploy comes up with correct absolute links and
  * no second pass.
  *
- *   NEXT_PUBLIC_SITE_URL            set by hand; wins, and is how a custom
+ *   SITE_URL            set by hand; wins, and is how a custom
  *                                   domain takes over later
  *   VERCEL_PROJECT_PRODUCTION_URL   the project's stable production domain
  *   VERCEL_URL                      this one deployment — right for a preview,
@@ -41,7 +41,7 @@ function present(value: string | undefined): string | null {
  * https.
  */
 function candidates(): string[] {
-	const explicit = present(process.env.NEXT_PUBLIC_SITE_URL)
+	const explicit = present(process.env.SITE_URL)
 	const production = present(process.env.VERCEL_PROJECT_PRODUCTION_URL)
 	const deployment = present(process.env.VERCEL_URL)
 

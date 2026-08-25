@@ -26,7 +26,13 @@ class PostmarkProvider implements EmailProvider {
 
 	constructor(private readonly apiKey: string) {}
 
-	async send(message: EmailMessage & { from: string }): Promise<void> {
+	async send(message: EmailMessage & { from: string | null }): Promise<void> {
+		// Postmark cannot be asked to send from nowhere, and this is the layer
+		// that actually knows it matters.
+		if (!message.from) {
+			throw new Error("EMAIL_FROM is not set, so there is no address to send from.")
+		}
+
 		const response = await fetch("https://api.postmarkapp.com/email", {
 			method: "POST",
 			headers: {
@@ -57,19 +63,24 @@ class PostmarkProvider implements EmailProvider {
 /**
  * The development sink.
  *
- * Writes each message to `.mail/` as well as logging it, so the wording and the
- * links can be read as a dealer would receive them rather than guessed at from
- * a template file. The invite and password-reset links in particular are only
- * usable if you can actually see them.
+ * Where a message goes when nothing is configured to send it.
+ *
+ * On a machine with a writable disk it lands in `.mail/` as well as the log, so
+ * the wording and the links can be read as a dealer would receive them. On a
+ * host the filesystem is read-only, so the whole message goes to the log.
+ *
+ * Either way it is kept. The invite and password-reset links are the only way
+ * into an account until the mailbox exists, and a message that is neither sent
+ * nor recorded is a person locked out with nothing to show for it.
  */
 class SinkProvider implements EmailProvider {
 	readonly name = "sink"
 
-	async send(message: EmailMessage & { from: string }): Promise<void> {
+	async send(message: EmailMessage & { from: string | null }): Promise<void> {
 		const header = [
 			`To: ${message.to}`,
 			message.cc?.length ? `Cc: ${message.cc.join(", ")}` : null,
-			`From: ${message.from}`,
+			`From: ${message.from ?? "(EMAIL_FROM is not set)"}`,
 			`Subject: ${message.subject}`,
 		]
 			.filter(Boolean)
@@ -122,8 +133,11 @@ class SinkProvider implements EmailProvider {
  * not emailing dealers is exactly the failure this system cannot afford.
  */
 export function resolveProvider(): EmailProvider {
-	const apiKey = process.env.EMAIL_API_KEY
-	const provider = process.env.EMAIL_PROVIDER ?? "postmark"
+	// Trimmed to null first. Every one of these arrives as an empty string when
+	// somebody creates the variable in a dashboard and leaves the value blank,
+	// and an empty string is not a configuration.
+	const apiKey = process.env.EMAIL_API_KEY?.trim() || null
+	const provider = process.env.EMAIL_PROVIDER?.trim() || "postmark"
 
 	if (provider === "postmark" && apiKey) return new PostmarkProvider(apiKey)
 

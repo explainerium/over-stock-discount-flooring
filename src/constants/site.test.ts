@@ -14,7 +14,7 @@ async function load(env: Record<string, string | undefined>) {
 	return import("./site")
 }
 
-const KEYS = ["NEXT_PUBLIC_SITE_URL", "VERCEL_PROJECT_PRODUCTION_URL", "VERCEL_URL"]
+const KEYS = ["SITE_URL", "VERCEL_PROJECT_PRODUCTION_URL", "VERCEL_URL"]
 const saved: Record<string, string | undefined> = {}
 
 beforeEach(() => {
@@ -35,7 +35,7 @@ describe("where the site thinks it lives", () => {
 	it("prefers what somebody set by hand", async () => {
 		// This is how a custom domain takes over from the Vercel one.
 		const { SITE_URL } = await load({
-			NEXT_PUBLIC_SITE_URL: "https://overstockdiscountflooring.com",
+			SITE_URL: "https://overstockdiscountflooring.com",
 			VERCEL_PROJECT_PRODUCTION_URL: "odf.vercel.app",
 		})
 		expect(SITE_URL).toBe("https://overstockdiscountflooring.com")
@@ -58,20 +58,20 @@ describe("where the site thinks it lives", () => {
 	it("treats an empty variable as unset rather than as a value", async () => {
 		// A blank field in a hosting dashboard produces "", and `??` does not
 		// substitute for it — which is what took the first build down.
-		const { SITE_URL } = await load({ NEXT_PUBLIC_SITE_URL: "", VERCEL_URL: "  " })
+		const { SITE_URL } = await load({ SITE_URL: "", VERCEL_URL: "  " })
 		expect(SITE_URL).toBe("http://localhost:3000")
 	})
 
 	it("steps past a typo instead of failing", async () => {
 		const { SITE_URL } = await load({
-			NEXT_PUBLIC_SITE_URL: "overstockdiscountflooring.com",
+			SITE_URL: "overstockdiscountflooring.com",
 			VERCEL_PROJECT_PRODUCTION_URL: "odf.vercel.app",
 		})
 		expect(SITE_URL).toBe("https://odf.vercel.app")
 	})
 
 	it("never doubles the slash", async () => {
-		const { siteUrl } = await load({ NEXT_PUBLIC_SITE_URL: "https://odf.vercel.app/" })
+		const { siteUrl } = await load({ SITE_URL: "https://odf.vercel.app/" })
 		expect(siteUrl("/products")).toBe("https://odf.vercel.app/products")
 	})
 })

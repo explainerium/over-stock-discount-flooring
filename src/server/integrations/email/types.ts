@@ -25,7 +25,13 @@ export interface EmailMessage {
 
 export interface EmailProvider {
 	readonly name: string
-	send(message: EmailMessage & { from: string }): Promise<void>
+	/**
+	 * The sender is null until the client has a mailbox on the business domain.
+	 * Only a provider that really sends needs one — the sink records the
+	 * message either way, which is what keeps invite and reset links
+	 * recoverable in the meantime.
+	 */
+	send(message: EmailMessage & { from: string | null }): Promise<void>
 }
 
 /**

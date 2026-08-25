@@ -18,7 +18,7 @@ import Script from "next/script"
  * content it is measuring.
  */
 export function Analytics() {
-	const id = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+	const id = process.env.GA_MEASUREMENT_ID
 
 	if (!id || process.env.NODE_ENV !== "production") return null
 

@@ -10,6 +10,7 @@ const LINKS = [
 	{ href: "/portal/cart", label: "Your Order" },
 	{ href: "/portal/orders", label: "History" },
 	{ href: "/portal/addresses", label: "Addresses" },
+	{ href: "/portal/account", label: "Account" },
 ]
 
 export function PortalNav({ lineCount }: { lineCount: number }) {
