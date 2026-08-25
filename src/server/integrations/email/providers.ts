@@ -11,6 +11,15 @@ import type { EmailMessage, EmailProvider } from "./types"
  * nor recorded is a bug nobody can see.
  */
 
+/**
+ * Whether there is a writable disk to keep messages on.
+ *
+ * A deployed build has a read-only filesystem, so the sink logs instead. Kept
+ * as a constant rather than a try-per-send so the decision is made once and is
+ * readable from one line.
+ */
+const writable = process.env.NODE_ENV !== "production"
+
 /** Postmark. Chosen because the plan already names it and the env vars exist. */
 class PostmarkProvider implements EmailProvider {
 	readonly name = "postmark"
@@ -57,16 +66,6 @@ class SinkProvider implements EmailProvider {
 	readonly name = "sink"
 
 	async send(message: EmailMessage & { from: string }): Promise<void> {
-		const stamp = new Date().toISOString().replace(/[:.]/g, "-")
-		const slug = message.subject
-			.toLowerCase()
-			.replace(/[^a-z0-9]+/g, "-")
-			.replace(/^-|-$/g, "")
-			.slice(0, 50)
-
-		const dir = join(process.cwd(), ".mail")
-		await mkdir(dir, { recursive: true })
-
 		const header = [
 			`To: ${message.to}`,
 			message.cc?.length ? `Cc: ${message.cc.join(", ")}` : null,
@@ -76,12 +75,41 @@ class SinkProvider implements EmailProvider {
 			.filter(Boolean)
 			.join("\n")
 
-		await Promise.all([
-			writeFile(join(dir, `${stamp}-${slug}.txt`), `${header}\n\n${message.text}\n`, "utf8"),
-			writeFile(join(dir, `${stamp}-${slug}.html`), message.html, "utf8"),
-		])
+		// Written to disk only where there is a disk to write to. A deployed
+		// build runs on a read-only filesystem, so on a host the whole message
+		// goes to the log instead — the invite and reset links in it are the
+		// only way into an account before the mailbox exists, and losing them
+		// to a failed write would be worse than a noisy log.
+		if (!writable) {
+			console.info(`[mail] not sent — no provider configured\n${header}\n\n${message.text}`)
+			return
+		}
 
-		console.info(`[mail] ${message.to} — ${message.subject}  →  .mail/${stamp}-${slug}.txt`)
+		const stamp = new Date().toISOString().replace(/[:.]/g, "-")
+		const slug = message.subject
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/^-|-$/g, "")
+			.slice(0, 50)
+
+		try {
+			const dir = join(process.cwd(), ".mail")
+			await mkdir(dir, { recursive: true })
+
+			await Promise.all([
+				writeFile(
+					join(dir, `${stamp}-${slug}.txt`),
+					`${header}\n\n${message.text}\n`,
+					"utf8",
+				),
+				writeFile(join(dir, `${stamp}-${slug}.html`), message.html, "utf8"),
+			])
+
+			console.info(`[mail] ${message.to} — ${message.subject}  →  .mail/${stamp}-${slug}.txt`)
+		} catch {
+			// A read-only or full disk must not lose the message.
+			console.info(`[mail] not sent — no provider configured\n${header}\n\n${message.text}`)
+		}
 	}
 }
 
@@ -101,7 +129,7 @@ export function resolveProvider(): EmailProvider {
 
 	if (process.env.NODE_ENV === "production") {
 		console.error(
-			`[mail] EMAIL_API_KEY is not set — mail is being written to .mail/ instead of sent. ` +
+			`[mail] EMAIL_API_KEY is not set — messages are being logged, not sent. ` +
 				`Nobody is being notified of anything.`,
 		)
 	}
