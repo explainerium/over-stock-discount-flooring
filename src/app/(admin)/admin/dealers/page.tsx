@@ -60,7 +60,9 @@ export default async function DealersPage({
 								<div className="min-w-0">
 									<p className="truncate font-medium">{dealer.companyName}</p>
 									<p className="text-muted-foreground truncate text-sm">
-										{dealer.contactName ?? dealer.contactEmail ?? "No contact on file"}
+										{dealer.contactName ??
+											dealer.contactEmail ??
+											"No contact on file"}
 									</p>
 								</div>
 								<div className="flex items-center gap-3">

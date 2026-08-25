@@ -14,7 +14,9 @@ function rounds(): number {
 	const configured = Number(process.env.AUTH_BCRYPT_ROUNDS)
 	// 12 is the floor for production. A misconfigured env var silently dropping
 	// this to 4 would be invisible and would matter.
-	return Number.isInteger(configured) && configured >= DEFAULT_ROUNDS ? configured : DEFAULT_ROUNDS
+	return Number.isInteger(configured) && configured >= DEFAULT_ROUNDS
+		? configured
+		: DEFAULT_ROUNDS
 }
 
 /**

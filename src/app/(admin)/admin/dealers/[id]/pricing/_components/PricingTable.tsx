@@ -137,7 +137,9 @@ function PricingRowForm({
 				<p className="truncate text-sm font-medium">{row.name}</p>
 				<p className="text-muted-foreground truncate font-mono text-xs">
 					{row.sku} · {row.seriesName} ·{" "}
-					{row.listPrice ? formatUnitPrice(row.listPrice, row.pricingUom) : "no list price"}
+					{row.listPrice
+						? formatUnitPrice(row.listPrice, row.pricingUom)
+						: "no list price"}
 				</p>
 			</div>
 
@@ -178,7 +180,13 @@ function PricingRowForm({
 					Save
 				</Button>
 				{(row.price || row.discountPct) && (
-					<Button type="button" size="sm" variant="ghost" onClick={clear} disabled={pending}>
+					<Button
+						type="button"
+						size="sm"
+						variant="ghost"
+						onClick={clear}
+						disabled={pending}
+					>
 						Clear
 					</Button>
 				)}

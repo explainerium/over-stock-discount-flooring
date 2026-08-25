@@ -119,7 +119,14 @@ export default async function HomePage() {
 					</p>
 
 					<div className="mt-12">
-						<SwatchGrid products={products.map((p) => ({ slug: p.slug, name: p.name, sku: p.sku, image: p.images[0] ?? null }))} />
+						<SwatchGrid
+							products={products.map((p) => ({
+								slug: p.slug,
+								name: p.name,
+								sku: p.sku,
+								image: p.images[0] ?? null,
+							}))}
+						/>
 					</div>
 
 					<div className="mt-12">
@@ -233,7 +240,9 @@ export default async function HomePage() {
 							</dd>
 						</div>
 						<div>
-							<dt className="display text-muted-foreground text-xs uppercase">Open</dt>
+							<dt className="display text-muted-foreground text-xs uppercase">
+								Open
+							</dt>
 							<dd className="mt-3 text-sm">
 								{SHOWROOM.weekdays}
 								<br />
@@ -241,7 +250,9 @@ export default async function HomePage() {
 							</dd>
 						</div>
 						<div>
-							<dt className="display text-muted-foreground text-xs uppercase">Call</dt>
+							<dt className="display text-muted-foreground text-xs uppercase">
+								Call
+							</dt>
 							<dd className="mt-3 text-sm">
 								<a href={SHOWROOM.phoneHref}>{SHOWROOM.phone}</a>
 							</dd>

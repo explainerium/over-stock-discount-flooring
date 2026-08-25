@@ -29,11 +29,18 @@ export function Breadcrumbs({ trail }: { trail: Crumb[] }) {
 									{crumb.label}
 								</Link>
 							) : (
-								<span className={last ? "text-ink" : "text-muted-foreground"} aria-current={last ? "page" : undefined}>
+								<span
+									className={last ? "text-ink" : "text-muted-foreground"}
+									aria-current={last ? "page" : undefined}
+								>
 									{crumb.label}
 								</span>
 							)}
-							{!last && <span className="text-muted-foreground" aria-hidden>/</span>}
+							{!last && (
+								<span className="text-muted-foreground" aria-hidden>
+									/
+								</span>
+							)}
 						</li>
 					)
 				})}

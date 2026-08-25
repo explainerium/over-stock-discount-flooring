@@ -1,7 +1,10 @@
 import { Badge } from "@/components/ui/badge"
 import type { StockStatus } from "@/generated/prisma/client"
 
-const LOOK: Record<StockStatus, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+const LOOK: Record<
+	StockStatus,
+	{ label: string; variant: "default" | "secondary" | "outline" | "destructive" }
+> = {
 	IN_STOCK: { label: "In stock", variant: "secondary" },
 	LOW: { label: "Low", variant: "outline" },
 	OUT: { label: "Out", variant: "destructive" },

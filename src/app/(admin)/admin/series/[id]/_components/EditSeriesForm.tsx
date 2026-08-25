@@ -3,7 +3,14 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { toast } from "sonner"
-import { FormError, ProCheckbox, ProForm, ProInput, ProSubmit, ProTextarea } from "@/components/form"
+import {
+	FormError,
+	ProCheckbox,
+	ProForm,
+	ProInput,
+	ProSubmit,
+	ProTextarea,
+} from "@/components/form"
 import {
 	updateSeriesFormSchema,
 	type UpdateSeriesFormInput,
@@ -101,8 +108,8 @@ export function EditSeriesForm({
 			<fieldset className="grid gap-4 border-t pt-5">
 				<legend className="sr-only">Freight</legend>
 				<p className="text-muted-foreground text-sm">
-					Freight — no LTL rate can be quoted without a class and an NMFC code. These
-					come from the manufacturer.
+					Freight — no LTL rate can be quoted without a class and an NMFC code. These come
+					from the manufacturer.
 				</p>
 				<div className="grid gap-4 sm:grid-cols-2">
 					<ProInput name="freightClass" label="Freight class" placeholder="70" />

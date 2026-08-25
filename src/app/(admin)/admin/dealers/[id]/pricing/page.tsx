@@ -16,11 +16,7 @@ import { PricingTable } from "./_components/PricingTable"
  * exceptions. The client has not told us which of the three he actually uses,
  * so all three are here and the ones he ignores stay empty.
  */
-export default async function DealerPricingPage({
-	params,
-}: {
-	params: Promise<{ id: string }>
-}) {
+export default async function DealerPricingPage({ params }: { params: Promise<{ id: string }> }) {
 	await requireStaff()
 	const { id } = await params
 
@@ -76,7 +72,8 @@ export default async function DealerPricingPage({
 						<span className="text-muted-foreground">Tier</span>
 						{dealer.priceTier ? (
 							<Badge variant="secondary">
-								{dealer.priceTier.name} · {dealer.priceTier.discountPct.toString()}% off
+								{dealer.priceTier.name} · {dealer.priceTier.discountPct.toString()}%
+								off
 							</Badge>
 						) : (
 							<span className="text-muted-foreground text-xs">None set</span>
@@ -101,8 +98,9 @@ export default async function DealerPricingPage({
 						{withoutListPrice > 0 && (
 							<>
 								{" "}
-								{withoutListPrice} product{withoutListPrice === 1 ? " has" : "s have"} no
-								list price yet and cannot be priced until one is set.
+								{withoutListPrice} product
+								{withoutListPrice === 1 ? " has" : "s have"} no list price yet and
+								cannot be priced until one is set.
 							</>
 						)}
 					</CardDescription>
@@ -115,7 +113,10 @@ export default async function DealerPricingPage({
 							dealer.discountPct
 								? { pct: dealer.discountPct.toString(), label: "flat rate" }
 								: dealer.priceTier
-									? { pct: dealer.priceTier.discountPct.toString(), label: "tier" }
+									? {
+											pct: dealer.priceTier.discountPct.toString(),
+											label: "tier",
+										}
 									: { pct: null, label: "flat rate" }
 						}
 					/>

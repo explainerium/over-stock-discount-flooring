@@ -78,10 +78,7 @@ export class UomError extends Error {
 	constructor(
 		message: string,
 		readonly code:
-			| "UOM_NOT_ALLOWED"
-			| "SPEC_INCOMPLETE"
-			| "QUANTITY_INVALID"
-			| "CONVERSION_UNSUPPORTED",
+			"UOM_NOT_ALLOWED" | "SPEC_INCOMPLETE" | "QUANTITY_INVALID" | "CONVERSION_UNSUPPORTED",
 	) {
 		super(message)
 		this.name = "UomError"

@@ -45,11 +45,7 @@ export interface ProductPricing {
  * different conversation from "it is the price you set on that product".
  */
 export type PriceSource =
-	| "PRODUCT_PRICE"
-	| "PRODUCT_DISCOUNT"
-	| "DEALER_DISCOUNT"
-	| "TIER_DISCOUNT"
-	| "LIST"
+	"PRODUCT_PRICE" | "PRODUCT_DISCOUNT" | "DEALER_DISCOUNT" | "TIER_DISCOUNT" | "LIST"
 
 export interface PriceResult {
 	/** What this dealer pays, per unit of `pricingUom`. Four decimal places. */

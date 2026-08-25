@@ -44,12 +44,7 @@ export function NewProductForm({
 		>
 			<FormError message={error} />
 			<ProInput name="name" label="Colour name" required autoFocus />
-			<ProInput
-				name="sku"
-				label="SKU"
-				required
-				description="How dealers will order it."
-			/>
+			<ProInput name="sku" label="SKU" required description="How dealers will order it." />
 			<ProSelect
 				name="seriesId"
 				label="Series"

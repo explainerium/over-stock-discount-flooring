@@ -59,13 +59,16 @@ export default async function DealersPage() {
 				<div className="mx-auto max-w-[1280px] px-5 pb-20 md:pb-24">
 					{dealers.length === 0 ? (
 						<div className="bg-band px-8 py-16 text-center">
-							<MapPinIcon className="text-muted-foreground mx-auto size-8" aria-hidden />
+							<MapPinIcon
+								className="text-muted-foreground mx-auto size-8"
+								aria-hidden
+							/>
 							<p className="display text-ink mt-5 text-lg uppercase">
 								No dealers listed yet
 							</p>
 							<p className="text-muted-foreground mx-auto mt-3 max-w-md text-sm">
-								We are setting up trade accounts now. In the meantime the showroom in
-								High Point is open to everyone.
+								We are setting up trade accounts now. In the meantime the showroom
+								in High Point is open to everyone.
 							</p>
 							<div className="mt-8 flex flex-wrap justify-center gap-3">
 								<Link href="/become-a-dealer" className="btn bg-ink text-paper">
@@ -85,11 +88,17 @@ export default async function DealersPage() {
 									</h2>
 									<ul className="mt-6 grid gap-x-10 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
 										{list.map((dealer) => (
-											<li key={dealer.id} className="border-rule border-b pb-3">
-												<p className="text-sm font-medium">{dealer.companyName}</p>
+											<li
+												key={dealer.id}
+												className="border-rule border-b pb-3"
+											>
+												<p className="text-sm font-medium">
+													{dealer.companyName}
+												</p>
 												{dealer.addresses[0] && (
 													<p className="text-muted-foreground text-xs">
-														{dealer.addresses[0].city}, {dealer.addresses[0].state}
+														{dealer.addresses[0].city},{" "}
+														{dealer.addresses[0].state}
 													</p>
 												)}
 											</li>

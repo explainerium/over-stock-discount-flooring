@@ -4,10 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { toast } from "sonner"
 import { FormError, ProForm, ProInput, ProSubmit } from "@/components/form"
-import {
-	dealerDiscountFormSchema,
-	type DealerDiscountFormInput,
-} from "@/lib/validation/pricing"
+import { dealerDiscountFormSchema, type DealerDiscountFormInput } from "@/lib/validation/pricing"
 import { setDealerDiscountAction } from "../_actions"
 
 export function FlatDiscountForm({

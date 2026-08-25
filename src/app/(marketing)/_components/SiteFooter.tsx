@@ -53,9 +53,7 @@ export function SiteFooter() {
 
 				{COLUMNS.map((column) => (
 					<nav key={column.heading}>
-						<h2 className="display text-xs uppercase opacity-55">
-							{column.heading}
-						</h2>
+						<h2 className="display text-xs uppercase opacity-55">{column.heading}</h2>
 						<ul className="mt-4 grid gap-2">
 							{column.links.map((link) => (
 								<li key={link.href}>

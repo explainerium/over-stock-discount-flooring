@@ -12,7 +12,10 @@ const decimalText = (label: string) =>
 	z
 		.union([
 			z.literal(""),
-			z.string().trim().regex(/^\d+(\.\d{1,4})?$/, `${label} must be a number.`),
+			z
+				.string()
+				.trim()
+				.regex(/^\d+(\.\d{1,4})?$/, `${label} must be a number.`),
 		])
 		.optional()
 

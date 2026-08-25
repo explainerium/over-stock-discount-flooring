@@ -25,8 +25,8 @@ export default async function NewProductPage() {
 				<CardHeader>
 					<CardTitle className="tracking-wide uppercase">Add Product</CardTitle>
 					<CardDescription>
-						Name, SKU, series and an image. Everything else — thickness, wear layer,
-						sq ft a box, pallet weight — is inherited from the series.
+						Name, SKU, series and an image. Everything else — thickness, wear layer, sq
+						ft a box, pallet weight — is inherited from the series.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>

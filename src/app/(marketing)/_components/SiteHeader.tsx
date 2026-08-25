@@ -90,10 +90,7 @@ export function SiteHeader() {
 							</a>
 						</nav>
 
-						<nav
-							aria-label="Main"
-							className="-mx-1 flex gap-7 overflow-x-auto px-1"
-						>
+						<nav aria-label="Main" className="-mx-1 flex gap-7 overflow-x-auto px-1">
 							{NAV.map((item) => (
 								<Link
 									key={item.href}

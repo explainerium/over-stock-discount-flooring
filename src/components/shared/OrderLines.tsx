@@ -39,18 +39,21 @@ export function OrderLines({ lines }: { lines: OrderLineView[] }) {
 	return (
 		<ul className="grid">
 			{lines.map((line) => {
-				const changed =
-					line.unitPriceAtSubmit && line.unitPriceAtSubmit !== line.unitPrice
+				const changed = line.unitPriceAtSubmit && line.unitPriceAtSubmit !== line.unitPrice
 
 				return (
-					<li key={line.id} className="flex flex-wrap justify-between gap-4 border-b py-4">
+					<li
+						key={line.id}
+						className="flex flex-wrap justify-between gap-4 border-b py-4"
+					>
 						<div className="min-w-0">
 							<p className="font-medium">{line.name}</p>
 							<p className="text-muted-foreground font-mono text-xs">
 								{line.sku} · {line.seriesName}
 							</p>
 							<p className="text-muted-foreground mt-2 text-sm">
-								{line.qtyEntered} {UNIT_LABEL[line.unitSelected] ?? line.unitSelected}
+								{line.qtyEntered}{" "}
+								{UNIT_LABEL[line.unitSelected] ?? line.unitSelected}
 								{line.boxes !== null && (
 									<>
 										{" → "}
@@ -70,8 +73,8 @@ export function OrderLines({ lines }: { lines: OrderLineView[] }) {
 							</p>
 							{changed && (
 								<p className="text-muted-foreground mt-1 text-xs">
-									was {formatUnitPrice(line.unitPriceAtSubmit!, line.pricingUom)} at
-									submission
+									was {formatUnitPrice(line.unitPriceAtSubmit!, line.pricingUom)}{" "}
+									at submission
 								</p>
 							)}
 						</div>

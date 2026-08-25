@@ -73,8 +73,8 @@ export function CoverageCalculator({ series: SERIES }: { series: CalculatorSerie
 			<div className="border-rule border-b px-7 py-5">
 				<h2 className="display text-base uppercase">Coverage calculator</h2>
 				<p className="text-muted-foreground mt-1 text-xs">
-					Enter your square footage. We round up to whole boxes, because that is how
-					it ships.
+					Enter your square footage. We round up to whole boxes, because that is how it
+					ships.
 				</p>
 			</div>
 

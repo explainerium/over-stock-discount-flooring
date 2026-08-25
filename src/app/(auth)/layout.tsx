@@ -12,10 +12,7 @@ import type { ReactNode } from "react"
 export default function AuthLayout({ children }: { children: ReactNode }) {
 	return (
 		<div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-			<Link
-				href="/"
-				className="text-lg font-semibold tracking-[0.2em] uppercase"
-			>
+			<Link href="/" className="text-lg font-semibold tracking-[0.2em] uppercase">
 				Overstock
 				<span className="text-muted-foreground block text-[0.6rem] tracking-[0.35em]">
 					Discount Flooring

@@ -24,7 +24,14 @@ export function DealerApplicationForm() {
 		<ProForm<DealerApplicationInput>
 			onSubmit={onSubmit}
 			resolver={zodResolver(dealerApplicationSchema)}
-			defaultValues={{ name: "", email: "", phone: "", company: "", message: "", website: "" }}
+			defaultValues={{
+				name: "",
+				email: "",
+				phone: "",
+				company: "",
+				message: "",
+				website: "",
+			}}
 			className="relative grid gap-4"
 		>
 			<FormError message={error} />

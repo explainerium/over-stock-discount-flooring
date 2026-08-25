@@ -81,5 +81,4 @@ export type AcceptInviteInput = z.infer<typeof acceptInviteSchema>
  * attach it to. Actions that succeed by redirecting never return at all.
  */
 export type ActionResult =
-	| { ok: true; message?: string }
-	| { ok: false; message: string; field?: string }
+	{ ok: true; message?: string } | { ok: false; message: string; field?: string }

@@ -14,12 +14,21 @@ const optionalText = (max: number) => z.string().trim().max(max).optional()
 /** A decimal as typed. Validated by shape, never parsed into a float. */
 const decimalText = (label: string) =>
 	z
-		.union([z.literal(""), z.string().trim().regex(/^\d+(\.\d+)?$/, `${label} must be a number.`)])
+		.union([
+			z.literal(""),
+			z
+				.string()
+				.trim()
+				.regex(/^\d+(\.\d+)?$/, `${label} must be a number.`),
+		])
 		.optional()
 
 const wholeNumber = (label: string) =>
 	z
-		.union([z.literal(""), z.string().trim().regex(/^\d+$/, `${label} must be a whole number.`)])
+		.union([
+			z.literal(""),
+			z.string().trim().regex(/^\d+$/, `${label} must be a whole number.`),
+		])
 		.optional()
 
 /** `""` means "not provided", which the database stores as null. */

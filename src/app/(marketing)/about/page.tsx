@@ -27,18 +27,15 @@ export const metadata: Metadata = {
 const TESTIMONIALS = [
 	{
 		initials: "AB",
-		quote:
-			"Thank you Nick, Steve, Will and Jerry for the beautiful flooring. Each of them is super responsive, professional, and you cannot beat the price for both materials and installation.",
+		quote: "Thank you Nick, Steve, Will and Jerry for the beautiful flooring. Each of them is super responsive, professional, and you cannot beat the price for both materials and installation.",
 	},
 	{
 		initials: "PT",
-		quote:
-			"Great selection, affordable prices, and they have everything you need — moisture barrier, matching transitions and quarter round. Steve and Ashley are amazing.",
+		quote: "Great selection, affordable prices, and they have everything you need — moisture barrier, matching transitions and quarter round. Steve and Ashley are amazing.",
 	},
 	{
 		initials: "BB",
-		quote:
-			"Excellent customer service and a very customer-friendly environment. Great quality with an unbelievable selection of in-stock flooring to choose from.",
+		quote: "Excellent customer service and a very customer-friendly environment. Great quality with an unbelievable selection of in-stock flooring to choose from.",
 	},
 ]
 
@@ -57,8 +54,8 @@ export default function AboutPage() {
 					<div className="grid gap-5 text-sm leading-relaxed">
 						<p>
 							We have been helping residential and commercial customers for years with
-							everyday low prices, flooring consultations and professional installation
-							referrals.
+							everyday low prices, flooring consultations and professional
+							installation referrals.
 						</p>
 						<p>
 							We partner directly with the manufacturer and serve as a factory direct
@@ -66,8 +63,9 @@ export default function AboutPage() {
 							wholesale prices — which is the whole reason the business exists.
 						</p>
 						<p>
-							We are proud to carry the area&rsquo;s most extensive range of made-in-the-USA
-							rigid core luxury vinyl flooring, in stock and available. Come and see it.
+							We are proud to carry the area&rsquo;s most extensive range of
+							made-in-the-USA rigid core luxury vinyl flooring, in stock and
+							available. Come and see it.
 						</p>
 					</div>
 

@@ -48,12 +48,17 @@ export default async function OrdersPage() {
 							<div>
 								<p className="font-medium">Order #{order.orderNumber}</p>
 								<p className="text-muted-foreground text-xs">
-									{order._count.items} {order._count.items === 1 ? "line" : "lines"} ·{" "}
-									{(order.submittedAt ?? order.createdAt).toLocaleDateString("en-US")}
+									{order._count.items}{" "}
+									{order._count.items === 1 ? "line" : "lines"} ·{" "}
+									{(order.submittedAt ?? order.createdAt).toLocaleDateString(
+										"en-US",
+									)}
 								</p>
 							</div>
 							<div className="flex items-center gap-4">
-								<span className="font-medium">{formatMoney(order.total.toString())}</span>
+								<span className="font-medium">
+									{formatMoney(order.total.toString())}
+								</span>
 								<OrderStatusBadge status={order.status} />
 							</div>
 						</Link>

@@ -39,7 +39,14 @@ export function ForgotPasswordForm() {
 			className="grid gap-4"
 		>
 			<FormError message={error} />
-			<ProInput name="email" label="Email" type="email" autoComplete="username" required autoFocus />
+			<ProInput
+				name="email"
+				label="Email"
+				type="email"
+				autoComplete="username"
+				required
+				autoFocus
+			/>
 			<ProSubmit fullWidth>Send Reset Link</ProSubmit>
 		</ProForm>
 	)

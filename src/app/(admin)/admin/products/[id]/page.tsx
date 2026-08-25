@@ -7,11 +7,7 @@ import { requireStaff } from "@/server/auth/guards"
 import { getProduct, listSeriesOptions } from "@/server/repositories/catalog"
 import { EditProductForm } from "./_components/EditProductForm"
 
-export default async function EditProductPage({
-	params,
-}: {
-	params: Promise<{ id: string }>
-}) {
+export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
 	await requireStaff()
 	const { id } = await params
 
@@ -45,7 +41,8 @@ export default async function EditProductPage({
 						<CardTitle>{product.name}</CardTitle>
 						<p className="text-muted-foreground font-mono text-xs">
 							{product.sku} · {product.series.name}
-							{product.series.sqFtPerBox && ` · ${product.series.sqFtPerBox} sq ft/box`}
+							{product.series.sqFtPerBox &&
+								` · ${product.series.sqFtPerBox} sq ft/box`}
 						</p>
 					</div>
 				</CardHeader>

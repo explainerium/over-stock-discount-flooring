@@ -45,7 +45,13 @@ export function InviteLinkPanel({ email, link }: { email: string; link: string }
 				<code className="bg-muted block overflow-x-auto rounded p-2 text-xs break-all">
 					{link}
 				</code>
-				<Button type="button" variant="outline" size="sm" onClick={copy} className="justify-self-start">
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={copy}
+					className="justify-self-start"
+				>
 					{copied ? <CheckIcon aria-hidden /> : <CopyIcon aria-hidden />}
 					{copied ? "Copied" : "Copy link"}
 				</Button>

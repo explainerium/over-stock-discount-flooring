@@ -46,7 +46,9 @@ describe("password hashing", () => {
 	})
 
 	it("flags hashes made with too low a work factor", async () => {
-		expect(needsRehash("$2b$04$C6UzMDM.H6dfI/f/IKcEe.HqLkQhOWQ6RQ0.mQVYUCUKPmpsvVGZm")).toBe(true)
+		expect(needsRehash("$2b$04$C6UzMDM.H6dfI/f/IKcEe.HqLkQhOWQ6RQ0.mQVYUCUKPmpsvVGZm")).toBe(
+			true,
+		)
 		expect(needsRehash(await hashPassword("x"))).toBe(false)
 	})
 })
@@ -85,7 +87,9 @@ describe("expiry", () => {
 	})
 
 	it("computes expiry from a given instant", () => {
-		expect(expiresAt(TOKEN_TTL.passwordReset, now).toISOString()).toBe("2026-08-22T13:00:00.000Z")
+		expect(expiresAt(TOKEN_TTL.passwordReset, now).toISOString()).toBe(
+			"2026-08-22T13:00:00.000Z",
+		)
 	})
 
 	it("treats the exact expiry moment as expired", () => {

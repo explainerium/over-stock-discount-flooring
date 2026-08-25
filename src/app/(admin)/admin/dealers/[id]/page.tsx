@@ -1,5 +1,4 @@
 import { ArrowLeftIcon } from "lucide-react"
-import { formatTerms } from "@/lib/format/terms"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +9,7 @@ import { listAllAddresses } from "@/server/repositories/addresses"
 import { getDealer } from "@/server/repositories/dealers"
 import { DealerStatusBadge } from "../_components/DealerStatusBadge"
 import { DealerAddresses } from "./_components/DealerAddresses"
+import { EditDealerForm } from "./_components/EditDealerForm"
 import { DealerTermsForm } from "./_components/DealerTermsForm"
 import { DealerStatusActions } from "./_components/DealerStatusActions"
 import { InviteUserForm } from "./_components/InviteUserForm"
@@ -61,25 +61,21 @@ export default async function DealerDetailPage({ params }: { params: Promise<{ i
 			<Card>
 				<CardHeader>
 					<CardTitle>Contact</CardTitle>
+					<CardDescription>
+						Who to ring, and what to call them. Payment and freight are below.
+					</CardDescription>
 				</CardHeader>
-				<CardContent className="text-sm">
-					<dl className="grid gap-y-2 sm:grid-cols-[10rem_1fr]">
-						<dt className="text-muted-foreground">Contact name</dt>
-						<dd>{dealer.contactName ?? "—"}</dd>
-						<dt className="text-muted-foreground">Email</dt>
-						<dd>{dealer.contactEmail ?? "—"}</dd>
-						<dt className="text-muted-foreground">Phone</dt>
-						<dd>{dealer.contactPhone ?? "—"}</dd>
-						<dt className="text-muted-foreground">Payment terms</dt>
-						<dd>{formatTerms(dealer.paymentTerms)}</dd>
-						<dt className="text-muted-foreground">Freight</dt>
-						<dd>{dealer.freightMode}</dd>
-					</dl>
-					{dealer.notes && (
-						<p className="text-muted-foreground mt-4 border-t pt-4 whitespace-pre-wrap">
-							{dealer.notes}
-						</p>
-					)}
+				<CardContent>
+					<EditDealerForm
+						dealer={{
+							id: dealer.id,
+							companyName: dealer.companyName,
+							contactName: dealer.contactName ?? "",
+							contactEmail: dealer.contactEmail ?? "",
+							contactPhone: dealer.contactPhone ?? "",
+							notes: dealer.notes ?? "",
+						}}
+					/>
 				</CardContent>
 			</Card>
 

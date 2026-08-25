@@ -51,7 +51,9 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle className="text-xl tracking-wide uppercase">Set Up Your Account</CardTitle>
+				<CardTitle className="text-xl tracking-wide uppercase">
+					Set Up Your Account
+				</CardTitle>
 				<CardDescription>
 					{invite.dealer
 						? `Creating an account for ${invite.dealer.companyName}.`
