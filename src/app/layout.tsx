@@ -34,6 +34,22 @@ export const metadata: Metadata = {
 	},
 	description:
 		"Factory-direct rigid core luxury vinyl plank, stocked by the pallet in High Point, North Carolina. Open to the public and to the trade.",
+	/**
+	 * Set here so every page inherits it. Only the parts that are the same
+	 * everywhere — the site name, the type, the locale; a route that wants its
+	 * own title or image overrides those and the rest still carries.
+	 *
+	 * No `images` key: the `opengraph-image` file beside this one is picked up
+	 * by the file convention, and naming it here as well would put two og:image
+	 * tags on every page.
+	 */
+	openGraph: {
+		type: "website",
+		siteName: "Overstock Discount Flooring",
+		locale: "en_US",
+		url: "/",
+	},
+	twitter: { card: "summary_large_image" },
 }
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

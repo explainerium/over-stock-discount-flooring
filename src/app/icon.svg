@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Overstock Discount Flooring">
+	<!--
+		The header mark, inverted for the size it has to survive at.
+
+		On the page the mark is ink letters inside a hairline ink box on white.
+		At 16px that box is a smudge and the letters inside it are two pixels
+		tall, so the tab would show a grey square. Filling the square and cutting
+		the letters out of it keeps the same shape and the same three letters
+		while spending every pixel on contrast.
+	-->
+	<rect width="32" height="32" fill="#231f20" />
+	<text
+		x="16"
+		y="21.5"
+		fill="#ffffff"
+		font-family="Poppins, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+		font-size="12"
+		font-weight="700"
+		letter-spacing="0.2"
+		text-anchor="middle"
+	>ODF</text>
+</svg>

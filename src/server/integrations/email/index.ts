@@ -7,6 +7,7 @@ export {
 	orderRejectedEmail,
 	orderShippedEmail,
 	orderSubmittedEmail,
+	resaleCertsExpiringEmail,
 	passwordResetEmail,
 	type OrderSummary,
 } from "./templates"

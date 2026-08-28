@@ -54,6 +54,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
 		)
 	}
 
-	console.info(`[cron] ${result.job}: removed ${result.removed}`)
+	console.info(`[cron] ${result.job}: ${result.count}`)
 	return NextResponse.json(result)
 }

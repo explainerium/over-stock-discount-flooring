@@ -316,6 +316,66 @@ const LEAD_SOURCE: Record<string, string> = {
 	DEALER_APPLICATION: "Dealer application",
 }
 
+/**
+ * To the owner, weekly, and only when there is something to say.
+ *
+ * A tax-exempt dealer whose resale certificate has lapsed is not tax-exempt.
+ * The expiry has been a column since the first migration with nothing acting on
+ * it, which meant a date could pass unnoticed and every invoice after it would
+ * be wrong in a way that is expensive to unwind months later.
+ *
+ * Lapsed ones are listed first because they are the ones already costing
+ * something.
+ */
+export function resaleCertsExpiringEmail(data: {
+	dealers: { companyName: string; expiresOn: string; daysLeft: number }[]
+}): RenderedEmail {
+	const link = siteUrl("/admin/dealers")
+
+	const describe = (dealer: { expiresOn: string; daysLeft: number }) =>
+		dealer.daysLeft < 0
+			? `expired ${dealer.expiresOn}`
+			: dealer.daysLeft === 0
+				? `expires today`
+				: `expires ${dealer.expiresOn}, in ${period(dealer.daysLeft, "day")}`
+
+	const lapsed = data.dealers.filter((dealer) => dealer.daysLeft < 0).length
+	const lead =
+		lapsed > 0
+			? `${period(lapsed, "resale certificate")} on file ${lapsed === 1 ? "has" : "have"} expired. Until ${lapsed === 1 ? "it is" : "they are"} replaced, those accounts should be charged sales tax.`
+			: `Resale certificates coming up for renewal. Nothing is wrong yet.`
+
+	return {
+		subject:
+			lapsed > 0
+				? `${period(lapsed, "resale certificate")} expired`
+				: `Resale certificates due for renewal`,
+		text: [
+			lead,
+			``,
+			...data.dealers.map((dealer) => `${dealer.companyName} — ${describe(dealer)}`),
+			``,
+			link,
+			``,
+			SIGN_OFF,
+		].join("\n"),
+		html: wrap(
+			h(lapsed > 0 ? "Expired resale certificates" : "Resale certificates due") +
+				p(lead) +
+				facts(
+					data.dealers.map(
+						(dealer) =>
+							[escape(dealer.companyName), describe(dealer)] as [string, string],
+					),
+				),
+			{
+				action: { label: "Open dealers", href: link },
+				footnote: "Sent weekly, and only when a certificate is inside 30 days.",
+			},
+		),
+	}
+}
+
 /** To the owner. A lead nobody is told about is a lead that goes cold. */
 export function newLeadEmail(data: {
 	source: string

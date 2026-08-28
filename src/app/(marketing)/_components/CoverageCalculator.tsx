@@ -33,9 +33,9 @@ export interface CalculatorSeries {
 
 export function CoverageCalculator({ series: SERIES }: { series: CalculatorSeries[] }) {
 	const [input, setInput] = useState("1200")
-	// Defaults to the last series, which is the top of the ladder — most visitors
-	// are looking at Gold. Falls back to an empty string so the hooks below run
-	// unconditionally even when nothing has been published yet.
+	// Defaults to the last in sort order, which is the top of the range whatever
+	// the client ends up calling it. Falls back to an empty string so the hooks
+	// below run unconditionally even when nothing has been published yet.
 	const [seriesSlug, setSeriesSlug] = useState(SERIES.at(-1)?.slug ?? "")
 	const [waste, setWaste] = useState(0)
 
@@ -94,7 +94,16 @@ export function CoverageCalculator({ series: SERIES }: { series: CalculatorSerie
 					/>
 				</label>
 
-				<div className="grid grid-cols-3 gap-px" role="group" aria-label="Series">
+				{/* Three across was right when Bronze, Silver and Gold were the whole
+				    catalogue. The client is bringing more lines, and a fixed three
+				    would either squash them or leave a ragged last row — so the
+				    track count comes from how many fit at a readable width, in this
+				    box and in the wider one on the resources page alike. */}
+				<div
+					className="grid gap-px [grid-template-columns:repeat(auto-fit,minmax(6.5rem,1fr))]"
+					role="group"
+					aria-label="Series"
+				>
 					{SERIES.map((option) => {
 						const active = option.slug === series.slug
 						return (

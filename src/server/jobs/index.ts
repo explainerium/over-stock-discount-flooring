@@ -1,22 +1,28 @@
 import "server-only"
 import { db } from "@/server/db/client"
 import { pruneExpiredSessions } from "@/server/auth/session"
+import { notifyResaleCertsExpiring } from "@/server/notifications/dealers"
 
 /**
  * Scheduled work.
  *
- * Kept as a registry rather than one route per job, so adding the resale
- * certificate reminder or the QuickBooks health check later is a line here and
- * a line in the schedule, not another endpoint to secure.
+ * Kept as a registry rather than one route per job, so adding the QuickBooks
+ * health check later is a line here and a line in the schedule, not another
+ * endpoint to secure. The resale certificate reminder below arrived that way.
  *
- * Every job returns a count and nothing else. A cron run that says "removed 0"
- * is proof it ran; one that returns nothing is indistinguishable from one that
- * never fired.
+ * Every job returns a count and nothing else. A cron run that says "0" is proof
+ * it ran; one that returns nothing is indistinguishable from one that never
+ * fired.
  */
 
 export interface JobResult {
 	job: string
-	removed: number
+	/**
+	 * What the run touched. Rows removed for a sweep, dealers reported for a
+	 * reminder — deliberately not named `removed`, now that not every job
+	 * deletes anything.
+	 */
+	count: number
 }
 
 /**
@@ -47,14 +53,70 @@ async function pruneExpiredCredentials(): Promise<number> {
 	return sessions + invites.count + resets.count
 }
 
+/**
+ * How far ahead a lapsing resale certificate is worth mentioning.
+ *
+ * Thirty days is roughly how long it takes a dealer to find the form, get it
+ * signed and send it back, which is the whole point of the notice.
+ */
+const RESALE_NOTICE_DAYS = 30
+
+/**
+ * Resale certificates about to lapse, and the ones that already have.
+ *
+ * A tax-exempt dealer whose certificate has expired is not tax-exempt. The
+ * expiry has been a column since the first migration with nothing acting on it,
+ * so a date could pass unnoticed and every invoice after it would be wrong in a
+ * way that is expensive to unwind months later.
+ *
+ * Stateless on purpose. Nothing records who has already been told, because the
+ * message is a list of what is true this Monday rather than a per-dealer alert
+ * — so a missed run costs a week of notice instead of a reminder that never
+ * arrives, and there is no table to keep in step.
+ *
+ * Suspended accounts are left out. They cannot order, so their paperwork is not
+ * urgent, and listing them would train the owner to skim the message.
+ */
+async function remindExpiringResaleCerts(): Promise<number> {
+	const now = new Date()
+	const horizon = new Date(now.getTime() + RESALE_NOTICE_DAYS * 24 * 60 * 60 * 1000)
+
+	const dealers = await db.dealer.findMany({
+		where: {
+			taxExempt: true,
+			status: { not: "SUSPENDED" },
+			resaleCertExpiresAt: { not: null, lte: horizon },
+		},
+		select: { companyName: true, resaleCertExpiresAt: true },
+		// Expired first, then whichever lapses soonest — the order the owner
+		// would deal with them in.
+		orderBy: { resaleCertExpiresAt: "asc" },
+	})
+
+	await notifyResaleCertsExpiring(
+		dealers.map((dealer) => ({
+			companyName: dealer.companyName,
+			expiresOn: dealer.resaleCertExpiresAt!.toLocaleDateString("en-US"),
+			// Floored, so a certificate expiring later today reads as 0 rather
+			// than as tomorrow.
+			daysLeft: Math.floor(
+				(dealer.resaleCertExpiresAt!.getTime() - now.getTime()) / (24 * 60 * 60 * 1000),
+			),
+		})),
+	)
+
+	return dealers.length
+}
+
 /** Everything the scheduler may ask for, by name. */
 export const JOBS: Record<string, () => Promise<number>> = {
 	"prune-credentials": pruneExpiredCredentials,
+	"resale-cert-reminders": remindExpiringResaleCerts,
 }
 
 export async function runJob(name: string): Promise<JobResult | null> {
 	const job = JOBS[name]
 	if (!job) return null
 
-	return { job: name, removed: await job() }
+	return { job: name, count: await job() }
 }

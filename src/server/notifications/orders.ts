@@ -12,6 +12,7 @@ import {
 	sendEmail,
 	type OrderSummary,
 } from "@/server/integrations/email"
+import { alertOwner, newLeadSms, newOrderSms } from "@/server/integrations/sms"
 import { db } from "@/server/db/client"
 import { dealerRecipients, orderSubmitter, staffRecipients } from "@/server/repositories/recipients"
 
@@ -73,13 +74,23 @@ function report(what: string, error: unknown) {
 export async function notifyOrderSubmitted(orderId: string): Promise<void> {
 	try {
 		const [order, staff] = await Promise.all([loadOrder(orderId), staffRecipients()])
-		if (!order || !staff.to) return
+		if (!order) return
+
+		const summary = summarise(order)
+
+		// Sent whether or not there is a staff address on file. The two channels
+		// answer different problems — the mail is the record, the text is the one
+		// that reaches him on the warehouse floor — and a missing mailbox must not
+		// take the alert down with it.
+		await alertOwner(newOrderSms(summary))
+
+		if (!staff.to) return
 
 		const submittedBy = (await orderSubmitter(orderId)) ?? order.dealer.companyName
 
 		await sendEmail(
 			orderSubmittedEmail({
-				order: summarise(order),
+				order: summary,
 				submittedBy,
 				dealerNotes: order.dealerNotes,
 				// Zero means nothing rated it, not that delivery is free.
@@ -178,8 +189,10 @@ export async function notifyNewLead(lead: {
 }): Promise<void> {
 	try {
 		const staff = await staffRecipients()
-		if (!staff.to) return
 
+		// The flood guard now covers the text as well as the mail, and it matters
+		// more there: a form under attack fills an inbox, which is a nuisance, and
+		// empties a phone battery, which is not.
 		const recent = await db.lead.count({
 			where: { createdAt: { gte: new Date(Date.now() - LEAD_MAIL_WINDOW_MS) } },
 		})
@@ -190,6 +203,10 @@ export async function notifyNewLead(lead: {
 			)
 			return
 		}
+
+		await alertOwner(newLeadSms(lead))
+
+		if (!staff.to) return
 
 		await sendEmail(newLeadEmail(lead), {
 			to: staff.to,
