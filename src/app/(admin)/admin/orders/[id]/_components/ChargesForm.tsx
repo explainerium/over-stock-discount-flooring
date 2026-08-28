@@ -7,12 +7,22 @@ import { FormError, ProForm, ProInput, ProSubmit, ProTextarea } from "@/componen
 import { orderChargesFormSchema, type OrderChargesFormInput } from "@/lib/validation/orders"
 import { setOrderChargesAction } from "../../_actions"
 
+/** Where the figure in the box came from, said plainly. */
+const SOURCE_NOTE: Record<string, string> = {
+	ZONE: "Rated from the zone table.",
+	FLAT: "This dealer's flat rate.",
+	MANUAL: "You set this figure by hand.",
+	TQL: "Quoted live by the carrier.",
+}
+
 /**
  * Freight, tax and the owner's own note.
  *
- * Freight is typed in by hand. A rated engine behind a carrier API is in the
- * plan, but he quotes these himself today, and an order that cannot be approved
- * until an integration exists is worse than a text field.
+ * Freight arrives rated where the zone table covers the destination, and blank
+ * where it does not. Either way it stays a field he can overwrite: he knows
+ * what the carrier actually quoted him, and a number he cannot argue with is a
+ * screen he stops trusting. Saving here marks the figure MANUAL, and a
+ * resubmission will not rate over the top of it.
  *
  * The internal note is on the same form because it is written at the same
  * moment — "spoke to Mike, he'll take the Silver W" belongs with the freight
@@ -21,6 +31,7 @@ import { setOrderChargesAction } from "../../_actions"
 export function ChargesForm({
 	orderId,
 	freight,
+	freightSource,
 	tax,
 	internalNotes,
 	weightLb,
@@ -28,6 +39,7 @@ export function ChargesForm({
 }: {
 	orderId: string
 	freight: string
+	freightSource: string | null
 	tax: string
 	internalNotes: string
 	weightLb: string | null
@@ -60,6 +72,10 @@ export function ChargesForm({
 						{palletCount && `${palletCount} pallet${palletCount === 1 ? "" : "s"}`}
 					</span>
 				</p>
+			)}
+
+			{freightSource && SOURCE_NOTE[freightSource] && (
+				<p className="text-muted-foreground text-sm">{SOURCE_NOTE[freightSource]}</p>
 			)}
 
 			<div className="grid gap-4 sm:grid-cols-2">

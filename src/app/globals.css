@@ -143,6 +143,28 @@
 	html {
 		@apply font-body;
 	}
+	/* Put this on anything a fragment link points at.
+
+	   The marketing header is sticky, so the browser scrolls an anchor to the
+	   top of the viewport and straight behind 85–160px of it. SiteHeader
+	   measures itself into --header-h; the fallback is the tallest the header
+	   gets — a phone, with the announcement bar the server always renders — and
+	   covers the one frame before it hydrates.
+
+	   Two tidier-looking fixes were tried and measured first. `:target` never
+	   matches: the router moves the fragment with pushState, which by spec does
+	   not update the document's target element, so the rule sat there doing
+	   nothing while the section landed under the header anyway. And
+	   `scroll-padding-top` on the document reaches every scrollIntoView on the
+	   site, including ScrollableNav's — that tab lives *inside* the admin and
+	   portal sticky headers, so the padding puts it above the region the scroll
+	   aims at and the page moves to reach something that cannot move. Measured
+	   at 160px of padding: an admin navigation scrolled the page 105px on its
+	   own, which is the exact thing that call's `block: "nearest"` is there to
+	   stop. A margin on the target element is the version with no reach. */
+	.anchor-target {
+		scroll-margin-top: var(--header-h, 10rem);
+	}
 	/* Tailwind v4's preflight sets buttons to `cursor: default` to match the
      browser's own default. That is technically faithful and practically wrong
      here — every one of these is something a person presses, and the pointer is

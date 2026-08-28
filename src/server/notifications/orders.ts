@@ -82,6 +82,8 @@ export async function notifyOrderSubmitted(orderId: string): Promise<void> {
 				order: summarise(order),
 				submittedBy,
 				dealerNotes: order.dealerNotes,
+				// Zero means nothing rated it, not that delivery is free.
+				freight: Number(order.freight) > 0 ? formatMoney(order.freight.toString()) : null,
 			}),
 			{ to: staff.to, cc: staff.cc },
 		)

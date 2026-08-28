@@ -11,6 +11,7 @@ import {
 import { isQuotable } from "@/server/domain/addresses"
 import { lineTotal, resolvePrice, sumLines } from "@/server/domain/pricing"
 import { resolve as resolveUom, type Uom } from "@/server/domain/uom"
+import { stampFreight } from "./freight"
 
 /**
  * Orders, starting with the cart.
@@ -618,6 +619,12 @@ export async function submitOrder(params: {
 		},
 	})
 
+	// Rated after the transition rather than before it, so the quote and the
+	// frozen destination are the same address by construction. A figure the
+	// owner typed by hand survives this — see stampFreight.
+	await stampFreight(order.id)
+	await recalculate(order.id)
+
 	return order.id
 }
 
@@ -627,6 +634,7 @@ const orderDetailSelect = {
 	status: true,
 	subtotal: true,
 	freight: true,
+	freightSource: true,
 	tax: true,
 	total: true,
 	totalWeightLb: true,

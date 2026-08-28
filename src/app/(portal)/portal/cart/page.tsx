@@ -1,3 +1,4 @@
+import Decimal from "decimal.js"
 import { AlertTriangleIcon, ShoppingCartIcon } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -7,6 +8,7 @@ import { formatMoney } from "@/lib/format/money"
 import { stockWarning } from "@/lib/format/stock"
 import { requireDealerScope } from "@/server/auth/guards"
 import { listAddresses } from "@/server/repositories/addresses"
+import { quoteForOrder } from "@/server/repositories/freight"
 import { getDraft } from "@/server/repositories/orders"
 import { CartLine } from "./_components/CartLine"
 import { ShipTo } from "./_components/ShipTo"
@@ -56,6 +58,14 @@ export default async function CartPage() {
 		)
 	}
 
+	// Rated here as well as at submission, because a number in front of the
+	// dealer while they are still building the order is the point of doing it at
+	// all — the alternative is that they find out what delivery costs after the
+	// owner has already approved the order.
+	const freight = await quoteForOrder(draft!.id)
+	const subtotal = new Decimal(draft!.subtotal.toString())
+	const total = freight.quoted ? subtotal.plus(freight.amount) : subtotal
+
 	return (
 		<div className="grid max-w-4xl gap-6">
 			<div>
@@ -99,12 +109,32 @@ export default async function CartPage() {
 						</span>
 					</div>
 
-					{/* Freight is quoted at approval in Phase 1, so the order says so
-					    rather than showing a zero that looks like free delivery. */}
+					{/* An estimate, and labelled as one. Where the zone table cannot rate
+					    the shipment the row says so rather than showing a zero that reads
+					    as free delivery. The reason the engine gives is written for the
+					    owner and stays in admin — what a dealer needs to know is that a
+					    person will price it. */}
 					<div className="flex justify-between text-sm">
-						<span className="text-muted-foreground">Freight</span>
-						<span className="text-muted-foreground">Quoted when we approve</span>
+						<span className="text-muted-foreground">
+							Freight{freight.quoted ? " estimate" : ""}
+						</span>
+						{freight.quoted ? (
+							<span className="font-medium">
+								{formatMoney(freight.amount.toString())}
+							</span>
+						) : (
+							<span className="text-muted-foreground">Quoted when we approve</span>
+						)}
 					</div>
+
+					{freight.quoted && freight.accessorials.length > 0 && (
+						<div className="text-muted-foreground flex justify-between text-xs">
+							<span>Includes</span>
+							<span>
+								{freight.accessorials.map((charge) => charge.label).join(" · ")}
+							</span>
+						</div>
+					)}
 
 					{draft!.totalWeightLb && (
 						<div className="text-muted-foreground flex justify-between text-xs">
@@ -121,7 +151,7 @@ export default async function CartPage() {
 					<div className="mt-2 flex justify-between border-t pt-3">
 						<span className="font-medium">Total so far</span>
 						<span className="text-lg font-semibold">
-							{formatMoney(draft!.subtotal.toString())}
+							{formatMoney(total.toString())}
 						</span>
 					</div>
 				</CardContent>

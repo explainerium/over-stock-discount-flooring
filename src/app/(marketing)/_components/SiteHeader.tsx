@@ -208,13 +208,43 @@ function MobileMenu() {
 	)
 }
 
+/**
+ * Publishes the header's own height so the document can scroll clear of it.
+ *
+ * This header is `sticky top-0`, which means an in-page anchor — the footer's
+ * link to the coverage calculator is the first one, and it will not be the
+ * last — scrolls its target to the top of the viewport and straight underneath
+ * here. A scroll margin on the target is the cure, but no constant is the
+ * right value. Measured: 85px on a desktop once the announcement is
+ * dismissed, 124px with it, and half again as much on a phone, where that one
+ * sentence wraps to the 77px the store above already measures it at. So the
+ * header runs from 85px to about 10rem, and moves on state, on resize, and
+ * again when the display font finishes loading.
+ *
+ * A ResizeObserver catches all three. React 19 takes a cleanup function back
+ * from a ref callback, so this needs no effect and no state. `.anchor-target`
+ * in globals.css is what reads the variable, and carries the note on why the
+ * margin sits on the target rather than as padding on the document.
+ */
+function measureHeader(node: HTMLElement | null) {
+	if (!node) return
+	const observer = new ResizeObserver(() => {
+		document.documentElement.style.setProperty("--header-h", `${node.offsetHeight}px`)
+	})
+	observer.observe(node)
+	return () => {
+		observer.disconnect()
+		document.documentElement.style.removeProperty("--header-h")
+	}
+}
+
 export function SiteHeader() {
 	// Server snapshot is "not dismissed", so the bar is in the HTML and a
 	// first-time visitor gets no shift when it hydrates.
 	const dismissed = useSyncExternalStore(subscribeDismissed, readDismissed, () => false)
 
 	return (
-		<header className="bg-paper sticky top-0 z-40">
+		<header ref={measureHeader} className="bg-paper sticky top-0 z-40">
 			{!dismissed && (
 				<div className="relative bg-black py-2.5 pr-14 pl-5 text-center sm:px-14">
 					<p className="text-[0.8rem] text-white">

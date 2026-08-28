@@ -251,6 +251,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
 						<ChargesForm
 							orderId={order.id}
 							freight={order.freight.toString()}
+							freightSource={order.freightSource}
 							tax={order.tax.toString()}
 							internalNotes={order.internalNotes ?? ""}
 							weightLb={order.totalWeightLb?.toString() ?? null}

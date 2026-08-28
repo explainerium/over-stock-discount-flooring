@@ -13,7 +13,7 @@ const COLUMNS = [
 		heading: "Resources",
 		links: [
 			{ href: "/rigid-core", label: "What is rigid core?" },
-			{ href: "/resources/coverage-calculator", label: "Coverage calculator" },
+			{ href: "/resources#coverage-calculator", label: "Coverage calculator" },
 			{ href: "/resources", label: "Warranties & guides" },
 		],
 	},
@@ -84,21 +84,17 @@ export async function SiteFooter() {
 				))}
 			</div>
 
+			{/* Privacy and Terms used to sit on the right of this bar, pointing at
+			    /privacy and /terms. Neither page has ever existed, so both 404ed
+			    from the footer of every page on the site. The old site has no
+			    legal pages either — its whole route map is ten pages and none of
+			    them is one, and every candidate URL on it 404s — so there is no
+			    copy to recover. Left out until the client supplies the text; the
+			    links go back the moment there is something behind them. */}
 			<div className="border-white/10 mx-auto flex max-w-[1280px] flex-wrap justify-between gap-3 border-t px-5 py-6">
 				<p className="display text-[0.65rem] opacity-50">
 					© {new Date().getFullYear()} Overstock Discount Flooring
 				</p>
-				{/* 10px type is a 12px-tall target — the smallest on the site.
-				    The padding is pulled back out with -my-2 so the bar keeps its
-				    height. */}
-				<div className="display -my-2 flex gap-5 text-[0.65rem] opacity-50">
-					<Link href="/privacy" className="py-2">
-						Privacy
-					</Link>
-					<Link href="/terms" className="py-2">
-						Terms
-					</Link>
-				</div>
 			</div>
 		</footer>
 	)

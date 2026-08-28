@@ -127,8 +127,17 @@ export function orderSubmittedEmail(data: {
 	order: OrderSummary
 	submittedBy: string
 	dealerNotes?: string | null
+	/** The rated figure, where the zone table covered the destination. */
+	freight?: string | null
 }): RenderedEmail {
 	const link = siteUrl(`/admin/orders/${data.order.orderId}`)
+
+	// Said either way, because the absence of a freight line reads as an
+	// oversight rather than as a fact about the order. A rated one still names
+	// the figure, so he can see it is wrong without opening anything.
+	const freightNote = data.freight
+		? `Freight is rated at ${data.freight}. Change it on the order if the carrier says otherwise.`
+		: `Freight has not been quoted yet.`
 
 	return {
 		subject: `New order #${data.order.orderNumber} — ${data.order.companyName}`,
@@ -141,7 +150,7 @@ export function orderSubmittedEmail(data: {
 			`Approve, change or decline it here:`,
 			link,
 			``,
-			`Freight has not been quoted yet.`,
+			freightNote,
 		].join("\n"),
 		html: wrap(
 			h(`${escape(data.order.companyName)} sent an order`) +
@@ -150,7 +159,7 @@ export function orderSubmittedEmail(data: {
 				(data.dealerNotes ? quote(data.dealerNotes) : ""),
 			{
 				action: { label: "Open the order", href: link },
-				footnote: "Freight has not been quoted yet.",
+				footnote: freightNote,
 			},
 		),
 	}

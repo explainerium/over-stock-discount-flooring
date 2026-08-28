@@ -51,7 +51,7 @@ export default async function ResourcesPage() {
 				intro="Everything you need before and after the floor arrives."
 			/>
 
-			<section className="bg-band">
+			<section id="coverage-calculator" className="anchor-target bg-band">
 				<div className="mx-auto grid max-w-[1280px] gap-12 px-5 py-20 lg:grid-cols-[1fr_24rem] lg:items-center">
 					<div>
 						<h2 className="display text-ink text-2xl uppercase sm:text-3xl">

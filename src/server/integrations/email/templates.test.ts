@@ -123,4 +123,17 @@ describe("what the owner is told about an order", () => {
 			"Freight has not been quoted",
 		)
 	})
+
+	it("names the rated figure when the zone table found one", () => {
+		// He is reading this on a phone in the warehouse. The number being in
+		// the message is what lets him notice it is wrong without opening it.
+		const mail = orderSubmittedEmail({
+			order: ORDER,
+			submittedBy: "Dana",
+			freight: "$310.00",
+		})
+
+		expect(mail.text).toContain("rated at $310.00")
+		expect(mail.text).not.toContain("has not been quoted")
+	})
 })

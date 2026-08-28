@@ -20,6 +20,7 @@ const LINKS = [
 	{ href: "/admin/products", label: "Products" },
 	{ href: "/admin/series", label: "Series" },
 	{ href: "/admin/leads", label: "Leads" },
+	{ href: "/admin/freight", label: "Freight" },
 	{ href: "/admin/settings", label: "Settings" },
 ]
 
