@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { isOverdue, waitingFor } from "./elapsed"
+import { agoLabel, isOverdue, waitingFor } from "./elapsed"
 
 const NOW = new Date("2026-08-24T12:00:00Z")
 const ago = (ms: number) => new Date(NOW.getTime() - ms)
@@ -39,5 +39,16 @@ describe("overdue", () => {
 		// rings up. That is the moment worth marking.
 		expect(isOverdue(ago(2 * DAY - MIN), NOW)).toBe(false)
 		expect(isOverdue(ago(2 * DAY + MIN), NOW)).toBe(true)
+	})
+})
+
+describe("phrasing a duration as a point in the past", () => {
+	it("appends ago to a measured duration", () => {
+		expect(agoLabel(ago(3 * DAY), NOW)).toBe("3 days ago")
+		expect(agoLabel(ago(HOUR), NOW)).toBe("1 hour ago")
+	})
+
+	it("leaves 'just now' alone, which is the whole reason it exists", () => {
+		expect(agoLabel(NOW, NOW)).toBe("just now")
 	})
 })

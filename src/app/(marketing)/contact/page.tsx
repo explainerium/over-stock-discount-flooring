@@ -100,7 +100,9 @@ export default function ContactPage() {
 										</dt>
 										<dd className="mt-1.5 text-sm">
 											{href ? (
-												<a href={href}>{lines[0]}</a>
+												<a href={href} className="inline-block py-1">
+													{lines[0]}
+												</a>
 											) : (
 												lines.map((line) => <div key={line}>{line}</div>)
 											)}

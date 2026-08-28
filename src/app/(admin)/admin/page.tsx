@@ -1,7 +1,7 @@
 import { ArrowRightIcon } from "lucide-react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { isOverdue, waitingFor } from "@/lib/format/elapsed"
+import { agoLabel, isOverdue, waitingFor } from "@/lib/format/elapsed"
 import { formatMoney } from "@/lib/format/money"
 import { requireStaff } from "@/server/auth/guards"
 import { getDashboard } from "@/server/repositories/dashboard"
@@ -210,7 +210,7 @@ export default async function AdminHome() {
 											<span className="text-muted-foreground">
 												{" · "}
 												{LEAD_SOURCE[lead.source] ?? lead.source} ·{" "}
-												{waitingFor(lead.createdAt, now)} ago
+												{agoLabel(lead.createdAt, now)}
 											</span>
 										</Link>
 									</li>

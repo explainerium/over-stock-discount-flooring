@@ -117,3 +117,87 @@ export async function getDashboard() {
 
 	return { awaiting, noAddress, pending, noPrice, noFreightData, unhandledLeads, recentLeads }
 }
+
+/**
+ * The dealer's own version of the same question.
+ *
+ * A dealer opens the portal to find out one of two things: what is happening
+ * to an order they sent, or where they got to on one they had not sent yet.
+ * The screen was a stub that told them their session was valid, which is the
+ * one thing they already knew.
+ *
+ * Scoped by `dealerId` in every query rather than filtered afterwards — this
+ * is pricing and order data, and the layout resolves the scope precisely so
+ * pages below it cannot widen it by accident.
+ */
+
+/** Non-terminal orders: the ones still going somewhere. */
+async function ordersInFlight(dealerId: string, take = 6) {
+	return db.order.findMany({
+		where: {
+			dealerId,
+			status: { notIn: ["DRAFT", "DELIVERED", "CLOSED", "REJECTED", "CANCELLED"] },
+		},
+		select: {
+			id: true,
+			orderNumber: true,
+			status: true,
+			total: true,
+			submittedAt: true,
+			createdAt: true,
+			_count: { select: { items: true } },
+		},
+		orderBy: { submittedAt: "desc" },
+		take,
+	})
+}
+
+/** The last few that finished, so history is one glance rather than one click. */
+async function ordersSettled(dealerId: string, take = 3) {
+	return db.order.findMany({
+		where: { dealerId, status: { in: ["DELIVERED", "CLOSED", "REJECTED", "CANCELLED"] } },
+		select: {
+			id: true,
+			orderNumber: true,
+			status: true,
+			total: true,
+			submittedAt: true,
+			createdAt: true,
+			_count: { select: { items: true } },
+		},
+		orderBy: { createdAt: "desc" },
+		take,
+	})
+}
+
+export async function getDealerDashboard(dealerId: string) {
+	const [draft, inFlight, settled, addressCount, dealer] = await Promise.all([
+		db.order.findFirst({
+			where: { dealerId, status: "DRAFT" },
+			select: {
+				id: true,
+				total: true,
+				updatedAt: true,
+				_count: { select: { items: true } },
+			},
+		}),
+		ordersInFlight(dealerId),
+		ordersSettled(dealerId),
+		db.address.count({ where: { dealerId, isActive: true } }),
+		db.dealer.findUnique({
+			where: { id: dealerId },
+			select: { minOrderValue: true },
+		}),
+	])
+
+	return {
+		draft,
+		inFlight,
+		settled,
+		// Surfaced to the dealer for the same reason the owner's overview
+		// surfaces it to him: without one the submit button refuses, and the
+		// message only appears at the end of building a whole order.
+		hasAddress: addressCount > 0,
+		minOrderValue: dealer?.minOrderValue?.toString() ?? null,
+	}
+}

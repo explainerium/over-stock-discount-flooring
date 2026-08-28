@@ -82,11 +82,14 @@ export default async function ResourcesPage() {
 								className="border-rule flex flex-wrap items-center justify-between gap-4 border-b py-4"
 							>
 								<span className="display text-ink text-sm">{item.name}</span>
-								<span className="flex flex-wrap gap-6">
+								{/* -my-1.5 against py-1.5 on each link: a 16px download
+								    link is the whole point of this page, and the row keeps
+								    its height. */}
+								<span className="-my-1.5 flex flex-wrap gap-6">
 									{item.installationPdfUrl && (
 										<a
 											href={item.installationPdfUrl}
-											className="display text-ink flex items-center gap-2 text-xs uppercase underline underline-offset-4"
+											className="display text-ink flex items-center gap-2 py-1.5 text-xs uppercase underline underline-offset-4"
 										>
 											<DownloadIcon className="size-4" aria-hidden />
 											Installation
@@ -95,7 +98,7 @@ export default async function ResourcesPage() {
 									{item.warrantyPdfUrl && (
 										<a
 											href={item.warrantyPdfUrl}
-											className="display text-ink flex items-center gap-2 text-xs uppercase underline underline-offset-4"
+											className="display text-ink flex items-center gap-2 py-1.5 text-xs uppercase underline underline-offset-4"
 										>
 											<DownloadIcon className="size-4" aria-hidden />
 											Warranty

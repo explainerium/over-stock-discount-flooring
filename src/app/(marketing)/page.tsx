@@ -278,7 +278,9 @@ export default async function HomePage() {
 								Call
 							</dt>
 							<dd className="mt-3 text-sm">
-								<a href={SHOWROOM.phoneHref}>{SHOWROOM.phone}</a>
+								<a href={SHOWROOM.phoneHref} className="inline-block py-1">
+									{SHOWROOM.phone}
+								</a>
 							</dd>
 						</div>
 					</dl>

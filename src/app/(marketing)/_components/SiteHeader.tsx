@@ -3,7 +3,7 @@
 import { MenuIcon, PhoneIcon, SearchIcon, SquareStackIcon, UserIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useState, useSyncExternalStore } from "react"
 import {
 	Sheet,
 	SheetClose,
@@ -50,6 +50,61 @@ const NAV = [
 	{ href: "/about", label: "Company" },
 	{ href: "/contact", label: "Contact" },
 ]
+
+/**
+ * Whether the announcement has been dismissed, remembered per browser.
+ *
+ * It was plain `useState`, so the bar came back on every navigation — 77px of
+ * a phone screen, in a sticky header, re-taken from someone who had already
+ * said no to it once.
+ *
+ * `useSyncExternalStore` rather than reading localStorage in an effect: the
+ * server has no localStorage, and the server snapshot below keeps the bar in
+ * the HTML so a first-time visitor gets no shift when it hydrates. Someone who
+ * dismissed it sees it disappear on hydration instead, which is the right way
+ * round — that flash costs them nothing, and the alternative is reading a
+ * cookie in the layout, which would make every marketing page dynamic.
+ */
+const DISMISSED_KEY = "odf.announcement.dismissed"
+
+let listeners: Array<() => void> = []
+
+function subscribeDismissed(onChange: () => void) {
+	listeners = [...listeners, onChange]
+	// Another tab dismissing it should settle this one too.
+	window.addEventListener("storage", onChange)
+	return () => {
+		listeners = listeners.filter((l) => l !== onChange)
+		window.removeEventListener("storage", onChange)
+	}
+}
+
+/**
+ * Set when storage refused the write, so the bar still closes for this page
+ * view. Without it a browser with site data blocked would reopen the bar the
+ * instant the click re-read the snapshot.
+ */
+let dismissedThisLoad = false
+
+/** Private windows and blocked site data throw on access, not only on write. */
+function readDismissed() {
+	if (dismissedThisLoad) return true
+	try {
+		return localStorage.getItem(DISMISSED_KEY) === "1"
+	} catch {
+		return false
+	}
+}
+
+function dismissAnnouncement() {
+	dismissedThisLoad = true
+	try {
+		localStorage.setItem(DISMISSED_KEY, "1")
+	} catch {
+		// Nothing to remember it in; dismissedThisLoad carries it instead.
+	}
+	for (const listener of listeners) listener()
+}
 
 /**
  * The phone number, which stays out of the menu at every width.
@@ -140,7 +195,7 @@ function MobileMenu() {
 				</nav>
 
 				<div className="border-rule mt-auto border-t px-6 py-5">
-					<PhoneLink className="text-sm" />
+					<PhoneLink className="py-1 text-sm" />
 					<p className="text-muted-foreground mt-2 text-xs">
 						{SHOWROOM.street}, {SHOWROOM.city}, {SHOWROOM.state} {SHOWROOM.zip}
 					</p>
@@ -154,11 +209,13 @@ function MobileMenu() {
 }
 
 export function SiteHeader() {
-	const [announced, setAnnounced] = useState(true)
+	// Server snapshot is "not dismissed", so the bar is in the HTML and a
+	// first-time visitor gets no shift when it hydrates.
+	const dismissed = useSyncExternalStore(subscribeDismissed, readDismissed, () => false)
 
 	return (
 		<header className="bg-paper sticky top-0 z-40">
-			{announced && (
+			{!dismissed && (
 				<div className="relative bg-black py-2.5 pr-14 pl-5 text-center sm:px-14">
 					<p className="text-[0.8rem] text-white">
 						Open to the public — {SHOWROOM.weekdays}, {SHOWROOM.saturday}. Walk in and
@@ -169,7 +226,7 @@ export function SiteHeader() {
 					    the icon's own 16px it was the hardest thing here to hit. */}
 					<button
 						type="button"
-						onClick={() => setAnnounced(false)}
+						onClick={dismissAnnouncement}
 						aria-label="Dismiss announcement"
 						className="absolute top-1/2 right-1 flex size-11 -translate-y-1/2 items-center justify-center text-white/70 transition-colors hover:text-white"
 					>
@@ -207,7 +264,11 @@ export function SiteHeader() {
 							<PhoneLink />
 						</nav>
 
-						<PhoneLink className="sm:hidden" />
+						{/* py-1 lifts this from a 16px box to 24px. It sits beside the
+						    44px menu button, which already sets the row height, so the
+						    header does not grow — and ringing the shop is the most
+						    valuable tap on the site from a phone. */}
+						<PhoneLink className="py-1 sm:hidden" />
 
 						<nav
 							aria-label="Main"

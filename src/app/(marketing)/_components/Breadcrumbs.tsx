@@ -16,7 +16,10 @@ export interface Crumb {
 export function Breadcrumbs({ trail }: { trail: Crumb[] }) {
 	return (
 		<nav aria-label="Breadcrumb">
-			<ol className="display flex flex-wrap items-center gap-x-2 text-xs uppercase">
+			{/* -my-1 on the row and py-1 on the links: the crumbs are 12px
+			    uppercase, a 16px-tall target, and they sit at the top of every
+			    inner page where a thumb lands first. */}
+			<ol className="display -my-1 flex flex-wrap items-center gap-x-2 text-xs uppercase">
 				{trail.map((crumb, index) => {
 					const last = index === trail.length - 1
 					return (
@@ -24,7 +27,7 @@ export function Breadcrumbs({ trail }: { trail: Crumb[] }) {
 							{crumb.href && !last ? (
 								<Link
 									href={crumb.href}
-									className="text-muted-foreground hover:text-ink transition-colors"
+									className="text-muted-foreground hover:text-ink py-1 transition-colors"
 								>
 									{crumb.label}
 								</Link>

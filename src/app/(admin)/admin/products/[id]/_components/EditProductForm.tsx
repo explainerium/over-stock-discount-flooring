@@ -98,7 +98,7 @@ export function EditProductForm({
 			<ProInput
 				name="designName"
 				label="Design name"
-				description="Groups the same print film across formats — Brookfield appears in both Gold and Gold W."
+				description="Groups the same print film across formats, where one colour is stocked in more than one plank size."
 			/>
 
 			<ProTextarea name="description" label="Description" rows={4} />

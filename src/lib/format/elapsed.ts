@@ -38,3 +38,16 @@ export function waitingFor(since: Date, now: Date = new Date()): string {
 export function isOverdue(since: Date, now: Date = new Date()): boolean {
 	return now.getTime() - since.getTime() > 2 * 24 * 60 * 60 * 1000
 }
+
+/**
+ * The same duration, phrased as a point in the past.
+ *
+ * Exists because "just now" is the one value `waitingFor` returns that is
+ * already a complete phrase. Appending "ago" to it by hand at the call site
+ * gives "just now ago", which shipped on the admin lead list and again on the
+ * dealer overview before anyone hit a lead less than a minute old.
+ */
+export function agoLabel(since: Date, now: Date = new Date()): string {
+	const elapsed = waitingFor(since, now)
+	return elapsed === "just now" ? elapsed : `${elapsed} ago`
+}

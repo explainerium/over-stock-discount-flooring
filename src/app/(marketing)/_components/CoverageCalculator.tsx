@@ -115,8 +115,13 @@ export function CoverageCalculator({ series: SERIES }: { series: CalculatorSerie
 					})}
 				</div>
 
-				<div className="flex items-center gap-3">
-					<span className="text-muted-foreground display text-[0.65rem] tracking-widest uppercase">
+				{/* The padding is the tap target, not decoration: "0%" set as 12px
+				    text is a 19×16 box, and this is a calculator people use on a
+				    phone. The negative margin puts the first label back on the
+				    same optical line as the field above it, so the row looks
+				    unchanged while each button is comfortably hittable. */}
+				<div className="-my-2 flex items-center gap-1">
+					<span className="text-muted-foreground display mr-2 text-[0.65rem] tracking-widest uppercase">
 						Waste
 					</span>
 					{[0, 5, 10].map((option) => (
@@ -125,7 +130,7 @@ export function CoverageCalculator({ series: SERIES }: { series: CalculatorSerie
 							type="button"
 							onClick={() => setWaste(option)}
 							aria-pressed={waste === option}
-							className={`display text-xs underline-offset-4 transition-colors ${
+							className={`display px-2 py-2 text-xs underline-offset-4 transition-colors ${
 								waste === option
 									? "text-ink underline"
 									: "text-muted-foreground hover:text-ink"

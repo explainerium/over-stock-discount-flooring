@@ -30,7 +30,7 @@ export default async function DealerOrderPage({ params }: { params: Promise<{ id
 		<div className="grid max-w-4xl gap-6">
 			<Link
 				href="/portal/orders"
-				className="text-muted-foreground hover:text-foreground flex w-fit items-center gap-1 text-sm"
+				className="text-muted-foreground hover:text-foreground -my-1 flex w-fit items-center gap-1 py-1 text-sm"
 			>
 				<ArrowLeftIcon className="size-4" aria-hidden />
 				Orders

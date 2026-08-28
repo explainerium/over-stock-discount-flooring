@@ -55,7 +55,7 @@ export function NewProductForm({
 			<ProInput
 				name="imageUrl"
 				label="Swatch image"
-				placeholder="/swatches/gold-a-brookfield.jpg"
+				placeholder="/swatches/series-colour-name.jpg"
 				description="Optional for now — can be added later."
 			/>
 			<ProSubmit>Add product</ProSubmit>

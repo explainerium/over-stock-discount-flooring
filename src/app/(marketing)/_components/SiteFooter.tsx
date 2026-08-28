@@ -64,12 +64,16 @@ export async function SiteFooter() {
 				{columns.map((column) => (
 					<nav key={column.heading}>
 						<h2 className="display text-xs uppercase opacity-55">{column.heading}</h2>
-						<ul className="mt-4 grid gap-2">
+						{/* The 8px that used to be a gap is padding on the links
+						    instead. Same rhythm, but each row is a 27px tap target with
+						    no dead strip between them — these are 19px of text on a
+						    phone, and they are the secondary nav for the whole site. */}
+						<ul className="mt-3 grid">
 							{column.links.map((link) => (
 								<li key={link.href}>
 									<Link
 										href={link.href}
-										className="text-sm opacity-80 transition-opacity hover:opacity-100"
+										className="block py-1 text-sm opacity-80 transition-opacity hover:opacity-100"
 									>
 										{link.label}
 									</Link>
@@ -84,9 +88,16 @@ export async function SiteFooter() {
 				<p className="display text-[0.65rem] opacity-50">
 					© {new Date().getFullYear()} Overstock Discount Flooring
 				</p>
-				<div className="display flex gap-5 text-[0.65rem] opacity-50">
-					<Link href="/privacy">Privacy</Link>
-					<Link href="/terms">Terms</Link>
+				{/* 10px type is a 12px-tall target — the smallest on the site.
+				    The padding is pulled back out with -my-2 so the bar keeps its
+				    height. */}
+				<div className="display -my-2 flex gap-5 text-[0.65rem] opacity-50">
+					<Link href="/privacy" className="py-2">
+						Privacy
+					</Link>
+					<Link href="/terms" className="py-2">
+						Terms
+					</Link>
 				</div>
 			</div>
 		</footer>
