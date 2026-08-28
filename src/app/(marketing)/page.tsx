@@ -30,6 +30,29 @@ const RIGID_CORE = [
 	"Fire resistant. Won't help a fire spread.",
 ]
 
+/**
+ * The series count, set in a display heading rather than a sentence, so it is
+ * spelled out. Was the literal "Three series." until the client said he is
+ * dropping the Bronze/Silver/Gold names and adding lines — a heading that
+ * contradicts the cards under it is worse than one that just counts them.
+ * Past ten it falls back to digits, which no real catalogue should reach.
+ */
+const NUMBER_WORD = [
+	"No",
+	"One",
+	"Two",
+	"Three",
+	"Four",
+	"Five",
+	"Six",
+	"Seven",
+	"Eight",
+	"Nine",
+	"Ten",
+]
+
+const countWord = (n: number) => NUMBER_WORD[n] ?? String(n)
+
 export default async function HomePage() {
 	// One fetch at the page, handed down. The calculator is a client component
 	// and cannot query; the cards and the grid could, but three round trips for
@@ -45,6 +68,7 @@ export default async function HomePage() {
 		.map((s) => ({
 			slug: s.slug,
 			name: s.name,
+			blurb: s.blurb,
 			colourCount: s._count.products,
 			wearLayerMil: s.wearLayerMil,
 			sqFtPerBox: s.sqFtPerBox?.toString() ?? null,
@@ -93,7 +117,7 @@ export default async function HomePage() {
 			<section className="bg-paper">
 				<div className="mx-auto max-w-[1280px] px-5 py-24 md:py-32">
 					<h2 className="display text-ink text-center text-3xl uppercase sm:text-4xl">
-						<span className="font-bold">Three series.</span>{" "}
+						<span className="font-bold">{countWord(seriesCards.length)} series.</span>{" "}
 						<span className="font-light">One warehouse.</span>
 					</h2>
 					<p className="text-muted-foreground mx-auto mt-4 max-w-2xl text-center text-sm">

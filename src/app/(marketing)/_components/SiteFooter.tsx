@@ -1,16 +1,14 @@
 import Link from "next/link"
 import { SHOWROOM } from "@/constants/catalog"
+import { listPublicSeries } from "@/server/repositories/catalog"
 
+/**
+ * The columns that do not depend on the catalogue. The Catalog column is built
+ * from the database instead — it used to list Bronze, Silver and Gold by hand,
+ * which meant the footer kept pointing at series the client had renamed or
+ * retired, on every page of the site.
+ */
 const COLUMNS = [
-	{
-		heading: "Catalog",
-		links: [
-			{ href: "/products?series=bronze", label: "Bronze Series" },
-			{ href: "/products?series=silver", label: "Silver Series" },
-			{ href: "/products?series=gold", label: "Gold Series" },
-			{ href: "/products?series=accessories", label: "Trim & Mouldings" },
-		],
-	},
 	{
 		heading: "Resources",
 		links: [
@@ -24,12 +22,24 @@ const COLUMNS = [
 		links: [
 			{ href: "/become-a-dealer", label: "Become a dealer" },
 			{ href: "/login", label: "Dealer login" },
-			{ href: "/dealers", label: "Find a dealer" },
 		],
 	},
 ]
 
-export function SiteFooter() {
+export async function SiteFooter() {
+	const series = await listPublicSeries()
+
+	const columns = [
+		{
+			heading: "Catalog",
+			links: series.map((item) => ({
+				href: `/products?series=${item.slug}`,
+				label: item.name,
+			})),
+		},
+		...COLUMNS,
+	]
+
 	return (
 		<footer className="bg-ink text-paper">
 			<div className="mx-auto grid max-w-[1280px] gap-10 px-5 py-16 md:grid-cols-[1.4fr_repeat(3,1fr)]">
@@ -51,7 +61,7 @@ export function SiteFooter() {
 					</address>
 				</div>
 
-				{COLUMNS.map((column) => (
+				{columns.map((column) => (
 					<nav key={column.heading}>
 						<h2 className="display text-xs uppercase opacity-55">{column.heading}</h2>
 						<ul className="mt-4 grid gap-2">

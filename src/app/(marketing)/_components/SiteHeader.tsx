@@ -1,14 +1,6 @@
 "use client"
 
-import {
-	MapPinIcon,
-	MenuIcon,
-	PhoneIcon,
-	SearchIcon,
-	SquareStackIcon,
-	UserIcon,
-	XIcon,
-} from "lucide-react"
+import { MenuIcon, PhoneIcon, SearchIcon, SquareStackIcon, UserIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
@@ -40,14 +32,13 @@ import { cn } from "@/lib/utils"
  * The previous pass here scrolled the nav sideways instead, which measured
  * badly: 170px of it sat off-screen, so Company and Contact were invisible
  * unless you thought to swipe a row that gives no sign it can be swiped, and
- * three of the four utility links were dropped from the phone entirely. That
+ * most of the utility links were dropped from the phone entirely. That
  * included Samples, which the audit calls out as how a flooring buyer actually
- * decides. A menu costs one tap and reaches all nine.
+ * decides. A menu costs one tap and reaches all eight.
  */
 
 const UTILITY = [
 	{ href: "/products", label: "Search", Icon: SearchIcon },
-	{ href: "/dealers", label: "Find a Dealer", Icon: MapPinIcon },
 	{ href: "/products", label: "Samples", Icon: SquareStackIcon },
 	{ href: "/login", label: "Dealer Login", Icon: UserIcon },
 ]

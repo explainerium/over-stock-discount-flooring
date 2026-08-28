@@ -41,7 +41,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		{ url: `${base}/about`, changeFrequency: "yearly", priority: 0.6 },
 		{ url: `${base}/contact`, changeFrequency: "yearly", priority: 0.6 },
 		{ url: `${base}/become-a-dealer`, changeFrequency: "yearly", priority: 0.7 },
-		{ url: `${base}/dealers`, changeFrequency: "weekly", priority: 0.5 },
 	]
 
 	return [

@@ -24,20 +24,3 @@ export const FACTS = {
 	checkpoints: 89,
 	productionProcesses: 10,
 } as const
-
-/**
- * A series' plain-English claim.
- *
- * Deliberately not in the database: these are marketing lines, and on the
- * published specs Bronze and Silver are identical on thickness and wear layer.
- * Until the client says what actually separates them, each line here is
- * something verifiably true rather than an invented differentiator.
- */
-export const SERIES_CLAIM: Record<string, string> = {
-	bronze: "The widest plank we stock, and the most floor in a box.",
-	silver: "Wood-embossed rather than random — a quieter, more even floor.",
-	gold: "A 20 mil wear layer — rated for commercial floors, not just homes.",
-	"silver-w": "A wider plank on a slimmer core, packed 60 boxes to the pallet.",
-	"gold-w": "The Gold surface in the wider 7.17 inch plank.",
-	accessories: "Baseboard and quarter round, priced by the linear foot.",
-}

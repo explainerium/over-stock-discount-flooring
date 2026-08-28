@@ -31,6 +31,7 @@ const SERIES = [
 	{
 		name: "Bronze Series",
 		slug: "bronze",
+		blurb: "The widest plank we stock, and the most floor in a box.",
 		widthIn: "7.17",
 		thicknessMm: "5",
 		wearLayerMil: 12,
@@ -55,6 +56,7 @@ const SERIES = [
 	{
 		name: "Silver Series",
 		slug: "silver",
+		blurb: "Wood-embossed rather than random — a quieter, more even floor.",
 		widthIn: "7.09",
 		thicknessMm: "5",
 		wearLayerMil: 12,
@@ -82,6 +84,7 @@ const SERIES = [
 		// to a pallet where everything else packs 55.
 		name: "Silver Series W",
 		slug: "silver-w",
+		blurb: "A wider plank on a slimmer core, packed 60 boxes to the pallet.",
 		widthIn: "7.17",
 		thicknessMm: "4.5",
 		wearLayerMil: 12,
@@ -107,6 +110,7 @@ const SERIES = [
 	{
 		name: "Gold Series",
 		slug: "gold",
+		blurb: "A 20 mil wear layer — rated for commercial floors, not just homes.",
 		widthIn: "7.09",
 		thicknessMm: "5",
 		wearLayerMil: 20,
@@ -146,6 +150,7 @@ const SERIES = [
 	{
 		name: "Gold Series W",
 		slug: "gold-w",
+		blurb: "The Gold surface in the wider 7.17 inch plank.",
 		widthIn: "7.17",
 		thicknessMm: "5",
 		wearLayerMil: 20,
@@ -321,6 +326,7 @@ async function main() {
 			create: {
 				name: series.name,
 				slug: series.slug,
+				blurb: series.blurb,
 				lengthIn: "48.03",
 				widthIn: series.widthIn,
 				thicknessMm: series.thicknessMm,
@@ -343,6 +349,17 @@ async function main() {
 				sortOrder: series.sortOrder,
 			},
 		})
+
+		// The card copy used to live in a slug-keyed map in the source, which
+		// meant a series the client renames loses its line. It belongs on the
+		// row, where the owner can edit it. Only fills a blank one — an edit
+		// made in admin is not something a re-seed should overwrite.
+		if (!record.blurb) {
+			await prisma.series.update({
+				where: { id: record.id },
+				data: { blurb: series.blurb },
+			})
+		}
 
 		const existingFacts = await prisma.seriesFact.count({ where: { seriesId: record.id } })
 		if (existingFacts === 0) {
