@@ -162,6 +162,35 @@
 	input[type="checkbox"]:not(:disabled) {
 		cursor: pointer;
 	}
+	/* `grid gap-4` is this codebase's vertical stack — 114 of them, across 61
+     files. Every one was able to push the page sideways on a phone.
+
+     A grid with no column template puts its items in one *implicit* column,
+     and an implicit track is sized `auto`, which never goes narrower than the
+     widest row's min-content. A row holding `truncate` text is nowrap, so its
+     min-content is the whole untruncated string: the admin product list came
+     to 405px against a 343px column, the dealer list 539px, the order queue
+     571px. The track won, the truncation never engaged, and the whole document
+     scrolled. It only showed up once real names were in the database.
+
+     `grid-auto-columns` applies to implicit tracks only, so this caps exactly
+     the stacks that were vulnerable and leaves every explicit `grid-cols-*`
+     and `sm:grid-cols-*` alone. `[class~="grid"]` matches the bare `grid`
+     token, never `grid-cols-2`. Nothing here uses `grid-flow-col`, which is
+     the one pattern that would want auto-width implicit columns back. */
+	[class~="grid"] {
+		grid-auto-columns: minmax(0, 1fr);
+	}
+	/* A row that scrolls sideways should not also show a scrollbar. On a phone
+	   the bar is about as wide as a nav item and reads as a broken layout; the
+	   content being cut off at the edge is the affordance people actually use. */
+	.no-scrollbar {
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+	}
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
 	/* Poppins 700 with a hair of tracking and a 1.2 line — the reference site's
      heading setting, measured rather than approximated. */
 	.display {

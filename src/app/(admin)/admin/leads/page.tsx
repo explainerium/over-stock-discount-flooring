@@ -79,7 +79,11 @@ export default async function LeadsPage() {
 													)}
 												</div>
 
-												<p className="text-muted-foreground mt-1 text-sm">
+												{/* Lead addresses come from a public form and are
+												    length-unchecked, and an email has no space to
+												    wrap at. break-words only engages when one would
+												    otherwise run past the edge. */}
+												<p className="text-muted-foreground mt-1 text-sm break-words">
 													{lead.email && (
 														<a href={`mailto:${lead.email}`}>
 															{lead.email}

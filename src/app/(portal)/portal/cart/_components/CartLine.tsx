@@ -121,7 +121,7 @@ export function CartLine({ line }: { line: CartLineData }) {
 						onChange={(event) => setUnit(event.target.value)}
 						aria-label={`Unit for ${line.name}`}
 						disabled={pending}
-						className="border-input h-9 rounded-md border bg-transparent px-2 text-sm"
+						className="border-input h-9 rounded-md border bg-transparent px-2 text-base md:text-sm"
 					>
 						{line.orderUoms.map((option) => (
 							<option key={option} value={option}>

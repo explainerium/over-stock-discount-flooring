@@ -52,7 +52,7 @@ export default async function PortalCatalogPage({
 				</p>
 			)}
 
-			<ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+			<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				{products.map((product) => (
 					<li key={product.id} className="flex gap-4 rounded-lg border p-4">
 						<div className="bg-muted relative size-24 shrink-0 overflow-hidden rounded">

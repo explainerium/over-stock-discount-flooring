@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { ScrollableNav } from "@/components/shared/ScrollableNav"
 import { cn } from "@/lib/utils"
 
 const LINKS = [
@@ -17,7 +18,7 @@ export function PortalNav({ lineCount }: { lineCount: number }) {
 	const pathname = usePathname()
 
 	return (
-		<nav className="-mx-1 flex gap-1 overflow-x-auto" aria-label="Portal">
+		<ScrollableNav label="Portal" activeKey={pathname}>
 			{LINKS.map((link) => {
 				const active = link.exact ? pathname === link.href : pathname.startsWith(link.href)
 				return (
@@ -46,6 +47,6 @@ export function PortalNav({ lineCount }: { lineCount: number }) {
 					</Link>
 				)
 			})}
-		</nav>
+		</ScrollableNav>
 	)
 }

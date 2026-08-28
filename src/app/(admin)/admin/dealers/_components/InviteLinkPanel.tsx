@@ -35,7 +35,7 @@ export function InviteLinkPanel({ email, link }: { email: string; link: string }
 	return (
 		<Alert>
 			<MailIcon />
-			<AlertTitle>Invitation ready for {email}</AlertTitle>
+			<AlertTitle className="break-words">Invitation ready for {email}</AlertTitle>
 			<AlertDescription className="grid gap-3">
 				<p>
 					Send them this link. It works once, expires in seven days, and{" "}

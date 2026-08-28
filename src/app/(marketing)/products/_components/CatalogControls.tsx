@@ -63,6 +63,13 @@ export function CatalogControls({ wearLayers, thicknesses, resultCount }: Catalo
 
 	return (
 		<div className="border-rule grid gap-4 border-b py-4">
+			{/*
+			  Both controls below are 16px on a phone and 14px from md up, which is
+			  what Input and Textarea already do. Mobile Safari zooms the viewport
+			  when a focused control computes under 16px, and it does not zoom back
+			  out afterwards — tapping search left you on a magnified page that now
+			  scrolls sideways.
+			*/}
 			<div className="flex flex-wrap items-center gap-3">
 				<label className="relative flex-1 sm:max-w-xs">
 					<SearchIcon
@@ -75,7 +82,7 @@ export function CatalogControls({ wearLayers, thicknesses, resultCount }: Catalo
 						onChange={(event) => setSearch(event.target.value)}
 						placeholder="Colour name or SKU"
 						aria-label="Search the catalogue"
-						className="border-rule focus-visible:border-ink w-full border py-2 pr-3 pl-9 text-sm outline-none"
+						className="border-rule focus-visible:border-ink w-full border py-2 pr-3 pl-9 text-base outline-none md:text-sm"
 					/>
 				</label>
 
@@ -89,7 +96,7 @@ export function CatalogControls({ wearLayers, thicknesses, resultCount }: Catalo
 								event.target.value === "curated" ? null : event.target.value,
 							)
 						}
-						className="border-rule text-ink border bg-transparent px-2 py-2 text-sm"
+						className="border-rule text-ink border bg-transparent px-2 py-2 text-base md:text-sm"
 					>
 						<option value="curated">Our order</option>
 						<option value="series">By series, then name</option>
