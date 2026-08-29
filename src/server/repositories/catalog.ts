@@ -305,6 +305,7 @@ export async function updateProduct(
 		stockStatus: StockStatus
 		isPublic: boolean
 		isActive: boolean
+		images: string[]
 	},
 ) {
 	return db.product.update({
@@ -321,6 +322,7 @@ export async function updateProduct(
 			stockStatus: data.stockStatus,
 			isPublic: data.isPublic,
 			isActive: data.isActive,
+			images: data.images,
 		},
 		select: { id: true, name: true },
 	})

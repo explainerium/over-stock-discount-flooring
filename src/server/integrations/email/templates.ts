@@ -317,6 +317,40 @@ const LEAD_SOURCE: Record<string, string> = {
 }
 
 /**
+ * To the owner, when QuickBooks needs him.
+ *
+ * The connection dies quietly. A refresh token lasts a hundred days from the
+ * last refresh and there is no event when it lapses — the next approved order
+ * simply is not invoiced, and nobody notices until a dealer asks where their
+ * invoice is. This is the message that arrives first.
+ */
+export function qboAttentionEmail(data: {
+	/** False when a real call was rejected, whatever the tokens look like. */
+	working: boolean
+	detail: string
+	daysLeft: number
+}): RenderedEmail {
+	const link = siteUrl("/admin/settings")
+
+	const lead = !data.working
+		? `QuickBooks is not answering, so approved orders are not being invoiced. ${data.detail}`
+		: data.daysLeft < 0
+			? `The QuickBooks connection has lapsed. Approved orders are not being invoiced until you reconnect.`
+			: `The QuickBooks connection expires in ${period(data.daysLeft, "day")}. Reconnecting takes about a minute and stops orders going uninvoiced.`
+
+	return {
+		subject: data.working
+			? "QuickBooks needs reconnecting soon"
+			: "QuickBooks is not connected",
+		text: [lead, ``, link, ``, SIGN_OFF].join("\n"),
+		html: wrap(h("QuickBooks") + p(lead), {
+			action: { label: "Open settings", href: link },
+			footnote: "Nothing else on the site is affected. Orders still arrive as usual.",
+		}),
+	}
+}
+
+/**
  * To the owner, weekly, and only when there is something to say.
  *
  * A tax-exempt dealer whose resale certificate has lapsed is not tax-exempt.

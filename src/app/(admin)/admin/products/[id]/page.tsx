@@ -66,6 +66,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 							stockStatus: product.stockStatus,
 							isPublic: product.isPublic,
 							isActive: product.isActive,
+							images: product.images.join("\n"),
 						}}
 					/>
 				</CardContent>

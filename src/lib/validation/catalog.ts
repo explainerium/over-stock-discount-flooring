@@ -77,7 +77,43 @@ export const updateProductSchema = z.object({
 	stockStatus: z.enum(["IN_STOCK", "LOW", "OUT", "SPECIAL_ORDER"]),
 	isPublic: z.boolean(),
 	isActive: z.boolean(),
+	/**
+	 * One URL a line.
+	 *
+	 * A product carries a list — the plan asks for a swatch and a room shot — and
+	 * until now the only way to set any of them was the create form, which takes
+	 * one. So a colour photographed after it was added could never get its
+	 * picture, and one added with the wrong URL kept it forever.
+	 *
+	 * A textarea rather than a repeating field: these are pasted, not typed, and
+	 * a line each is the shape somebody pasting them already has. It becomes an
+	 * uploader the day there is somewhere to upload to.
+	 *
+	 * Required, and empty is a valid value. Optional would be worse than it
+	 * sounds: a field the form failed to register would arrive as undefined,
+	 * split to an empty list, and quietly clear every image on the product. This
+	 * way that mistake is a validation error somebody can see.
+	 */
+	images: z
+		.string()
+		.trim()
+		.max(2000)
+		.refine(
+			(value) => splitImages(value).every((url) => /^(\/|https?:\/\/)/.test(url)),
+			"Each line should be a path like /swatches/name.jpg, or a full https:// URL.",
+		),
 })
+
+/** "a
+b
+
+c" becomes ["a", "b", "c"]. Blank lines are not images. */
+export function splitImages(value: string): string[] {
+	return value
+		.split(/\r?\n/)
+		.map((line) => line.trim())
+		.filter(Boolean)
+}
 
 export const updateSeriesSchema = z.object({
 	id: z.string().min(1),

@@ -2,6 +2,8 @@ import "server-only"
 import { db } from "@/server/db/client"
 import { pruneExpiredSessions } from "@/server/auth/session"
 import { notifyResaleCertsExpiring } from "@/server/notifications/dealers"
+import { notifyQboNeedsAttention } from "@/server/notifications/quickbooks"
+import { checkConnection, qboStatus } from "@/server/repositories/quickbooks"
 
 /**
  * Scheduled work.
@@ -108,10 +110,46 @@ async function remindExpiringResaleCerts(): Promise<number> {
 	return dealers.length
 }
 
+/**
+ * How much warning is useful before the QuickBooks connection lapses.
+ *
+ * Three weeks. Long enough that a run can be missed and the owner still hears
+ * in time, short enough that the message is about something imminent rather
+ * than something he will forget.
+ */
+const QBO_WARN_DAYS = 21
+
+/**
+ * Keeps QuickBooks alive, and says so when it will not stay that way.
+ *
+ * Two jobs in one, and they are the same job. Making a real call refreshes the
+ * access token, and a refresh resets the hundred-day clock on the refresh
+ * token — so a connection that is used weekly never expires on its own. What
+ * this catches is the connection that has stopped working for a reason no
+ * token expiry explains: somebody disconnected the app from inside QuickBooks,
+ * which leaves tokens that look perfectly valid and calls that all fail.
+ *
+ * Silence when everything is fine. A weekly all-clear is the kind of mail
+ * people filter, and the filter catches the one that mattered.
+ */
+async function checkQuickBooks(): Promise<number> {
+	const status = await qboStatus()
+	if (!status.connected) return 0
+
+	const health = await checkConnection()
+	const daysLeft = status.daysUntilReconnect ?? 0
+
+	if (health.ok && daysLeft > QBO_WARN_DAYS) return 0
+
+	await notifyQboNeedsAttention({ working: health.ok, detail: health.detail, daysLeft })
+	return 1
+}
+
 /** Everything the scheduler may ask for, by name. */
 export const JOBS: Record<string, () => Promise<number>> = {
 	"prune-credentials": pruneExpiredCredentials,
 	"resale-cert-reminders": remindExpiringResaleCerts,
+	"qbo-health": checkQuickBooks,
 }
 
 export async function runJob(name: string): Promise<JobResult | null> {

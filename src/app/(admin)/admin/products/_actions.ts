@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import {
+	splitImages,
 	blank,
 	createProductSchema,
 	slugify,
@@ -108,6 +109,7 @@ export async function updateProductAction(input: unknown): Promise<ActionResult>
 		stockStatus: data.stockStatus,
 		isPublic: data.isPublic,
 		isActive: data.isActive,
+		images: splitImages(data.images),
 	})
 
 	await audit({

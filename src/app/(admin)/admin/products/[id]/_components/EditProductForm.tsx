@@ -103,6 +103,13 @@ export function EditProductForm({
 
 			<ProTextarea name="description" label="Description" rows={4} />
 
+			<ProTextarea
+				name="images"
+				label="Images"
+				rows={3}
+				description="One URL a line. The first is the one the catalogue and the search results use."
+			/>
+
 			<div className="grid gap-4 sm:grid-cols-2">
 				<ProSelect name="pricingUom" label="Priced in" options={PRICING_UOM} required />
 				<ProSelect name="stockStatus" label="Stock" options={STOCK} required />

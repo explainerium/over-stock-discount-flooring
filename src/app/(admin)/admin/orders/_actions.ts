@@ -15,6 +15,7 @@ import { PricingError } from "@/server/domain/pricing"
 import { UomError } from "@/server/domain/uom"
 import { notifyOrderDecision } from "@/server/notifications/orders"
 import { audit } from "@/server/repositories/audit"
+import { raiseInvoice } from "@/server/repositories/quickbooks"
 import {
 	OrderError,
 	getOrderForStaff,
@@ -118,11 +119,27 @@ export async function transitionOrderAction(input: unknown): Promise<ActionResul
 	// portal is a dealer who rings up instead.
 	await notifyOrderDecision(order.id, parsed.data.to, note || null)
 
+	// Approving is what raises the invoice — the client's own sequence: "we
+	// approve and then send invoice through Quickbooks". It cannot fail the
+	// approval, which has already happened and which the dealer has already been
+	// told about, so the outcome rides back on the message instead.
+	let invoiced: string | null = null
+	if (parsed.data.to === "APPROVED") {
+		const result = await raiseInvoice(order.id)
+		invoiced = result.ok
+			? result.alreadySent
+				? null
+				: " Invoice raised in QuickBooks."
+			: ` Not invoiced: ${result.reason}`
+	}
+
 	refresh(order.id)
 
 	return {
 		ok: true,
-		message: `Order #${order.orderNumber} is now ${label(parsed.data.to).toLowerCase()}.`,
+		message:
+			`Order #${order.orderNumber} is now ${label(parsed.data.to).toLowerCase()}.` +
+			(invoiced ?? ""),
 	}
 }
 

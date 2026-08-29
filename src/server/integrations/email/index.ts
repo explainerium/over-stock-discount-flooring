@@ -9,6 +9,7 @@ export {
 	orderSubmittedEmail,
 	resaleCertsExpiringEmail,
 	passwordResetEmail,
+	qboAttentionEmail,
 	type OrderSummary,
 } from "./templates"
 export type { RenderedEmail } from "./types"
