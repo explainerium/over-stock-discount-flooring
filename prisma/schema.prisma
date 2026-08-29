@@ -281,11 +281,12 @@ model Dealer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users     User[]
-  invites   Invite[]
-  addresses Address[]
-  prices    DealerPrice[]
-  orders    Order[]
+  users         User[]
+  invites       Invite[]
+  addresses     Address[]
+  prices        DealerPrice[]
+  orders        Order[]
+  productAccess DealerProductAccess[]
 
   @@index([status])
   @@index([companyName])
@@ -325,6 +326,29 @@ model Address {
   orders Order[]
 
   @@index([dealerId, isActive])
+}
+
+/// Who may order a restricted product.
+///
+/// Only consulted for products with `dealerRestricted` set. A row here is a
+/// grant, never a denial: an empty table means every dealer sees everything,
+/// which is exactly what the system did before this model existed.
+///
+/// Deliberately separate from DealerPrice. A dealer can be quoted a price for
+/// something they are not offered, and can be offered something at list — the
+/// two facts move independently and folding them together would make
+/// withdrawing a price look like withdrawing access.
+model DealerProductAccess {
+  id        String  @id @default(cuid())
+  dealerId  String
+  dealer    Dealer  @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([dealerId, productId])
+  @@index([productId])
 }
 
 model DealerPrice {
@@ -461,6 +485,18 @@ model Product {
   isActive  Boolean @default(true)
   sortOrder Int     @default(0)
 
+  /// Whether this product is offered to every dealer, or only to named ones.
+  ///
+  /// The client asked to be able to "pick and choose what products dealers
+  /// have access to". False is the default and means what the system did
+  /// before this existed: every signed-in dealer sees it. True narrows it to
+  /// the dealers with a DealerProductAccess row.
+  ///
+  /// Restricting is opt-in per product rather than per dealer so that adding a
+  /// dealer never silently hides the catalogue from them — a new account sees
+  /// everything unrestricted, which is the safe direction to be wrong in.
+  dealerRestricted Boolean @default(false)
+
   /// The QBO item this maps to. An unmapped SKU must fail loudly at invoice
   /// time rather than silently invoice as something else.
   qboItemId String?
@@ -468,13 +504,15 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  conversions UomConversion[]
-  prices      DealerPrice[]
-  orderItems  OrderItem[]
-  leads       Lead[]
+  conversions  UomConversion[]
+  prices       DealerPrice[]
+  orderItems   OrderItem[]
+  leads        Lead[]
+  dealerAccess DealerProductAccess[]
 
   @@index([seriesId])
   @@index([isPublic, isActive])
+  @@index([dealerRestricted])
   @@index([designName])
   @@index([stockStatus])
 }

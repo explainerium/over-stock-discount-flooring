@@ -26,7 +26,7 @@ export default async function PortalCatalogPage({
 
 	const [products, total] = await Promise.all([
 		listPricedProducts(dealerId, q),
-		countOrderableProducts(),
+		countOrderableProducts(dealerId),
 	])
 
 	const unpriced = products.filter((product) => !product.price).length

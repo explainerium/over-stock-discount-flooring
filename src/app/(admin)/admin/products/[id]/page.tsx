@@ -4,14 +4,23 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { requireStaff } from "@/server/auth/guards"
-import { getProduct, listSeriesOptions } from "@/server/repositories/catalog"
+import { listDealers } from "@/server/repositories/dealers"
+import { getProductAccess, getProduct, listSeriesOptions } from "@/server/repositories/catalog"
 import { EditProductForm } from "./_components/EditProductForm"
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
 	await requireStaff()
 	const { id } = await params
 
-	const [product, series] = await Promise.all([getProduct(id), listSeriesOptions()])
+	const [product, series, dealers, access] = await Promise.all([
+		getProduct(id),
+		listSeriesOptions(),
+		// Every dealer, suspended ones included: withdrawing access is a separate
+		// decision from suspending an account, and a suspended dealer that comes
+		// back should find their catalogue as they left it.
+		listDealers(),
+		getProductAccess(id),
+	])
 	if (!product) notFound()
 
 	return (
@@ -48,6 +57,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 				</CardHeader>
 				<CardContent>
 					<EditProductForm
+						dealers={dealers.map((d) => ({ value: d.id, label: d.companyName }))}
 						seriesOptions={series.map((s) => ({
 							value: s.id,
 							label: s.name,
@@ -67,6 +77,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 							isPublic: product.isPublic,
 							isActive: product.isActive,
 							images: product.images.join("\n"),
+							dealerRestricted: product.dealerRestricted,
+							dealerIds: access,
 						}}
 					/>
 				</CardContent>

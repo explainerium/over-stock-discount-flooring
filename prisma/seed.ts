@@ -2,17 +2,18 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "../src/generated/prisma/client"
 
 /**
- * Seed — the real catalogue, not sample data.
+ * Seed — the client's own catalogue.
  *
- * Every number here was read off the live site and cross-checked against
- * itself: boxes × sq ft/box matches the published sq ft/pallet for all five
- * series, boxes × lb/box plus a pallet's own weight matches lb/pallet, and
- * pallets × lb/pallet lands just under the ~44,000 lb truckload cap in every
- * case. The full working is in the project's content-inventory.md.
+ * Transcribed by hand from the sheet Nick is filling in, row by row, rather
+ * than parsed. He is adding to it as he goes and the columns are still moving —
+ * a SKU column and plank dimensions are coming — so a parser would be built
+ * against a shape that is not settled yet, and a wrong guess about a column
+ * lands silently in the catalogue.
  *
- * Building against this rather than placeholder data is deliberate. The hidden
- * "W" series — same colour names, different sq ft/box and boxes/pallet — is
- * exactly the sort of thing invented data hides until it is expensive.
+ * What replaced what: this file used to hold Bronze, Silver, Silver W, Gold and
+ * Gold W, read off the current live site. Those were real, but they are the
+ * names the client is retiring. His first real series is below; the old data is
+ * still in the project's content-inventory.md if any of it is ever needed.
  */
 
 const prisma = new PrismaClient({
@@ -20,231 +21,83 @@ const prisma = new PrismaClient({
 })
 
 /**
- * Five spec groups, not three.
+ * AR - Commercial, 5mm / 20 mil.
  *
- * `isPublicSeries` marks the two whose pages are live but commented out of the
- * client's own navigation. Until he says whether they are discontinued,
- * current or dealer-only, their products are seeded inactive — present, so
- * nothing has to be re-entered, invisible, so nothing wrong is published.
+ * The sheet writes the series as "AR - Commercial 5/20". The "5/20" is the
+ * spec, not part of the name — Nick confirmed it means 5mm board with a 20 mil
+ * wear layer — so it is stored in the two fields that already exist for it and
+ * the name is what appears on the site.
+ *
+ * `public` is his own Yes/No column, per colour. A "No" is not hidden: the
+ * product exists and a signed-in dealer sees it, it is only kept off the public
+ * catalogue. That is the split he asked for.
+ *
+ * Not here because he has not sent them yet: SKUs, plank length and width,
+ * descriptions, images, and everything in the freight block — weight per box,
+ * box dimensions, freight class.
  */
-const SERIES = [
-	{
-		name: "Bronze Series",
-		slug: "bronze",
-		blurb: "The widest plank we stock, and the most floor in a box.",
-		widthIn: "7.17",
-		thicknessMm: "5",
-		wearLayerMil: 12,
-		finishing: "Random EIR",
-		sqFtPerBox: "28.68",
-		boxesPerPallet: 55,
-		lbPerBox: "49.4",
-		lbPerPallet: "2745",
-		palletsPerFtl: 16,
-		legacyPath: "bronze",
-		active: true,
-		sortOrder: 1,
-		colors: [
-			"Avalon",
-			"Golden Coast",
-			"Harmony",
-			"Laurel Springs",
-			"Redwood Falls",
-			"Timber Lake",
-		],
-	},
-	{
-		name: "Silver Series",
-		slug: "silver",
-		blurb: "Wood-embossed rather than random — a quieter, more even floor.",
-		widthIn: "7.09",
-		thicknessMm: "5",
-		wearLayerMil: 12,
-		finishing: "Wood Emboss",
-		sqFtPerBox: "23.64",
-		boxesPerPallet: 55,
-		lbPerBox: "40.0",
-		lbPerPallet: "2230",
-		palletsPerFtl: 19,
-		legacyPath: "silver-a",
-		active: true,
-		sortOrder: 2,
-		colors: [
-			"Berkley Oak SE",
-			"Cumberland Lite",
-			"Lighthouse Bay",
-			"Mill Creek",
-			"Smokey Creek",
-			"Sterling Oak",
-			"Twilight",
-		],
-	},
-	{
-		// Wider plank and a thinner core than standard Silver, and it packs 60
-		// to a pallet where everything else packs 55.
-		name: "Silver Series W",
-		slug: "silver-w",
-		blurb: "A wider plank on a slimmer core, packed 60 boxes to the pallet.",
-		widthIn: "7.17",
-		thicknessMm: "4.5",
-		wearLayerMil: 12,
-		finishing: "Wood Emboss",
-		sqFtPerBox: "28.68",
-		boxesPerPallet: 60,
-		lbPerBox: "44.5",
-		lbPerPallet: "2700",
-		palletsPerFtl: 16,
-		legacyPath: "silver-w",
-		active: false,
-		sortOrder: 3,
-		colors: [
-			"Berkley Oak SE",
-			"Cumberland Lite",
-			"Lighthouse Bay",
-			"Mill Creek",
-			"Smokey Creek",
-			"Sterling Oak",
-			"Twilight",
-		],
-	},
-	{
-		name: "Gold Series",
-		slug: "gold",
-		blurb: "A 20 mil wear layer — rated for commercial floors, not just homes.",
-		widthIn: "7.09",
-		thicknessMm: "5",
-		wearLayerMil: 20,
-		finishing: "Wood Emboss",
-		sqFtPerBox: "23.64",
-		boxesPerPallet: 55,
-		lbPerBox: "40.0",
-		lbPerPallet: "2230",
-		palletsPerFtl: 19,
-		legacyPath: "gold-a",
-		active: true,
-		sortOrder: 4,
-		colors: [
-			"Brookfield",
-			"Charleston",
-			"Classic Lodge",
-			"Everstill Forest",
-			"Fountain Hills",
-			"Golden Pine",
-			"Houston",
-			"Kaneohe Bay",
-			"Lake Lanier",
-			"Mesa",
-			"Natural Oak",
-			"Nightfall Hills",
-			"Northshire",
-			"Olympia",
-			"Petrified Forest",
-			"Phoenix",
-			"Placid Cabin",
-			"Providence",
-			"River View",
-			"Rock Creek",
-			"Vintage Cabin",
-		],
-	},
-	{
-		name: "Gold Series W",
-		slug: "gold-w",
-		blurb: "The Gold surface in the wider 7.17 inch plank.",
-		widthIn: "7.17",
-		thicknessMm: "5",
-		wearLayerMil: 20,
-		finishing: "Wood Emboss",
-		sqFtPerBox: "23.90",
-		boxesPerPallet: 55,
-		lbPerBox: "40.5",
-		lbPerPallet: "2258",
-		palletsPerFtl: 19,
-		legacyPath: "gold-w",
-		active: false,
-		sortOrder: 5,
-		colors: [
-			"Brookfield",
-			"Charleston",
-			"Classic Lodge",
-			"Everstill Forest",
-			"Fountain Hills",
-			"Golden Pine",
-			"Houston",
-			"Kaneohe Bay",
-			"Lake Lanier",
-			"Mesa",
-			"Natural Oak",
-			"Nightfall Hills",
-			"Northshire",
-			"Olympia",
-			"Petrified Forest",
-			"Phoenix",
-			"Placid Cabin",
-			"Providence",
-			"River View",
-			"Rock Creek",
-			"Vintage Cabin",
-		],
-	},
-] as const
-
-/** Shared by every series — the certifications printed on all five spec sheets. */
-const CERTIFICATIONS = [
-	{
-		label: "FloorScore",
-		standard: "SCS-EC10.3-2014v3.0",
-		requirement: "Refer to Standards",
-		result: "Pass",
-	},
-	{
-		label: "Greenguard Gold",
-		standard: "CDPH Standard Method V1.2-2017",
-		requirement: "Refer to Standards",
-		result: "Pass",
-	},
-	{
-		label: "CE Certification",
-		standard: "EN14041",
-		requirement: "Refer to Standards",
-		result: "Pass",
-	},
-	{
-		label: "Fire resistance",
-		standard: "EN 13501-1",
-		requirement: "Refer to Standards",
-		result: "Pass",
-	},
-]
-
-const TEST_RESULTS = [
-	{
-		label: "Static Coefficient of Friction",
-		standard: "ASTM C1028",
-		result: "Dry 0.69 / Wet 0.56",
-	},
-	{
-		label: "Peel Strength of Adhesive Bonds",
-		standard: "ASTM D903",
-		requirement: "≥5.5 lbs/inch",
-		result: "10.3 lbs/inch",
-	},
-	{ label: "Abrasion Resistance", standard: "ASTM D4060", result: "14,000 cycles" },
-	{ label: "Critical Radiant Flux", standard: "ASTM E648", result: "Exceeds Class 1" },
-	{ label: "Resistance to Chemicals", standard: "ASTM F925", result: "0 — No change" },
-	{ label: "Heavy Metal Content", standard: "ASTM F963", result: "Not detected" },
-	{ label: "Static Load Limit", standard: "ASTM F970", result: "0.003 inch" },
-	{ label: "Heat Stability", standard: "ASTM F1514", result: "Gray Scale 5 — no change" },
-	{ label: "Light Stability", standard: "ASTM F1515", result: "Gray Scale 5 — no change" },
-	{ label: "Residual Indentation", standard: "ASTM F1914 / F3261", result: "0.002 inch" },
-]
+const SERIES = {
+	name: "AR - Commercial",
+	slug: "ar-commercial",
+	skuPrefix: "ARC",
+	thicknessMm: "5",
+	wearLayerMil: 20,
+	sqFtPerBox: "23.64",
+	boxesPerPallet: 55,
+	colors: [
+		{ name: "Nightfall Hills", public: true },
+		{ name: "Vintage Cabin", public: true },
+		{ name: "Natural Oak", public: true },
+		{ name: "Classic Lodge", public: false },
+		{ name: "Golden Pine", public: true },
+		{ name: "Berkley Oak", public: true },
+		{ name: "Sierra Sands", public: false },
+		{ name: "Rock Ferry", public: false },
+		{ name: "Fountain Hills", public: true },
+		{ name: "Vintage Hickory", public: false },
+		{ name: "Mill Creek", public: false },
+		{ name: "Sterling Oak", public: false },
+		{ name: "Lighthouse Bay", public: true },
+		{ name: "Brookfield", public: true },
+		{ name: "Canal Point", public: false },
+		{ name: "Placid Cabin", public: true },
+		{ name: "Logging Camp Lite", public: false },
+		{ name: "Everstill Forest Lite", public: true },
+		{ name: "Cherry Point Lite", public: false },
+		{ name: "River View Lite", public: true },
+		{ name: "Kaneohe Bay Lite", public: true },
+		{ name: "Catalina Lite", public: false },
+		{ name: "Petrified Forest Lite", public: true },
+		{ name: "Lake Lanier Lite", public: false },
+		{ name: "Cumberland Lite", public: false },
+		{ name: "Northshire Lite", public: true },
+		{ name: "Parris Island Lite", public: true },
+		{ name: "Oceanside Lite", public: false },
+		{ name: "Sandy Plains", public: false },
+		{ name: "Redwood Forest", public: true },
+		{ name: "Mount Pleasant", public: true },
+		{ name: "Cambridge", public: false },
+		{ name: "Carolina Hickory", public: false },
+		{ name: "Monterrey", public: true },
+		{ name: "Stanford Oak", public: true },
+		{ name: "Ruby Falls", public: false },
+		{ name: "Charleston", public: true },
+		{ name: "Houston", public: true },
+		{ name: "Mesa", public: true },
+		{ name: "Phoenix", public: true },
+		{ name: "Providence", public: true },
+		{ name: "Columbia", public: true },
+		{ name: "Rock Creek", public: true },
+	],
+} as const
 
 /**
  * Accessories — the counterexample to "price is always per square foot".
  *
- * Prices are the ones publicly listed on the current site. Whether they stay
- * public once flooring prices go behind the dealer login is an open question,
- * so `isPublic` follows today's behaviour rather than guessing.
+ * Kept through the catalogue change. These are the client's own products, with
+ * the prices publicly listed on his current site, and the template's own Series
+ * column offers "Accessories" as a category — so they are not placeholder data
+ * waiting to be replaced.
  *
  * No stick length is published, so none is invented here: the UOM engine keeps
  * linear feet continuous until the client says how these are bundled.
@@ -276,10 +129,14 @@ const slugify = (value: string) =>
 		.replace(/[^a-z0-9]+/g, "-")
 		.replace(/^-|-$/g, "")
 
-/** Provisional. The current catalogue shows no SKUs at all and the client has
- *  not confirmed a scheme — see the open questions in the project plan. */
-const skuFor = (seriesSlug: string, color: string) =>
-	`${seriesSlug.toUpperCase().replace(/-/g, "")}-${slugify(color).toUpperCase().replace(/-/g, "").slice(0, 10)}`
+/**
+ * Provisional, and replaced the moment Nick sends the real ones.
+ *
+ * The schema requires a unique SKU and his sheet does not have the column yet —
+ * he said he would add it. Derived from the colour rather than numbered, so the
+ * placeholder is recognisable as one and two runs produce the same value.
+ */
+const skuFor = (prefix: string, color: string) => `${prefix}-${slugify(color).toUpperCase()}`
 
 async function main() {
 	console.log("Seeding catalogue…")
@@ -317,102 +174,65 @@ async function main() {
 	console.log(`  accessories: ${ACCESSORIES.length}`)
 
 	// --- Flooring.
-	let productCount = 0
+	const series = await prisma.series.upsert({
+		where: { slug: SERIES.slug },
+		update: {},
+		create: {
+			name: SERIES.name,
+			slug: SERIES.slug,
+			thicknessMm: SERIES.thicknessMm,
+			wearLayerMil: SERIES.wearLayerMil,
+			sqFtPerBox: SERIES.sqFtPerBox,
+			boxesPerPallet: SERIES.boxesPerPallet,
+			// The two documents the current site serves. Five copies of each sit
+			// under /upload/prod/{series}/ there and they are byte-identical —
+			// verified by checksum — so one pair is what is actually true. Still
+			// on the list for the client to confirm they are current.
+			warrantyPdfUrl: "/documents/warranty.pdf",
+			installationPdfUrl: "/documents/installation-instructions.pdf",
+			isActive: true,
+			sortOrder: 1,
+		},
+	})
 
-	for (const series of SERIES) {
-		const record = await prisma.series.upsert({
-			where: { slug: series.slug },
+	for (const [index, color] of SERIES.colors.entries()) {
+		const slug = `${SERIES.slug}-${slugify(color.name)}`
+		await prisma.product.upsert({
+			where: { slug },
 			update: {},
 			create: {
-				name: series.name,
-				slug: series.slug,
-				blurb: series.blurb,
-				lengthIn: "48.03",
-				widthIn: series.widthIn,
-				thicknessMm: series.thicknessMm,
-				wearLayerMil: series.wearLayerMil,
-				finishing: series.finishing,
-				edgeProfile: "Micro Bevel",
-				sqFtPerBox: series.sqFtPerBox,
-				boxesPerPallet: series.boxesPerPallet,
-				lbPerBox: series.lbPerBox,
-				lbPerPallet: series.lbPerPallet,
-				palletsPerFtl: series.palletsPerFtl,
-				// One warranty and one installation guide, not one per series. The
-				// current site serves five copies of each under /upload/prod/{series}/,
-				// but they are byte-identical — verified by checksum. Pointing every
-				// series at the same file is what is actually true, and the redirect
-				// map keeps all ten old URLs working.
-				warrantyPdfUrl: "/documents/warranty.pdf",
-				installationPdfUrl: "/documents/installation-instructions.pdf",
-				isActive: series.active,
-				sortOrder: series.sortOrder,
+				name: color.name,
+				slug,
+				sku: skuFor(SERIES.skuPrefix, color.name),
+				seriesId: series.id,
+				// Groups the same print film across formats, for the day a colour
+				// is stocked in more than one plank size.
+				designName: color.name,
+				// Left empty deliberately. There are film images on file under the
+				// old series names and several match these colours exactly, but
+				// matching them by name would be a guess about which film a colour
+				// actually uses — and a wrong grain on a product page is worse than
+				// no picture. Nick is sending photographs separately.
+				images: [],
+				pricingUom: "SQFT",
+				orderUoms: ["SQFT", "BOX", "PALLET"],
+				isPublic: color.public,
+				isActive: true,
+				sortOrder: index,
 			},
 		})
-
-		// The card copy used to live in a slug-keyed map in the source, which
-		// meant a series the client renames loses its line. It belongs on the
-		// row, where the owner can edit it. Only fills a blank one — an edit
-		// made in admin is not something a re-seed should overwrite.
-		if (!record.blurb) {
-			await prisma.series.update({
-				where: { id: record.id },
-				data: { blurb: series.blurb },
-			})
-		}
-
-		const existingFacts = await prisma.seriesFact.count({ where: { seriesId: record.id } })
-		if (existingFacts === 0) {
-			await prisma.seriesFact.createMany({
-				data: [
-					...CERTIFICATIONS.map((fact, i) => ({
-						...fact,
-						seriesId: record.id,
-						kind: "CERTIFICATION" as const,
-						sortOrder: i,
-					})),
-					...TEST_RESULTS.map((fact, i) => ({
-						...fact,
-						seriesId: record.id,
-						kind: "TEST_RESULT" as const,
-						sortOrder: i,
-					})),
-				],
-			})
-		}
-
-		for (const [index, color] of series.colors.entries()) {
-			const slug = `${series.slug}-${slugify(color)}`
-			await prisma.product.upsert({
-				where: { slug },
-				update: {},
-				create: {
-					name: color,
-					slug,
-					sku: skuFor(series.slug, color),
-					seriesId: record.id,
-					// Groups the same print film across formats: "Brookfield" is one
-					// design in both Gold and Gold W.
-					designName: color,
-					images: [`/swatches/${series.legacyPath}-${slugify(color)}.jpg`],
-					pricingUom: "SQFT",
-					orderUoms: ["SQFT", "BOX", "PALLET"],
-					isPublic: series.active,
-					isActive: series.active,
-					sortOrder: index,
-				},
-			})
-			productCount++
-		}
-
-		console.log(
-			`  ${series.name}: ${series.colors.length} colours` +
-				(series.active ? "" : "  (inactive — pending the W-series answer)"),
-		)
 	}
 
-	console.log(`\nDone. ${productCount} flooring products + ${ACCESSORIES.length} accessories.`)
-	console.log("No dealers, prices or orders seeded — those need the client's price list.")
+	const publicCount = SERIES.colors.filter((color) => color.public).length
+	console.log(
+		`  ${SERIES.name}: ${SERIES.colors.length} colours ` +
+			`(${publicCount} public, ${SERIES.colors.length - publicCount} dealer-only)`,
+	)
+
+	console.log(
+		`\nDone. ${SERIES.colors.length} flooring products + ${ACCESSORIES.length} accessories.`,
+	)
+	console.log("No dealers, prices or orders seeded — the dealer sheet is still empty.")
 }
 
 main()

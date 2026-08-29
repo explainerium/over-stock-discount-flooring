@@ -17,6 +17,7 @@ import { audit } from "@/server/repositories/audit"
 import {
 	createProduct,
 	findConflicting,
+	setProductAccess,
 	updateProduct,
 	updateSeries,
 } from "@/server/repositories/catalog"
@@ -110,7 +111,11 @@ export async function updateProductAction(input: unknown): Promise<ActionResult>
 		isPublic: data.isPublic,
 		isActive: data.isActive,
 		images: splitImages(data.images),
+		dealerRestricted: data.dealerRestricted,
 	})
+
+	// Written whatever the flag says — see setProductAccess.
+	await setProductAccess(data.id, data.dealerIds)
 
 	await audit({
 		entity: "Product",

@@ -94,6 +94,20 @@ export const updateProductSchema = z.object({
 	 * split to an empty list, and quietly clear every image on the product. This
 	 * way that mistake is a validation error somebody can see.
 	 */
+	/**
+	 * Who this is offered to.
+	 *
+	 * The client asked to "pick and choose what products dealers have access
+	 * to". Off means every signed-in dealer sees it, which is what the portal
+	 * did before this field existed and is the safe default for anything nobody
+	 * has thought about.
+	 *
+	 * `dealerIds` is only read when the flag is on. It is sent either way so a
+	 * list built up over months survives being toggled off and on again while
+	 * somebody works out what they meant.
+	 */
+	dealerRestricted: z.boolean(),
+	dealerIds: z.array(z.string().min(1)),
 	images: z
 		.string()
 		.trim()

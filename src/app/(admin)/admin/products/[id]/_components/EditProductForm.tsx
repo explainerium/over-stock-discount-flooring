@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
+import { useFormContext } from "react-hook-form"
 import { toast } from "sonner"
 import {
 	FormError,
@@ -50,12 +51,43 @@ const STOCK = [
 	{ value: "SPECIAL_ORDER", label: "Special order" },
 ]
 
+/**
+ * Who may order this, when it is not everyone.
+ *
+ * Hidden until the flag is on, the same reasoning as the dealer terms form:
+ * a list of dealers on a product offered to all of them is a control that
+ * looks like it does something and does not.
+ */
+function DealerAccessFields({ dealers }: { dealers: { value: string; label: string }[] }) {
+	const { watch } = useFormContext<UpdateProductFormInput>()
+	if (!watch("dealerRestricted")) return null
+
+	if (dealers.length === 0) {
+		return (
+			<p className="text-muted-foreground text-sm">
+				There are no dealer accounts yet, so this is offered to nobody until there are.
+			</p>
+		)
+	}
+
+	return (
+		<ProCheckboxGroup
+			name="dealerIds"
+			label="Offered to"
+			options={dealers}
+			description="Everyone else sees the catalogue without it."
+		/>
+	)
+}
+
 export function EditProductForm({
 	defaults,
 	seriesOptions,
+	dealers,
 }: {
 	defaults: UpdateProductInput
 	seriesOptions: { value: string; label: string; hint?: string }[]
+	dealers: { value: string; label: string }[]
 }) {
 	const [error, setError] = useState<string | null>(null)
 
@@ -109,6 +141,15 @@ export function EditProductForm({
 				rows={3}
 				description="One URL a line. The first is the one the catalogue and the search results use."
 			/>
+
+			<div className="grid gap-4 border-t pt-4">
+				<ProCheckbox
+					name="dealerRestricted"
+					label="Only certain dealers"
+					description="Off means every signed-in dealer can order it."
+				/>
+				<DealerAccessFields dealers={dealers} />
+			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<ProSelect name="pricingUom" label="Priced in" options={PRICING_UOM} required />

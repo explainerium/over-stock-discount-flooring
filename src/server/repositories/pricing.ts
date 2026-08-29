@@ -1,5 +1,6 @@
 import "server-only"
 import { db } from "@/server/db/client"
+import type { Prisma } from "@/generated/prisma/client"
 import { resolvePrice, type PriceResult } from "@/server/domain/pricing"
 
 /**
@@ -61,6 +62,23 @@ const catalogSelect = {
 } as const
 
 /**
+ * What this dealer is offered.
+ *
+ * Most products are offered to everyone — `dealerRestricted` is false by
+ * default and stays that way unless somebody narrows it deliberately. Only the
+ * narrowed ones consult the grant table, so a dealer with no rows at all sees
+ * the whole catalogue, which is what the portal did before any of this
+ * existed.
+ *
+ * Written once and used by both the listing and the count. Two copies of this
+ * predicate is how a catalogue ends up saying "12 of 46" over twelve rows.
+ */
+function offeredTo(dealerId: string): Prisma.ProductWhereInput {
+	return {
+		OR: [{ dealerRestricted: false }, { dealerAccess: { some: { dealerId } } }],
+	}
+}
+/**
  * The whole catalogue at this dealer's prices.
  *
  * A product with no list price comes back with `price: null` rather than
@@ -68,6 +86,7 @@ const catalogSelect = {
  * fails to render because one colour has not been priced yet would be worse
  * than one that shows the colour and says so.
  */
+
 export async function listPricedProducts(
 	dealerId: string,
 	/** Matches a colour name or a SKU. Both are how a dealer refers to one. */
@@ -80,14 +99,21 @@ export async function listPricedProducts(
 		db.product.findMany({
 			where: {
 				isActive: true,
-				...(q
-					? {
-							OR: [
-								{ name: { contains: q, mode: "insensitive" as const } },
-								{ sku: { contains: q, mode: "insensitive" as const } },
-							],
-						}
-					: {}),
+				// Two independent conditions, so both live under AND rather than
+				// fighting over the one OR key.
+				AND: [
+					offeredTo(dealerId),
+					...(q
+						? [
+								{
+									OR: [
+										{ name: { contains: q, mode: "insensitive" as const } },
+										{ sku: { contains: q, mode: "insensitive" as const } },
+									],
+								},
+							]
+						: []),
+				],
 			},
 			select: catalogSelect,
 			orderBy: [{ series: { sortOrder: "asc" } }, { sortOrder: "asc" }],
@@ -264,6 +290,6 @@ export async function listPriceTiers() {
  * hiding. A count rather than a second `listPricedProducts` call: the total
  * does not need every price resolved to be a number.
  */
-export async function countOrderableProducts(): Promise<number> {
-	return db.product.count({ where: { isActive: true } })
+export async function countOrderableProducts(dealerId: string): Promise<number> {
+	return db.product.count({ where: { isActive: true, ...offeredTo(dealerId) } })
 }

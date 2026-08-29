@@ -306,6 +306,7 @@ export async function updateProduct(
 		isPublic: boolean
 		isActive: boolean
 		images: string[]
+		dealerRestricted: boolean
 	},
 ) {
 	return db.product.update({
@@ -323,6 +324,7 @@ export async function updateProduct(
 			isPublic: data.isPublic,
 			isActive: data.isActive,
 			images: data.images,
+			dealerRestricted: data.dealerRestricted,
 		},
 		select: { id: true, name: true },
 	})
@@ -422,4 +424,33 @@ export async function getProductName(productId: string): Promise<string | null> 
 		select: { name: true },
 	})
 	return product?.name ?? null
+}
+
+/**
+ * Replaces the set of dealers a restricted product is offered to.
+ *
+ * Deleted and rewritten rather than diffed. The list is a handful of rows
+ * per product, the whole set arrives from one form, and a diff would be more
+ * code standing between the owner and what he just ticked.
+ *
+ * Runs even when the product is unrestricted, so a list survives the flag
+ * being turned off and back on.
+ */
+export async function setProductAccess(productId: string, dealerIds: string[]) {
+	await db.$transaction([
+		db.dealerProductAccess.deleteMany({ where: { productId } }),
+		db.dealerProductAccess.createMany({
+			data: dealerIds.map((dealerId) => ({ productId, dealerId })),
+			skipDuplicates: true,
+		}),
+	])
+}
+
+/** The dealers a product is currently offered to. */
+export async function getProductAccess(productId: string): Promise<string[]> {
+	const rows = await db.dealerProductAccess.findMany({
+		where: { productId },
+		select: { dealerId: true },
+	})
+	return rows.map((row) => row.dealerId)
 }

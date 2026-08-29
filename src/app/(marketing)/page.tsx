@@ -120,10 +120,24 @@ export default async function HomePage() {
 						<span className="font-bold">{countWord(seriesCards.length)} series.</span>{" "}
 						<span className="font-light">One warehouse.</span>
 					</h2>
+					{/* Derived, not asserted.
+
+					    This line used to say every series was a 48" plank, 5 mm, micro
+					    bevelled and pre-padded. That was true of Bronze, Silver and Gold,
+					    and written as though it would go on being true of whatever
+					    replaced them. The first real series has neither a plank length nor
+					    an edge profile on file, so the sentence was making a claim the
+					    catalogue could not back — and "what changes between them" read as
+					    nonsense above a single card.
+
+					    What is left is what the warehouse can say whatever it stocks, and
+					    a comparison only when there is something to compare. The three
+					    things it names are the three spec fields a series actually
+					    carries, so the sentence stays true as series are added. */}
 					<p className="text-muted-foreground mx-auto mt-4 max-w-2xl text-center text-sm">
-						Every series is 48&quot; plank, 5 mm, micro bevelled, with the pad already
-						attached. What changes between them is the width, the emboss and how hard
-						the surface is.
+						Stocked by the pallet in High Point.
+						{seriesCards.length > 1 &&
+							" What changes between them is the plank size, the finish and the wear layer."}
 					</p>
 					<div className="mt-14">
 						<SeriesCards series={seriesCards} />
