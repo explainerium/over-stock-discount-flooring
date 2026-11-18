@@ -6,24 +6,29 @@ import { PageHeader } from "../_components/PageHeader"
 export const metadata: Metadata = {
 	title: "About Us",
 	description:
-		"A family-owned flooring business in High Point, North Carolina. Factory direct rigid core LVP, sold to the public and to the trade.",
+		"Family-owned in High Point, North Carolina. Our own made-in-USA luxury vinyl plank, more than two million square feet in stock, shipped coast to coast.",
 	alternates: { canonical: "/about" },
 }
 
 /**
- * The client's own About copy, lightly corrected.
+ * The client's approved About copy, word for word — `About_Us_Approved.txt` in
+ * his November handover. Its opening line is the heading, the one-stop-shop
+ * sentence is set as a list, and its closing line leads into the showroom
+ * details. Edit the wording only with his say-so.
  *
- * Two things to raise with him before this goes live:
- *
- *   1. "nearly a decade in business" was written around 2024 and needs
- *      re-dating, or replacing with a founding year that will not go stale.
- *   2. The testimonials on the current site are initials only — CT, BB, AB —
- *      which is a weak trust signal. Real Google reviews would do more, and he
- *      has a Google Business Profile to pull them from.
- *
- * The quotes below are his, kept because they say something specific. The
- * staff names in them are the closest thing the site has to a team page.
+ * Still open with him: the testimonials are from his current site and carry
+ * initials only, which is a weak trust signal. Real Google reviews would do
+ * more, and he has a Google Business Profile to pull them from.
  */
+const RANGE = [
+	"Luxury vinyl plank and tile",
+	"Carpet",
+	"Stair products",
+	"Trim",
+	"Accessories",
+	"Butcher block countertops",
+]
+
 const TESTIMONIALS = [
 	{
 		initials: "AB",
@@ -44,41 +49,39 @@ export default function AboutPage() {
 		<>
 			<PageHeader
 				trail={[{ href: "/", label: "Home" }, { label: "Company" }]}
-				light="Pursuit of excellence"
-				bold="is in our genes"
-				intro="A family-owned company that has served thousands of customers in High Point, North Carolina."
+				light="Flooring is our business."
+				bold="Family is our foundation."
 			/>
 
 			<section className="bg-paper">
 				<div className="mx-auto grid max-w-[1280px] gap-12 px-5 pb-20 md:grid-cols-2 md:pb-24">
-					<div className="grid gap-5 text-sm leading-relaxed">
+					<div className="grid content-start gap-5 text-sm leading-relaxed">
 						<p>
-							We have been helping residential and commercial customers for years with
-							everyday low prices, flooring consultations and professional
-							installation referrals.
+							Steve and Ashley started our family-owned business with a simple goal:
+							offer quality flooring, fair prices, and the personal service customers
+							deserve. Their son Nick joined the team in 2022, and we’ve never looked
+							back.
 						</p>
 						<p>
-							We partner directly with the manufacturer and serve as a factory direct
-							outlet. That lets us skip the middle man and supply good flooring at
-							wholesale prices — which is the whole reason the business exists.
+							From our home in High Point, North Carolina, we’ve grown from one
+							truckload of flooring to more than two million square feet in stock,
+							shipping to customers from coast to coast every day.
 						</p>
 						<p>
-							We are proud to carry the area&rsquo;s most extensive range of
-							made-in-the-USA rigid core luxury vinyl flooring, in stock and
-							available. Come and see it.
+							We manufacture our own private-label luxury vinyl plank flooring right
+							here in the United States, with quality as our mission every step of the
+							way—from the products we put our name on to the way we care for our
+							customers.
 						</p>
 					</div>
 
 					<div className="bg-band p-8">
-						<h2 className="display text-ink text-lg uppercase">What we do</h2>
+						<h2 className="display text-ink text-lg uppercase">What we carry</h2>
+						<p className="text-muted-foreground mt-3 text-sm">
+							We’re your one-stop shop for flooring, offering:
+						</p>
 						<ul className="mt-5 grid gap-3 text-sm">
-							{[
-								"Detailed product information and free estimates",
-								"Visualiser boards to see a floor before you buy it",
-								"Installation referrals",
-								"Delivery options across the region",
-								"Wholesale pricing for trade accounts",
-							].map((item) => (
+							{RANGE.map((item) => (
 								<li key={item} className="border-rule border-t pt-3">
 									{item}
 								</li>
@@ -113,12 +116,16 @@ export default function AboutPage() {
 			<section className="bg-paper">
 				<div className="mx-auto max-w-[1280px] px-5 py-20 text-center md:py-24">
 					<h2 className="display text-ink text-2xl uppercase sm:text-3xl">
-						<span className="font-light">Open to the</span>{" "}
-						<span className="font-bold">public</span>
+						<span className="font-light">Part of</span>{" "}
+						<span className="font-bold">the family</span>
 					</h2>
+					<p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed">
+						Whether you need one box of flooring or enough for an entire neighborhood,
+						you’re part of the family now, too.
+					</p>
 					<p className="text-muted-foreground mx-auto mt-4 max-w-xl text-sm">
-						{SHOWROOM.street}, {SHOWROOM.city}, {SHOWROOM.state} {SHOWROOM.zip}.{" "}
-						{SHOWROOM.weekdays} and {SHOWROOM.saturday}.
+						Open to the public at {SHOWROOM.street}, {SHOWROOM.city}, {SHOWROOM.state}{" "}
+						{SHOWROOM.zip}. {SHOWROOM.weekdays} and {SHOWROOM.saturday}.
 					</p>
 					<div className="mt-10 flex flex-wrap justify-center gap-3">
 						<Link href="/contact" className="btn bg-ink text-paper">

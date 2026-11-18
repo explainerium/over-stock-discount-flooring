@@ -296,8 +296,8 @@ export default async function HomePage() {
 						<span className="font-bold">stand on it</span>
 					</h2>
 					<p className="text-muted-foreground mx-auto mt-4 max-w-2xl text-center text-sm">
-						A family-owned business, nearly a decade in High Point. Every colour we
-						stock is on the rack, full length, under real light.
+						A family-owned business in High Point, North Carolina. Every colour we stock
+						is on the rack, full length, under real light.
 					</p>
 
 					<dl className="mx-auto mt-14 grid max-w-3xl gap-10 text-center sm:grid-cols-3">
