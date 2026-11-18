@@ -50,6 +50,7 @@ const lineSelect = {
 			pricingUom: true,
 			orderUoms: true,
 			stockStatus: true,
+			category: { select: { name: true } },
 			series: { select: { name: true } },
 		},
 	},
@@ -169,10 +170,10 @@ function convert(product: ProductSpec, unit: Uom, quantity: string, wasteFactorP
 			pricingUom: product.pricingUom,
 			orderUoms: product.orderUoms,
 			sqFtPerBox:
-				product.sqFtPerBoxOverride?.toString() ?? product.series.sqFtPerBox?.toString(),
+				product.sqFtPerBoxOverride?.toString() ?? product.series?.sqFtPerBox?.toString(),
 			boxesPerPallet:
-				product.boxesPerPalletOverride ?? product.series.boxesPerPallet ?? undefined,
-			lbPerBox: product.series.lbPerBox?.toString(),
+				product.boxesPerPalletOverride ?? product.series?.boxesPerPallet ?? undefined,
+			lbPerBox: product.series?.lbPerBox?.toString(),
 			lfPerStick: lfPerStick?.toString(),
 			sticksPerBundle: sticksPerBundle ? Number(sticksPerBundle) : undefined,
 		},
@@ -405,7 +406,7 @@ export async function recalculate(orderId: string) {
 			},
 		})
 		for (const product of products) {
-			const perPallet = product.boxesPerPalletOverride ?? product.series.boxesPerPallet
+			const perPallet = product.boxesPerPalletOverride ?? product.series?.boxesPerPallet
 			if (!perPallet) continue
 			pallets = pallets.plus(
 				new Decimal(boxesByProduct.get(product.id) ?? 0).dividedBy(perPallet),

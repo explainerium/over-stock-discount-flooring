@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next"
 import { db } from "@/server/db/client"
+import { publishedProducts } from "@/server/repositories/catalog"
 import { SITE_URL } from "@/constants/site"
 
 /**
@@ -22,13 +23,21 @@ export const dynamic = "force-dynamic"
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const base = SITE_URL
 
-	const [products, series] = await Promise.all([
+	const [products, categories, series] = await Promise.all([
 		db.product.findMany({
-			where: { isPublic: true, isActive: true },
+			where: publishedProducts(),
+			select: { slug: true, updatedAt: true },
+		}),
+		db.category.findMany({
+			where: { isActive: true, products: { some: publishedProducts() } },
 			select: { slug: true, updatedAt: true },
 		}),
 		db.series.findMany({
-			where: { isActive: true, products: { some: { isPublic: true, isActive: true } } },
+			where: {
+				isActive: true,
+				sqFtPerBox: { not: null },
+				products: { some: publishedProducts() },
+			},
 			select: { slug: true, updatedAt: true },
 		}),
 	])
@@ -45,6 +54,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 	return [
 		...staticPages,
+		...categories.map((c) => ({
+			url: `${base}/products?category=${c.slug}`,
+			lastModified: c.updatedAt,
+			changeFrequency: "weekly" as const,
+			priority: 0.7,
+		})),
 		...series.map((s) => ({
 			url: `${base}/products?series=${s.slug}`,
 			lastModified: s.updatedAt,

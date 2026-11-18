@@ -1,10 +1,12 @@
 import Link from "next/link"
-import { FACTS, SHOWROOM } from "@/constants/catalog"
+import { FACTS, FLOORING_CATEGORY, SHOWROOM } from "@/constants/catalog"
 import {
 	countPublicColours,
+	listPublicCategories,
 	listPublicProducts,
 	listPublicSeries,
 } from "@/server/repositories/catalog"
+import { CategoryTiles } from "./_components/CategoryTiles"
 import { CoverageCalculator } from "./_components/CoverageCalculator"
 import { SeriesCards } from "./_components/SeriesCards"
 import { SwatchGrid } from "./_components/SwatchGrid"
@@ -57,11 +59,22 @@ export default async function HomePage() {
 	// One fetch at the page, handed down. The calculator is a client component
 	// and cannot query; the cards and the grid could, but three round trips for
 	// one screen is three round trips.
-	const [series, products, colourCount] = await Promise.all([
+	const [series, products, colourCount, categories] = await Promise.all([
 		listPublicSeries(),
-		listPublicProducts({ take: 12 }),
+		// Colours means flooring: a baseboard is not a colour on the shelf.
+		listPublicProducts({ categorySlug: FLOORING_CATEGORY, take: 12 }),
 		countPublicColours(),
+		listPublicCategories(),
 	])
+
+	const shelves = categories
+		.filter((c) => c.slug !== FLOORING_CATEGORY)
+		.map((c) => ({
+			slug: c.slug,
+			name: c.name,
+			count: c._count.products,
+			image: c.products[0]?.images[0] ?? null,
+		}))
 
 	const seriesCards = series
 		.filter((s) => s.sqFtPerBox)
@@ -168,10 +181,31 @@ export default async function HomePage() {
 					</div>
 
 					<div className="mt-12">
-						<Link href="/products" className="btn bg-ink text-paper">
+						<Link
+							href={`/products?category=${FLOORING_CATEGORY}`}
+							className="btn bg-ink text-paper"
+						>
 							See all {colourCount} colours
 						</Link>
 					</div>
+
+					{/* Everything that is not flooring, in the same band so the page
+					    keeps its white/grey rhythm. Absent until a shelf has a
+					    published product, so it never advertises an empty one. */}
+					{shelves.length > 0 && (
+						<div className="border-rule mt-20 border-t pt-20">
+							<h2 className="display text-ink text-3xl uppercase sm:text-4xl">
+								<span className="font-light">Finish</span>{" "}
+								<span className="font-bold">the job</span>
+							</h2>
+							<p className="text-muted-foreground mt-3 text-sm">
+								Everything that goes with the floor, from the same warehouse.
+							</p>
+							<div className="mt-12">
+								<CategoryTiles categories={shelves} />
+							</div>
+						</div>
+					)}
 				</div>
 			</section>
 

@@ -1,5 +1,6 @@
 import Decimal from "decimal.js"
 import { formatUnitPrice } from "@/lib/format/money"
+import { formatPieces } from "@/lib/format/sold-by"
 import { QboError, type QboInvoice, type QboInvoiceLine, type QboItemRefs } from "./types"
 
 /**
@@ -49,6 +50,8 @@ export interface InvoiceableLine {
 	/** Flooring only. */
 	boxes?: number | null
 	sqFt?: string | null
+	/** Trim only: whole pieces shipped, billed on the feet they add up to. */
+	pieces?: number | null
 }
 
 export interface InvoiceableOrder {
@@ -76,6 +79,7 @@ function describe(line: InvoiceableLine): string {
 	const measure: string[] = []
 	if (line.boxes) measure.push(`${line.boxes} ${line.boxes === 1 ? "box" : "boxes"}`)
 	if (line.sqFt) measure.push(`${exact(line.sqFt)} sq ft`)
+	if (line.pieces) measure.push(formatPieces(line.pieces))
 
 	if (measure.length > 0) {
 		parts.push(`${measure.join(" · ")} at ${formatUnitPrice(line.unitPrice, line.pricingUom)}`)

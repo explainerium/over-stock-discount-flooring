@@ -141,17 +141,20 @@ const skuFor = (prefix: string, color: string) => `${prefix}-${slugify(color).to
 async function main() {
 	console.log("Seeding catalogue…")
 
-	// --- Accessories live under their own series so the spec fields stay null.
-	const accessorySeries = await prisma.series.upsert({
+	// --- Categories. Same ids the categories migration created, so seeding a
+	// database that already ran it changes nothing.
+	const flooring = await prisma.category.upsert({
+		where: { slug: "flooring" },
+		update: {},
+		create: { id: "cat_flooring", name: "Flooring", slug: "flooring", sortOrder: 0 },
+	})
+	const accessories = await prisma.category.upsert({
 		where: { slug: "accessories" },
 		update: {},
-		create: {
-			name: "Accessories",
-			slug: "accessories",
-			blurb: "Trim and mouldings, priced per linear foot.",
-			sortOrder: 90,
-		},
+		create: { id: "cat_accessories", name: "Accessories", slug: "accessories", sortOrder: 100 },
 	})
+
+	// --- Accessories have no series: there are no plank specs to inherit.
 
 	for (const [index, item] of ACCESSORIES.entries()) {
 		await prisma.product.upsert({
@@ -161,7 +164,7 @@ async function main() {
 				name: item.name,
 				slug: item.slug,
 				sku: item.sku,
-				seriesId: accessorySeries.id,
+				categoryId: accessories.id,
 				pricingUom: "LF",
 				orderUoms: ["LF"],
 				listPrice: item.listPrice,
@@ -204,6 +207,7 @@ async function main() {
 				name: color.name,
 				slug,
 				sku: skuFor(SERIES.skuPrefix, color.name),
+				categoryId: flooring.id,
 				seriesId: series.id,
 				// Groups the same print film across formats, for the day a colour
 				// is stocked in more than one plank size.

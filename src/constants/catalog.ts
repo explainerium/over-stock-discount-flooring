@@ -24,3 +24,10 @@ export const FACTS = {
 	checkpoints: 89,
 	productionProcesses: 10,
 } as const
+
+/**
+ * The flooring category's slug. Created by the categories migration, and safe
+ * to name in code because a category's slug never changes when the owner
+ * renames it — only the name does.
+ */
+export const FLOORING_CATEGORY = "flooring"

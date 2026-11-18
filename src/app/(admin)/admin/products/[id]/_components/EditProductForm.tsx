@@ -15,14 +15,16 @@ import {
 	ProTextarea,
 } from "@/components/form"
 import {
+	NO_SERIES,
 	updateProductFormSchema,
 	type UpdateProductFormInput,
 	type UpdateProductInput,
 } from "@/lib/validation/catalog"
 import { updateProductAction } from "../../_actions"
+import { ProductImages } from "./ProductImages"
 
 const PRICING_UOM = [
-	{ value: "SQFT", label: "Per square foot" },
+	{ value: "SQFT", label: "Per square foot (flooring)" },
 	{ value: "LF", label: "Per linear foot" },
 	{ value: "EACH", label: "Each" },
 	{ value: "ROLL", label: "Per roll" },
@@ -38,7 +40,7 @@ const ORDER_UOMS = [
 	{ value: "BOX", label: "Box" },
 	{ value: "PALLET", label: "Pallet" },
 	{ value: "LF", label: "Linear ft" },
-	{ value: "STICK", label: "Stick" },
+	{ value: "STICK", label: "Piece" },
 	{ value: "BUNDLE", label: "Bundle" },
 	{ value: "EACH", label: "Each" },
 	{ value: "ROLL", label: "Roll" },
@@ -80,12 +82,35 @@ function DealerAccessFields({ dealers }: { dealers: { value: string; label: stri
 	)
 }
 
+/**
+ * Only for something priced per foot.
+ *
+ * Trim is priced per linear foot but leaves the warehouse in pieces, so the
+ * price on screen and the thing a dealer counts are different units. This is
+ * the number that joins them.
+ */
+function PieceLengthField() {
+	const { watch } = useFormContext<UpdateProductFormInput>()
+	if (watch("pricingUom") !== "LF") return null
+
+	return (
+		<ProInput
+			name="lfPerPiece"
+			label="Length per piece (ft)"
+			placeholder="12"
+			description="Needed to order by the piece. Feet typed by a dealer round up to whole pieces."
+		/>
+	)
+}
+
 export function EditProductForm({
 	defaults,
+	categoryOptions,
 	seriesOptions,
 	dealers,
 }: {
 	defaults: UpdateProductInput
+	categoryOptions: { value: string; label: string }[]
 	seriesOptions: { value: string; label: string; hint?: string }[]
 	dealers: { value: string; label: string }[]
 }) {
@@ -121,11 +146,21 @@ export function EditProductForm({
 			<FormError message={error} />
 
 			<div className="grid gap-4 sm:grid-cols-2">
-				<ProInput name="name" label="Colour name" required />
+				<ProInput name="name" label="Name" required />
 				<ProInput name="sku" label="SKU" required />
 			</div>
 
-			<ProSelect name="seriesId" label="Series" options={seriesOptions} required />
+			<div className="grid gap-4 sm:grid-cols-2">
+				<ProSelect name="categoryId" label="Category" options={categoryOptions} required />
+				<ProSelect
+					name="seriesId"
+					label="Series (flooring only)"
+					options={[
+						{ value: NO_SERIES, label: "No series (not flooring)" },
+						...seriesOptions,
+					]}
+				/>
+			</div>
 
 			<ProInput
 				name="designName"
@@ -133,14 +168,14 @@ export function EditProductForm({
 				description="Groups the same print film across formats, where one colour is stocked in more than one plank size."
 			/>
 
-			<ProTextarea name="description" label="Description" rows={4} />
-
 			<ProTextarea
-				name="images"
-				label="Images"
-				rows={3}
-				description="One URL a line. The first is the one the catalogue and the search results use."
+				name="description"
+				label="Description"
+				rows={4}
+				description="Lines starting with • or - show as a bulleted list on the product page."
 			/>
+
+			<ProductImages />
 
 			<div className="grid gap-4 border-t pt-4">
 				<ProCheckbox
@@ -152,15 +187,23 @@ export function EditProductForm({
 			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2">
-				<ProSelect name="pricingUom" label="Priced in" options={PRICING_UOM} required />
+				<ProSelect
+					name="pricingUom"
+					label="Sold by / priced per"
+					options={PRICING_UOM}
+					required
+				/>
 				<ProSelect name="stockStatus" label="Stock" options={STOCK} required />
 			</div>
 
-			<ProInput
-				name="listPrice"
-				label="List price"
-				description="In the unit above. Dealer pricing overrides this."
-			/>
+			<div className="grid gap-4 sm:grid-cols-2">
+				<ProInput
+					name="listPrice"
+					label="List price"
+					description="In the unit above. Dealer pricing overrides this."
+				/>
+				<PieceLengthField />
+			</div>
 
 			<ProCheckboxGroup
 				name="orderUoms"

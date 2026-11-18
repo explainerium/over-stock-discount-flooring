@@ -4,8 +4,12 @@ import { revalidatePath } from "next/cache"
 import {
 	splitImages,
 	blank,
+	createCategorySchema,
 	createProductSchema,
+	hasPieceLength,
+	seriesOrUndefined,
 	slugify,
+	updateCategorySchema,
 	updateProductSchema,
 	updateSeriesSchema,
 	wholeOrUndefined,
@@ -13,11 +17,16 @@ import {
 } from "@/lib/validation/catalog"
 import type { ActionResult } from "@/lib/validation/dealers"
 import { requireStaff } from "@/server/auth/guards"
+import { signProductUpload, type SignedUpload } from "@/server/integrations/cloudinary"
 import { audit } from "@/server/repositories/audit"
 import {
+	createCategory,
 	createProduct,
 	findConflicting,
+	findConflictingCategory,
+	getCategory,
 	setProductAccess,
+	updateCategory,
 	updateProduct,
 	updateSeries,
 } from "@/server/repositories/catalog"
@@ -35,6 +44,11 @@ function revalidateCatalog(slug?: string) {
 	revalidatePath("/")
 	revalidatePath("/products")
 	if (slug) revalidatePath(`/products/${slug}`)
+}
+
+/** A category id from a form is checked, not trusted to the foreign key. */
+async function categoryExists(categoryId: string): Promise<boolean> {
+	return Boolean(await getCategory(categoryId))
 }
 
 export async function createProductAction(
@@ -61,11 +75,18 @@ export async function createProductAction(
 			: { ok: false, message: "A product with that name already exists.", field: "name" }
 	}
 
+	if (!(await categoryExists(data.categoryId))) {
+		return { ok: false, message: "That category no longer exists.", field: "categoryId" }
+	}
+
 	const product = await createProduct({
 		name: data.name,
 		slug,
 		sku: data.sku,
-		seriesId: data.seriesId,
+		categoryId: data.categoryId,
+		seriesId: seriesOrUndefined(data.seriesId),
+		soldBy: data.soldBy,
+		lfPerPiece: hasPieceLength(data.lfPerPiece) ? data.lfPerPiece.trim() : undefined,
 		imageUrl: blank(data.imageUrl),
 	})
 
@@ -98,10 +119,15 @@ export async function updateProductAction(input: unknown): Promise<ActionResult>
 		return { ok: false, message: "That SKU is already in use.", field: "sku" }
 	}
 
+	if (!(await categoryExists(data.categoryId))) {
+		return { ok: false, message: "That category no longer exists.", field: "categoryId" }
+	}
+
 	const product = await updateProduct(data.id, {
 		name: data.name,
 		sku: data.sku,
-		seriesId: data.seriesId,
+		categoryId: data.categoryId,
+		seriesId: seriesOrUndefined(data.seriesId),
 		designName: blank(data.designName),
 		description: blank(data.description),
 		listPrice: blank(data.listPrice),
@@ -112,6 +138,7 @@ export async function updateProductAction(input: unknown): Promise<ActionResult>
 		isActive: data.isActive,
 		images: splitImages(data.images),
 		dealerRestricted: data.dealerRestricted,
+		lfPerPiece: hasPieceLength(data.lfPerPiece) ? data.lfPerPiece.trim() : undefined,
 	})
 
 	// Written whatever the flag says — see setProductAccess.
@@ -175,4 +202,107 @@ export async function updateSeriesAction(input: unknown): Promise<ActionResult> 
 	revalidatePath("/admin/series")
 	revalidateCatalog()
 	return { ok: true, message: "Saved. Every colour in this series follows these specs." }
+}
+
+// ---------------------------------------------------------------------------
+// Categories
+// ---------------------------------------------------------------------------
+
+export async function createCategoryAction(input: unknown): Promise<ActionResult<{ id: string }>> {
+	const staff = await requireStaff()
+
+	const parsed = createCategorySchema.safeParse(input)
+	if (!parsed.success) {
+		const issue = parsed.error.issues[0]
+		return { ok: false, message: issue.message, field: issue.path[0]?.toString() }
+	}
+	const data = parsed.data
+	const slug = slugify(data.name)
+
+	if (!slug) {
+		return { ok: false, message: "That name has no letters or numbers in it.", field: "name" }
+	}
+	if (await findConflictingCategory(data.name, slug)) {
+		return { ok: false, message: "A category with that name already exists.", field: "name" }
+	}
+
+	const category = await createCategory({
+		name: data.name,
+		slug,
+		blurb: blank(data.blurb),
+		sortOrder: wholeOrUndefined(data.sortOrder) ?? 0,
+	})
+
+	await audit({
+		entity: "Category",
+		entityId: category.id,
+		action: "created",
+		actorId: staff.id,
+		after: { name: category.name, slug: category.slug },
+	})
+
+	revalidatePath("/admin/categories")
+	revalidateCatalog()
+	return { ok: true, data: { id: category.id } }
+}
+
+export async function updateCategoryAction(input: unknown): Promise<ActionResult> {
+	const staff = await requireStaff()
+
+	const parsed = updateCategorySchema.safeParse(input)
+	if (!parsed.success) {
+		const issue = parsed.error.issues[0]
+		return { ok: false, message: issue.message, field: issue.path[0]?.toString() }
+	}
+	const data = parsed.data
+
+	const current = await getCategory(data.id)
+	if (!current) return { ok: false, message: "That category no longer exists." }
+
+	// The slug stays put (see updateCategory), so only the name can clash.
+	if (await findConflictingCategory(data.name, current.slug, data.id)) {
+		return { ok: false, message: "A category with that name already exists.", field: "name" }
+	}
+
+	const category = await updateCategory(data.id, {
+		name: data.name,
+		blurb: blank(data.blurb),
+		sortOrder: wholeOrUndefined(data.sortOrder) ?? 0,
+		isActive: data.isActive,
+	})
+
+	await audit({
+		entity: "Category",
+		entityId: data.id,
+		action: "updated",
+		actorId: staff.id,
+		after: { name: category.name, isActive: data.isActive },
+	})
+
+	revalidatePath("/admin/categories")
+	revalidateCatalog()
+	return { ok: true, message: "Saved." }
+}
+
+// ---------------------------------------------------------------------------
+// Images
+// ---------------------------------------------------------------------------
+
+/**
+ * Permission for the browser to upload one photo to Cloudinary.
+ *
+ * Staff only, because the signature is what stands between the client's media
+ * library and anyone who finds the upload URL.
+ */
+export async function signImageUploadAction(): Promise<ActionResult<SignedUpload>> {
+	await requireStaff()
+
+	const signed = signProductUpload()
+	if (!signed) {
+		return {
+			ok: false,
+			message: "Photo uploads are not set up yet: the Cloudinary keys are missing.",
+		}
+	}
+	return { ok: true, data: signed }
 }

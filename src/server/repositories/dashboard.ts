@@ -68,7 +68,8 @@ async function productsWithoutPrice() {
  */
 async function seriesMissingFreightData() {
 	return db.series.findMany({
-		where: { OR: [{ freightClass: null }, { nmfcCode: null }] },
+		// Flooring series only: a spec-less series has no boxes to ship.
+		where: { sqFtPerBox: { not: null }, OR: [{ freightClass: null }, { nmfcCode: null }] },
 		select: { id: true, name: true, freightClass: true, nmfcCode: true },
 		orderBy: { sortOrder: "asc" },
 	})

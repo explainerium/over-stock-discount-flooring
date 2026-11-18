@@ -2,6 +2,7 @@ import "server-only"
 import { db } from "@/server/db/client"
 import type { Prisma } from "@/generated/prisma/client"
 import { resolvePrice, type PriceResult } from "@/server/domain/pricing"
+import { lfPerPieceOf } from "./catalog"
 
 /**
  * Prices, resolved for one dealer.
@@ -26,6 +27,8 @@ export interface PricedProduct {
 	sqFtPerBox: string | null
 	boxesPerPallet: number | null
 	lbPerBox: string | null
+	/** Feet in one piece of trim. Null for anything not sold by the piece. */
+	lfPerPiece: string | null
 	/** Null when the product has no list price yet, which is not an error here. */
 	price: PriceResult | null
 }
@@ -56,9 +59,11 @@ const catalogSelect = {
 	orderUoms: true,
 	stockStatus: true,
 	listPrice: true,
+	category: { select: { name: true } },
 	series: {
 		select: { name: true, sqFtPerBox: true, boxesPerPallet: true, lbPerBox: true },
 	},
+	conversions: { select: { fromUom: true, toUom: true, factor: true } },
 } as const
 
 /**
@@ -116,7 +121,11 @@ export async function listPricedProducts(
 				],
 			},
 			select: catalogSelect,
-			orderBy: [{ series: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+			orderBy: [
+				{ category: { sortOrder: "asc" } },
+				{ series: { sortOrder: "asc" } },
+				{ sortOrder: "asc" },
+			],
 		}),
 		db.dealerPrice.findMany({
 			where: { dealerId },
@@ -150,10 +159,11 @@ export async function listPricedProducts(
 			pricingUom: product.pricingUom,
 			orderUoms: product.orderUoms,
 			stockStatus: product.stockStatus,
-			seriesName: product.series.name,
-			sqFtPerBox: product.series.sqFtPerBox?.toString() ?? null,
-			boxesPerPallet: product.series.boxesPerPallet,
-			lbPerBox: product.series.lbPerBox?.toString() ?? null,
+			seriesName: product.series?.name ?? product.category.name,
+			sqFtPerBox: product.series?.sqFtPerBox?.toString() ?? null,
+			boxesPerPallet: product.series?.boxesPerPallet ?? null,
+			lbPerBox: product.series?.lbPerBox?.toString() ?? null,
+			lfPerPiece: lfPerPieceOf(product.conversions),
 			price,
 		}
 	})
@@ -195,10 +205,11 @@ export async function getPricedProduct(
 		pricingUom: product.pricingUom,
 		orderUoms: product.orderUoms,
 		stockStatus: product.stockStatus,
-		seriesName: product.series.name,
-		sqFtPerBox: product.series.sqFtPerBox?.toString() ?? null,
-		boxesPerPallet: product.series.boxesPerPallet,
-		lbPerBox: product.series.lbPerBox?.toString() ?? null,
+		seriesName: product.series?.name ?? product.category.name,
+		sqFtPerBox: product.series?.sqFtPerBox?.toString() ?? null,
+		boxesPerPallet: product.series?.boxesPerPallet ?? null,
+		lbPerBox: product.series?.lbPerBox?.toString() ?? null,
+		lfPerPiece: lfPerPieceOf(product.conversions),
 		price,
 	}
 }
@@ -227,9 +238,14 @@ export async function listDealerPricing(dealerId: string) {
 				sku: true,
 				listPrice: true,
 				pricingUom: true,
+				category: { select: { name: true } },
 				series: { select: { name: true, sortOrder: true } },
 			},
-			orderBy: [{ series: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+			orderBy: [
+				{ category: { sortOrder: "asc" } },
+				{ series: { sortOrder: "asc" } },
+				{ sortOrder: "asc" },
+			],
 		}),
 		db.dealerPrice.findMany({
 			where: { dealerId },

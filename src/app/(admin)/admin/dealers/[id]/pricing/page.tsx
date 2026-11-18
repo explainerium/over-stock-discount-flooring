@@ -31,7 +31,7 @@ export default async function DealerPricingPage({ params }: { params: Promise<{ 
 			productId: product.id,
 			name: product.name,
 			sku: product.sku,
-			seriesName: product.series.name,
+			seriesName: product.series?.name ?? product.category.name,
 			pricingUom: product.pricingUom,
 			listPrice: product.listPrice?.toString() ?? null,
 			price: override?.price?.toString() ?? "",

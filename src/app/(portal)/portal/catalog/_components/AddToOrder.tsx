@@ -21,6 +21,7 @@ export interface OrderableProduct {
 	sqFtPerBox: string | null
 	boxesPerPallet: number | null
 	lbPerBox: string | null
+	lfPerPiece: string | null
 }
 
 const UNIT_LABEL: Record<string, string> = {
@@ -28,7 +29,7 @@ const UNIT_LABEL: Record<string, string> = {
 	BOX: "Boxes",
 	PALLET: "Pallets",
 	LF: "Linear ft",
-	STICK: "Sticks",
+	STICK: "Pieces",
 	BUNDLE: "Bundles",
 	EACH: "Each",
 	ROLL: "Rolls",
@@ -70,6 +71,7 @@ export function AddToOrder({ product }: { product: OrderableProduct }) {
 					sqFtPerBox: product.sqFtPerBox ?? undefined,
 					boxesPerPallet: product.boxesPerPallet ?? undefined,
 					lbPerBox: product.lbPerBox ?? undefined,
+					lfPerStick: product.lfPerPiece ?? undefined,
 				},
 				unit,
 				quantity,
@@ -188,6 +190,11 @@ export function AddToOrder({ product }: { product: OrderableProduct }) {
 					</span>
 					{preview.conversion.coverageSqFt && (
 						<> · {formatCoverage(preview.conversion.coverageSqFt)} sq ft</>
+					)}
+					{/* Pieces are what ships, feet are what is billed: both, or the
+					    total looks wrong against the price per foot. */}
+					{preview.conversion.sellableUom === "STICK" && (
+						<> · {new Decimal(preview.conversion.billableQty).toString()} linear ft</>
 					)}
 					{" · "}
 					<span className="font-medium">{formatMoney(preview.total)}</span>

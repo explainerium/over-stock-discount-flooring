@@ -20,6 +20,8 @@ const productCard = {
 	designName: true,
 	stockStatus: true,
 	pricingUom: true,
+	orderUoms: true,
+	category: { select: { id: true, name: true, slug: true } },
 	series: { select: { id: true, name: true, slug: true } },
 } satisfies Prisma.ProductSelect
 
@@ -29,10 +31,68 @@ export type ProductCard = Prisma.ProductGetPayload<{ select: typeof productCard 
 // Public
 // ---------------------------------------------------------------------------
 
-/** Series that have at least one published product. */
-export async function listPublicSeries() {
-	return db.series.findMany({
+/**
+ * What "published" means everywhere on the public site.
+ *
+ * The product is public and active, and so is the category it sits in, so
+ * hiding a category in admin takes its whole shelf off the site in one go.
+ * Narrowed to one category by slug when given.
+ */
+export function publishedProducts(categorySlug?: string) {
+	return {
+		isPublic: true,
+		isActive: true,
+		category: { isActive: true, ...(categorySlug ? { slug: categorySlug } : {}) },
+	} satisfies Prisma.ProductWhereInput
+}
+
+/**
+ * Categories that have at least one published product, in the owner's order.
+ *
+ * An empty shelf is left out rather than shown with a zero beside it: "Carpet
+ * (0)" in the menu is a promise the catalogue does not keep yet.
+ */
+export async function listPublicCategories() {
+	return db.category.findMany({
 		where: { isActive: true, products: { some: { isPublic: true, isActive: true } } },
+		select: {
+			id: true,
+			name: true,
+			slug: true,
+			blurb: true,
+			_count: { select: { products: { where: { isPublic: true, isActive: true } } } },
+			products: {
+				where: { isPublic: true, isActive: true, NOT: { images: { isEmpty: true } } },
+				select: { images: true },
+				orderBy: { sortOrder: "asc" },
+				take: 1,
+			},
+		},
+		orderBy: { sortOrder: "asc" },
+	})
+}
+
+/**
+ * A series is a flooring spec group, so only a series with square feet per
+ * box counts. The old spec-less "Accessories" series predates categories and
+ * is kept only until the catalogue import retires it.
+ */
+const flooringSeries = {
+	isActive: true,
+	sqFtPerBox: { not: null },
+} satisfies Prisma.SeriesWhereInput
+
+/**
+ * Series that have at least one published product.
+ *
+ * Narrowed to one category when given, so the series row under "Flooring"
+ * never offers a spec group from another shelf.
+ */
+export async function listPublicSeries(categorySlug?: string) {
+	const published = publishedProducts(categorySlug)
+
+	return db.series.findMany({
+		where: { ...flooringSeries, products: { some: published } },
 		select: {
 			id: true,
 			name: true,
@@ -44,11 +104,11 @@ export async function listPublicSeries() {
 			finishing: true,
 			sqFtPerBox: true,
 			boxesPerPallet: true,
-			_count: { select: { products: { where: { isPublic: true, isActive: true } } } },
+			_count: { select: { products: { where: published } } },
 			// One swatch per series, so a card never renders an empty image slot
 			// because its colours happened to fall outside a paged list.
 			products: {
-				where: { isPublic: true, isActive: true, NOT: { images: { isEmpty: true } } },
+				where: { ...published, NOT: { images: { isEmpty: true } } },
 				select: { images: true },
 				orderBy: { sortOrder: "asc" },
 				take: 1,
@@ -68,12 +128,17 @@ export async function listPublicSeries() {
 export type CatalogSort = "curated" | "name" | "series"
 
 const SORTS: Record<CatalogSort, Prisma.ProductOrderByWithRelationInput[]> = {
-	curated: [{ series: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+	curated: [
+		{ category: { sortOrder: "asc" } },
+		{ series: { sortOrder: "asc" } },
+		{ sortOrder: "asc" },
+	],
 	name: [{ name: "asc" }],
-	series: [{ series: { sortOrder: "asc" } }, { name: "asc" }],
+	series: [{ category: { sortOrder: "asc" } }, { series: { sortOrder: "asc" } }, { name: "asc" }],
 }
 
 export interface CatalogFilters {
+	categorySlug?: string
 	seriesSlug?: string
 	/** Matches a colour name or a SKU. Dealers know both; the public knows one. */
 	search?: string
@@ -88,20 +153,18 @@ export interface CatalogFilters {
 export async function listPublicProducts(options: CatalogFilters = {}) {
 	const search = options.search?.trim()
 
+	// One series condition, built once. Spreading two `series` keys let the
+	// second silently replace the first.
+	const series: Prisma.SeriesWhereInput = {
+		...(options.seriesSlug ? { slug: options.seriesSlug } : {}),
+		...(options.wearLayerMil ? { wearLayerMil: options.wearLayerMil } : {}),
+		...(options.thicknessMm ? { thicknessMm: options.thicknessMm } : {}),
+	}
+
 	return db.product.findMany({
 		where: {
-			isPublic: true,
-			isActive: true,
-			...(options.seriesSlug ? { series: { slug: options.seriesSlug } } : {}),
-			...(options.wearLayerMil || options.thicknessMm
-				? {
-						series: {
-							...(options.seriesSlug ? { slug: options.seriesSlug } : {}),
-							...(options.wearLayerMil ? { wearLayerMil: options.wearLayerMil } : {}),
-							...(options.thicknessMm ? { thicknessMm: options.thicknessMm } : {}),
-						},
-					}
-				: {}),
+			...publishedProducts(options.categorySlug),
+			...(Object.keys(series).length ? { series } : {}),
 			...(search
 				? {
 						OR: [
@@ -124,9 +187,12 @@ export async function listPublicProducts(options: CatalogFilters = {}) {
  * when nothing on the site has it — an empty result the visitor asked for is
  * worse than not offering the choice.
  */
-export async function listSpecFacets() {
+export async function listSpecFacets(categorySlug?: string) {
 	const series = await db.series.findMany({
-		where: { isActive: true, products: { some: { isPublic: true, isActive: true } } },
+		where: {
+			...flooringSeries,
+			products: { some: publishedProducts(categorySlug) },
+		},
 		select: { wearLayerMil: true, thicknessMm: true },
 	})
 
@@ -141,13 +207,21 @@ export async function listSpecFacets() {
 	return { wearLayers, thicknesses }
 }
 
+/**
+ * One published product.
+ *
+ * A series without square feet per box is handed back as no series at all.
+ * That is the old spec-less "Accessories" series, and passing it through made
+ * the page treat a baseboard as flooring — a plank spec table, a coverage
+ * description and a sample offer.
+ */
 export async function getPublicProduct(slug: string) {
-	return db.product.findFirst({
-		where: { slug, isPublic: true, isActive: true },
+	const product = await db.product.findFirst({
+		where: { slug, ...publishedProducts() },
 		select: {
 			...productCard,
 			description: true,
-			orderUoms: true,
+			conversions: { select: { fromUom: true, toUom: true, factor: true } },
 			series: {
 				select: {
 					id: true,
@@ -169,12 +243,14 @@ export async function getPublicProduct(slug: string) {
 			},
 		},
 	})
+	if (!product) return null
+	return { ...product, series: product.series?.sqFtPerBox ? product.series : null }
 }
 
 /** Every published slug, for the sitemap and for static generation. */
 export async function listPublicProductSlugs(): Promise<string[]> {
 	const rows = await db.product.findMany({
-		where: { isPublic: true, isActive: true },
+		where: publishedProducts(),
 		select: { slug: true },
 	})
 	return rows.map((row) => row.slug)
@@ -183,6 +259,86 @@ export async function listPublicProductSlugs(): Promise<string[]> {
 // ---------------------------------------------------------------------------
 // Admin
 // ---------------------------------------------------------------------------
+
+export async function listAllCategories() {
+	return db.category.findMany({
+		select: {
+			id: true,
+			name: true,
+			slug: true,
+			isActive: true,
+			sortOrder: true,
+			_count: { select: { products: true } },
+		},
+		orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+	})
+}
+
+export async function getCategory(id: string) {
+	return db.category.findUnique({
+		where: { id },
+		include: { _count: { select: { products: true } } },
+	})
+}
+
+/** For the "which category" control on the product form. */
+export async function listCategoryOptions() {
+	return db.category.findMany({
+		select: { id: true, name: true, isActive: true },
+		orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+	})
+}
+
+/** Is this name or slug already taken by a different category? */
+export async function findConflictingCategory(name: string, slug: string, exceptId?: string) {
+	return db.category.findFirst({
+		where: {
+			OR: [{ name: { equals: name, mode: "insensitive" } }, { slug }],
+			...(exceptId ? { NOT: { id: exceptId } } : {}),
+		},
+		select: { id: true, name: true, slug: true },
+	})
+}
+
+export async function createCategory(data: {
+	name: string
+	slug: string
+	blurb?: string
+	sortOrder: number
+}) {
+	return db.category.create({
+		data: {
+			name: data.name,
+			slug: data.slug,
+			blurb: data.blurb ?? null,
+			sortOrder: data.sortOrder,
+		},
+		select: { id: true, name: true, slug: true },
+	})
+}
+
+/**
+ * The slug is not edited with the name.
+ *
+ * It is the address of a catalogue page someone may have bookmarked or a
+ * search engine indexed. Renaming "Trim" to "Trim & Moldings" should not move
+ * the page.
+ */
+export async function updateCategory(
+	id: string,
+	data: { name: string; blurb?: string; sortOrder: number; isActive: boolean },
+) {
+	return db.category.update({
+		where: { id },
+		data: {
+			name: data.name,
+			blurb: data.blurb ?? null,
+			sortOrder: data.sortOrder,
+			isActive: data.isActive,
+		},
+		select: { id: true, name: true, slug: true },
+	})
+}
 
 export async function listAllSeries() {
 	return db.series.findMany({
@@ -225,9 +381,12 @@ export async function listSeriesOptions() {
 	})
 }
 
-export async function listAllProducts(options: { search?: string; seriesId?: string } = {}) {
+export async function listAllProducts(
+	options: { search?: string; seriesId?: string; categoryId?: string } = {},
+) {
 	return db.product.findMany({
 		where: {
+			...(options.categoryId ? { categoryId: options.categoryId } : {}),
 			...(options.seriesId ? { seriesId: options.seriesId } : {}),
 			...(options.search
 				? {
@@ -239,51 +398,65 @@ export async function listAllProducts(options: { search?: string; seriesId?: str
 				: {}),
 		},
 		select: { ...productCard, isPublic: true, isActive: true, listPrice: true },
-		orderBy: [{ series: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+		orderBy: SORTS.curated,
 	})
 }
 
 export async function getProduct(id: string) {
 	return db.product.findUnique({
 		where: { id },
-		include: { series: { select: { id: true, name: true, sqFtPerBox: true } } },
+		include: {
+			category: { select: { id: true, name: true } },
+			series: { select: { id: true, name: true, sqFtPerBox: true } },
+			conversions: { select: { fromUom: true, toUom: true, factor: true } },
+		},
 	})
 }
 
 /**
- * Adding a colour.
+ * Adding a product.
  *
- * Four fields, which is the promise the plan makes to the client when he asks
- * how hard it is to put a new product in: a name, a code, an image and which
- * series it belongs to. Everything else — specs, packaging, freight class —
- * is inherited from the series and never re-entered.
+ * Still a handful of fields: a name, a code, a category, and either a series
+ * (flooring, which inherits every spec and packaging figure from it) or the
+ * unit it is sold by (everything else). Nothing is typed twice.
  */
 export async function createProduct(data: {
 	name: string
 	slug: string
 	sku: string
-	seriesId: string
+	categoryId: string
+	seriesId?: string
+	soldBy: "EACH" | "PIECE" | "LF" | "ROLL"
+	/** Feet in one piece. Read only when sold by the piece. */
+	lfPerPiece?: string
 	imageUrl?: string
 	designName?: string
 }) {
-	const series = await db.series.findUnique({
-		where: { id: data.seriesId },
-		select: { sqFtPerBox: true },
-	})
+	const series = data.seriesId
+		? await db.series.findUnique({ where: { id: data.seriesId }, select: { sqFtPerBox: true } })
+		: null
+
+	// A series with sq ft per box is flooring: priced per square foot and
+	// ordered by the box. Anything else is priced and ordered in the unit it is
+	// sold by, which is the "Sold By" column the client asked for.
+	const flooring = Boolean(series?.sqFtPerBox)
+	const byPiece = !flooring && data.soldBy === "PIECE" && data.lfPerPiece !== undefined
 
 	return db.product.create({
 		data: {
 			name: data.name,
 			slug: data.slug,
 			sku: data.sku,
-			seriesId: data.seriesId,
+			categoryId: data.categoryId,
+			seriesId: data.seriesId ?? null,
 			designName: data.designName ?? data.name,
 			images: data.imageUrl ? [data.imageUrl] : [],
-			// A series with sq ft per box is flooring; anything else is priced in
-			// its own unit. Derived rather than asked, because the answer is
-			// already implied by the series they picked.
-			pricingUom: series?.sqFtPerBox ? "SQFT" : "EACH",
-			orderUoms: series?.sqFtPerBox ? ["SQFT", "BOX", "PALLET"] : ["EACH"],
+			...unitsFor(flooring, data.soldBy),
+			// The piece length is a conversion row, the same place the order
+			// engine already looks for it — see orders.ts convert().
+			conversions: byPiece
+				? { create: { fromUom: "STICK", toUom: "LF", factor: data.lfPerPiece! } }
+				: undefined,
 			isPublic: false,
 			isActive: true,
 		},
@@ -291,12 +464,37 @@ export async function createProduct(data: {
 	})
 }
 
+/**
+ * How a new product is priced and ordered.
+ *
+ * A piece of trim is priced per foot and ordered by the piece, but a dealer who
+ * has measured a room in feet can still type feet: the engine rounds that up
+ * to whole pieces, the way square feet round up to whole boxes.
+ */
+function unitsFor(
+	flooring: boolean,
+	soldBy: "EACH" | "PIECE" | "LF" | "ROLL",
+): { pricingUom: PricingUom; orderUoms: OrderUom[] } {
+	if (flooring) return { pricingUom: "SQFT", orderUoms: ["SQFT", "BOX", "PALLET"] }
+	if (soldBy === "PIECE") return { pricingUom: "LF", orderUoms: ["STICK", "LF"] }
+	return { pricingUom: soldBy, orderUoms: [soldBy] }
+}
+
+/** The feet in one piece, from a product's conversion rows. */
+export function lfPerPieceOf(
+	conversions: readonly { fromUom: string; toUom: string; factor: { toString(): string } }[],
+): string | null {
+	const row = conversions.find((c) => c.fromUom === "STICK" && c.toUom === "LF")
+	return row ? row.factor.toString() : null
+}
+
 export async function updateProduct(
 	id: string,
 	data: {
 		name: string
 		sku: string
-		seriesId: string
+		categoryId: string
+		seriesId?: string
 		designName?: string
 		description?: string
 		listPrice?: string
@@ -307,27 +505,41 @@ export async function updateProduct(
 		isActive: boolean
 		images: string[]
 		dealerRestricted: boolean
+		/** Undefined clears it. */
+		lfPerPiece?: string
 	},
 ) {
-	return db.product.update({
-		where: { id },
-		data: {
-			name: data.name,
-			sku: data.sku,
-			seriesId: data.seriesId,
-			designName: data.designName ?? null,
-			description: data.description ?? null,
-			listPrice: data.listPrice ?? null,
-			pricingUom: data.pricingUom,
-			orderUoms: data.orderUoms,
-			stockStatus: data.stockStatus,
-			isPublic: data.isPublic,
-			isActive: data.isActive,
-			images: data.images,
-			dealerRestricted: data.dealerRestricted,
-		},
-		select: { id: true, name: true },
-	})
+	const pieceRow = { productId: id, fromUom: "STICK" as const, toUom: "LF" as const }
+	const [product] = await db.$transaction([
+		db.product.update({
+			where: { id },
+			data: {
+				name: data.name,
+				sku: data.sku,
+				categoryId: data.categoryId,
+				seriesId: data.seriesId ?? null,
+				designName: data.designName ?? null,
+				description: data.description ?? null,
+				listPrice: data.listPrice ?? null,
+				pricingUom: data.pricingUom,
+				orderUoms: data.orderUoms,
+				stockStatus: data.stockStatus,
+				isPublic: data.isPublic,
+				isActive: data.isActive,
+				images: data.images,
+				dealerRestricted: data.dealerRestricted,
+			},
+			select: { id: true, name: true },
+		}),
+		data.lfPerPiece
+			? db.uomConversion.upsert({
+					where: { productId_fromUom_toUom: pieceRow },
+					create: { ...pieceRow, factor: data.lfPerPiece },
+					update: { factor: data.lfPerPiece },
+				})
+			: db.uomConversion.deleteMany({ where: pieceRow }),
+	])
+	return product
 }
 
 export async function updateSeries(
@@ -395,7 +607,7 @@ export async function findConflicting(slug: string, sku: string, exceptId?: stri
  */
 export async function countPublicColours(): Promise<number> {
 	return db.product.count({
-		where: { isPublic: true, isActive: true, series: { sqFtPerBox: { not: null } } },
+		where: { ...publishedProducts(), series: { sqFtPerBox: { not: null } } },
 	})
 }
 
@@ -408,7 +620,7 @@ export async function countPublicColours(): Promise<number> {
  * Using one number for both made "All (34)" sit above six filters adding to 37.
  */
 export async function countPublicProducts(): Promise<number> {
-	return db.product.count({ where: { isPublic: true, isActive: true } })
+	return db.product.count({ where: publishedProducts() })
 }
 
 /**

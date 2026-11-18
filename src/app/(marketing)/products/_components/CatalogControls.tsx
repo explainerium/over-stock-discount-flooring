@@ -56,7 +56,9 @@ export function CatalogControls({ wearLayers, thicknesses, resultCount }: Catalo
 	const wear = params.get("wear")
 	const thickness = params.get("thickness")
 	const sort = params.get("sort") ?? "curated"
-	const filtered = Boolean(search || wear || thickness || params.get("series"))
+	const filtered = Boolean(
+		search || wear || thickness || params.get("series") || params.get("category"),
+	)
 
 	const chip = "display px-3 py-1.5 text-xs uppercase transition-colors"
 	const chipOff = "border-rule text-ink border hover:bg-band"
@@ -80,7 +82,7 @@ export function CatalogControls({ wearLayers, thicknesses, resultCount }: Catalo
 						type="search"
 						value={search}
 						onChange={(event) => setSearch(event.target.value)}
-						placeholder="Colour name or SKU"
+						placeholder="Name or SKU"
 						aria-label="Search the catalogue"
 						className="border-rule focus-visible:border-ink w-full border py-2 pr-3 pl-9 text-base outline-none md:text-sm"
 					/>
@@ -156,7 +158,7 @@ export function CatalogControls({ wearLayers, thicknesses, resultCount }: Catalo
 			{filtered && (
 				<div className="flex flex-wrap items-center gap-3 text-xs">
 					<span className={cn("text-muted-foreground", pending && "opacity-50")}>
-						{resultCount} {resultCount === 1 ? "colour" : "colours"}
+						{resultCount} {resultCount === 1 ? "product" : "products"}
 					</span>
 					<button
 						type="button"

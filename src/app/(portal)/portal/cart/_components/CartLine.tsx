@@ -10,6 +10,7 @@ import { formatCoverage } from "@/lib/format/coverage"
 import { isStockNotable, stockLabel } from "@/lib/format/stock"
 import { differs } from "@/lib/format/dirty"
 import { formatMoney, formatUnitPrice } from "@/lib/format/money"
+import { formatPieces } from "@/lib/format/sold-by"
 import { removeLineAction, updateLineAction } from "../../_actions"
 
 export interface CartLineData {
@@ -21,6 +22,8 @@ export interface CartLineData {
 	unitSelected: string
 	qtyEntered: string
 	boxes: number | null
+	/** Whole pieces, for trim. Null for anything else. */
+	pieces: number | null
 	sqFt: string | null
 	unitPrice: string
 	pricingUom: string
@@ -35,7 +38,7 @@ const UNIT_LABEL: Record<string, string> = {
 	BOX: "Boxes",
 	PALLET: "Pallets",
 	LF: "Linear ft",
-	STICK: "Sticks",
+	STICK: "Pieces",
 	BUNDLE: "Bundles",
 	EACH: "Each",
 	ROLL: "Rolls",
@@ -164,12 +167,13 @@ export function CartLine({ line }: { line: CartLineData }) {
 					</div>
 				)}
 
-				{(line.boxes !== null || line.sqFt) && (
+				{(line.boxes !== null || line.sqFt || line.pieces !== null) && (
 					<p className="text-muted-foreground mt-2 text-xs">
 						Ships as{" "}
 						<span className="text-foreground">
 							{line.boxes !== null &&
 								`${line.boxes} ${line.boxes === 1 ? "box" : "boxes"}`}
+							{line.pieces !== null && formatPieces(line.pieces)}
 						</span>
 						{line.sqFt && <> · {formatCoverage(line.sqFt)} sq ft covered</>}
 					</p>

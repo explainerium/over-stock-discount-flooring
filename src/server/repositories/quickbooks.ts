@@ -1,4 +1,5 @@
 import "server-only"
+import { piecesOf } from "@/lib/format/sold-by"
 import { db } from "@/server/db/client"
 import {
 	QboError,
@@ -158,6 +159,8 @@ export async function raiseInvoice(orderId: string): Promise<InvoiceResult> {
 						lineTotal: true,
 						boxes: true,
 						sqFt: true,
+						qtyBase: true,
+						uomBase: true,
 						product: { select: { pricingUom: true } },
 					},
 					orderBy: { sortOrder: "asc" },
@@ -189,6 +192,7 @@ export async function raiseInvoice(orderId: string): Promise<InvoiceResult> {
 			amount: item.lineTotal.toString(),
 			boxes: item.boxes,
 			sqFt: item.sqFt?.toString() ?? null,
+			pieces: piecesOf(item),
 		}))
 
 		const invoice = buildInvoice(

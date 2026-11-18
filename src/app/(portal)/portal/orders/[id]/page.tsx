@@ -1,5 +1,6 @@
 import { ArrowLeftIcon } from "lucide-react"
 import Link from "next/link"
+import { piecesOf } from "@/lib/format/sold-by"
 import { notFound } from "next/navigation"
 import { CartLine } from "@/app/(portal)/portal/cart/_components/CartLine"
 import { SubmitOrder } from "@/app/(portal)/portal/cart/_components/SubmitOrder"
@@ -78,12 +79,14 @@ export default async function DealerOrderPage({ params }: { params: Promise<{ id
 										id: item.id,
 										name: item.productNameSnapshot,
 										sku: item.productSkuSnapshot,
-										seriesName: item.product.series.name,
+										seriesName:
+											item.product.series?.name ?? item.product.category.name,
 										image: item.product.images[0] ?? null,
 										unitSelected: item.unitSelected,
 										qtyEntered: item.qtyEntered.toString(),
 										wasteFactorPct: item.wasteFactorPct,
 										boxes: item.boxes,
+										pieces: piecesOf(item),
 										sqFt: item.sqFt?.toString() ?? null,
 										unitPrice: item.unitPrice.toString(),
 										pricingUom: item.product.pricingUom,
@@ -100,10 +103,11 @@ export default async function DealerOrderPage({ params }: { params: Promise<{ id
 								id: item.id,
 								name: item.productNameSnapshot,
 								sku: item.productSkuSnapshot,
-								seriesName: item.product.series.name,
+								seriesName: item.product.series?.name ?? item.product.category.name,
 								unitSelected: item.unitSelected,
 								qtyEntered: item.qtyEntered.toString(),
 								boxes: item.boxes,
+								pieces: piecesOf(item),
 								sqFt: item.sqFt?.toString() ?? null,
 								unitPrice: item.unitPrice.toString(),
 								unitPriceAtSubmit: item.unitPriceAtSubmit?.toString() ?? null,

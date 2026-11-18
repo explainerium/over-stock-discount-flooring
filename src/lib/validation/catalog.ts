@@ -43,29 +43,114 @@ export function wholeOrUndefined(value: string | undefined): number | undefined 
 }
 
 /**
- * Adding a colour: four fields.
+ * The "no series" choice on a product form.
+ *
+ * A select cannot hold an empty string as an option value, so "not flooring"
+ * travels as this word and becomes null on the way to the database.
+ */
+export const NO_SERIES = "none"
+
+/** `NO_SERIES` or blank means the product has no series. */
+export function seriesOrUndefined(value: string | undefined): string | undefined {
+	const trimmed = blank(value)
+	return trimmed === undefined || trimmed === NO_SERIES ? undefined : trimmed
+}
+
+/**
+ * The units a non-flooring product can be sold by.
+ *
+ * Flooring is never chosen here: picking a series with square feet per box
+ * makes a product flooring, priced per square foot and ordered by the box.
+ *
+ * PIECE is trim as the client sells it: "They're sold per piece. But people
+ * like it to be priced per LF." Priced per linear foot, ordered in whole
+ * pieces of a known length, billed on the feet those pieces add up to.
+ */
+export const SOLD_BY = ["EACH", "PIECE", "LF", "ROLL"] as const
+
+/** How long one piece of trim is, in feet. Kept as typed, like every figure here. */
+const pieceLength = decimalText("Length per piece")
+
+/** A length that was given and is more than nothing. */
+export function hasPieceLength(value: string | undefined): value is string {
+	const trimmed = blank(value)
+	return trimmed !== undefined && !/^0+(\.0+)?$/.test(trimmed)
+}
+
+/**
+ * A piece length and ordering by the piece only make sense together.
+ *
+ * Ordering by the piece without a length leaves nothing to multiply out, and
+ * the dealer would be told so at the cart rather than the owner here. A length
+ * on something not priced per foot would be stored and never used.
+ */
+function checkPieceLength(
+	data: { pricingUom: string; orderUoms: readonly string[]; lfPerPiece?: string },
+	ctx: z.RefinementCtx,
+) {
+	const length = hasPieceLength(data.lfPerPiece)
+	if (data.orderUoms.includes("STICK") && !length) {
+		ctx.addIssue({
+			code: "custom",
+			path: ["lfPerPiece"],
+			message: "Enter how long one piece is, so dealers can order by the piece.",
+		})
+	}
+	if (length && data.pricingUom !== "LF") {
+		ctx.addIssue({
+			code: "custom",
+			path: ["lfPerPiece"],
+			message: "A piece length only applies to products priced per linear foot.",
+		})
+	}
+}
+
+/**
+ * Adding a product.
  *
  * This is the shape of the answer to the client's own question — "if we added a
- * new product how hard would it be to put in the system". Specs, packaging and
- * freight class all come off the series and are never typed twice.
+ * new product how hard would it be to put in the system". Flooring picks a
+ * series and inherits every spec from it; anything else says what it is sold
+ * by. Nothing is typed twice.
  */
-export const createProductSchema = z.object({
-	name: z.string().trim().min(1, "Name is required.").max(120),
-	sku: z
-		.string()
-		.trim()
-		.min(1, "SKU is required.")
-		.max(40)
-		.regex(/^[A-Za-z0-9._-]+$/, "SKU can use letters, numbers, dots, dashes and underscores."),
-	seriesId: z.string().min(1, "Pick a series."),
-	imageUrl: optionalText(500),
-})
+export const createProductSchema = z
+	.object({
+		name: z.string().trim().min(1, "Name is required.").max(120),
+		sku: z
+			.string()
+			.trim()
+			.min(1, "SKU is required.")
+			.max(40)
+			.regex(
+				/^[A-Za-z0-9._-]+$/,
+				"SKU can use letters, numbers, dots, dashes and underscores.",
+			),
+		categoryId: z.string().min(1, "Pick a category."),
+		seriesId: z.string(),
+		soldBy: z.enum(SOLD_BY),
+		lfPerPiece: pieceLength,
+		imageUrl: optionalText(500),
+	})
+	.superRefine((data, ctx) => {
+		if (
+			seriesOrUndefined(data.seriesId) === undefined &&
+			data.soldBy === "PIECE" &&
+			!hasPieceLength(data.lfPerPiece)
+		) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["lfPerPiece"],
+				message: "Enter how long one piece is, in feet.",
+			})
+		}
+	})
 
-export const updateProductSchema = z.object({
+const updateProductFields = z.object({
 	id: z.string().min(1),
 	name: z.string().trim().min(1, "Name is required.").max(120),
 	sku: z.string().trim().min(1, "SKU is required.").max(40),
-	seriesId: z.string().min(1, "Pick a series."),
+	categoryId: z.string().min(1, "Pick a category."),
+	seriesId: z.string(),
 	/** Groups the same print film across formats — "Brookfield" in Gold and Gold W. */
 	designName: optionalText(120),
 	description: optionalText(4000),
@@ -74,6 +159,8 @@ export const updateProductSchema = z.object({
 	orderUoms: z
 		.array(z.enum(["SQFT", "BOX", "PALLET", "LF", "STICK", "BUNDLE", "EACH", "ROLL"]))
 		.min(1, "Pick at least one unit a dealer can order in."),
+	/** Feet in one piece, for trim sold by the piece and priced per foot. */
+	lfPerPiece: pieceLength,
 	stockStatus: z.enum(["IN_STOCK", "LOW", "OUT", "SPECIAL_ORDER"]),
 	isPublic: z.boolean(),
 	isActive: z.boolean(),
@@ -111,7 +198,7 @@ export const updateProductSchema = z.object({
 	images: z
 		.string()
 		.trim()
-		.max(2000)
+		.max(4000)
 		.refine(
 			(value) => splitImages(value).every((url) => /^(\/|https?:\/\/)/.test(url)),
 			"Each line should be a path like /swatches/name.jpg, or a full https:// URL.",
@@ -150,13 +237,34 @@ export const updateSeriesSchema = z.object({
 	isActive: z.boolean(),
 })
 
+/** Categories: a name, an optional line of copy, and a position. */
+export const createCategorySchema = z.object({
+	name: z.string().trim().min(1, "Name is required.").max(60),
+	blurb: optionalText(300),
+	sortOrder: wholeNumber("Position"),
+})
+
+export const updateCategorySchema = createCategorySchema.extend({
+	id: z.string().min(1),
+	isActive: z.boolean(),
+})
+
 /**
  * Form-level schemas: the fields actually rendered, without the id.
  * See the note on inviteUserFormSchema — a resolver rejects an unregistered id
  * before the submit handler ever runs.
  */
-export const updateProductFormSchema = updateProductSchema.omit({ id: true })
+export const updateProductSchema = updateProductFields.superRefine(checkPieceLength)
+// Refined after the omit: zod will not omit fields from a schema that already
+// carries a refinement.
+export const updateProductFormSchema = updateProductFields
+	.omit({ id: true })
+	.superRefine(checkPieceLength)
 export const updateSeriesFormSchema = updateSeriesSchema.omit({ id: true })
+export const updateCategoryFormSchema = updateCategorySchema.omit({ id: true })
+export type UpdateCategoryFormInput = z.infer<typeof updateCategoryFormSchema>
+export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>
+export type CreateCategoryInput = z.infer<typeof createCategorySchema>
 export type UpdateProductFormInput = z.infer<typeof updateProductFormSchema>
 export type UpdateSeriesFormInput = z.infer<typeof updateSeriesFormSchema>
 

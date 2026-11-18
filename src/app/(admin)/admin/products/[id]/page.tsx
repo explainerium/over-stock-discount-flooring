@@ -5,15 +5,23 @@ import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { requireStaff } from "@/server/auth/guards"
 import { listDealers } from "@/server/repositories/dealers"
-import { getProductAccess, getProduct, listSeriesOptions } from "@/server/repositories/catalog"
+import {
+	getProductAccess,
+	getProduct,
+	lfPerPieceOf,
+	listCategoryOptions,
+	listSeriesOptions,
+} from "@/server/repositories/catalog"
+import { NO_SERIES } from "@/lib/validation/catalog"
 import { EditProductForm } from "./_components/EditProductForm"
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
 	await requireStaff()
 	const { id } = await params
 
-	const [product, series, dealers, access] = await Promise.all([
+	const [product, categories, series, dealers, access] = await Promise.all([
 		getProduct(id),
+		listCategoryOptions(),
 		listSeriesOptions(),
 		// Every dealer, suspended ones included: withdrawing access is a separate
 		// decision from suspending an account, and a suspended dealer that comes
@@ -49,8 +57,9 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 					<div>
 						<CardTitle>{product.name}</CardTitle>
 						<p className="text-muted-foreground font-mono text-xs">
-							{product.sku} · {product.series.name}
-							{product.series.sqFtPerBox &&
+							{product.sku} · {product.category.name}
+							{product.series && ` · ${product.series.name}`}
+							{product.series?.sqFtPerBox &&
 								` · ${product.series.sqFtPerBox} sq ft/box`}
 						</p>
 					</div>
@@ -58,6 +67,10 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 				<CardContent>
 					<EditProductForm
 						dealers={dealers.map((d) => ({ value: d.id, label: d.companyName }))}
+						categoryOptions={categories.map((c) => ({
+							value: c.id,
+							label: c.isActive ? c.name : c.name + " (hidden)",
+						}))}
 						seriesOptions={series.map((s) => ({
 							value: s.id,
 							label: s.name,
@@ -67,12 +80,14 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 							id: product.id,
 							name: product.name,
 							sku: product.sku,
-							seriesId: product.seriesId,
+							categoryId: product.categoryId,
+							seriesId: product.seriesId ?? NO_SERIES,
 							designName: product.designName ?? "",
 							description: product.description ?? "",
 							listPrice: product.listPrice?.toString() ?? "",
 							pricingUom: product.pricingUom,
 							orderUoms: product.orderUoms,
+							lfPerPiece: lfPerPieceOf(product.conversions) ?? "",
 							stockStatus: product.stockStatus,
 							isPublic: product.isPublic,
 							isActive: product.isActive,

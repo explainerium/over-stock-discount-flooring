@@ -1,6 +1,7 @@
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { formatDiscount, formatUnitPrice } from "@/lib/format/money"
+import { formatFeet } from "@/lib/format/sold-by"
 import { stockLabel } from "@/lib/format/stock"
 import { requireDealerScope } from "@/server/auth/guards"
 import { countOrderableProducts, listPricedProducts } from "@/server/repositories/pricing"
@@ -96,6 +97,11 @@ export default async function PortalCatalogPage({
 											product.pricingUom,
 										)}
 									</span>
+									{product.lfPerPiece && product.orderUoms.includes("STICK") && (
+										<span className="text-muted-foreground ml-2 text-xs">
+											{formatFeet(product.lfPerPiece)} pieces
+										</span>
+									)}
 									{formatDiscount(product.price.discountPct) && (
 										<span className="text-muted-foreground ml-2 text-xs">
 											{formatDiscount(product.price.discountPct)}
@@ -116,6 +122,7 @@ export default async function PortalCatalogPage({
 										sqFtPerBox: product.sqFtPerBox,
 										boxesPerPallet: product.boxesPerPallet,
 										lbPerBox: product.lbPerBox,
+										lfPerPiece: product.lfPerPiece,
 									}}
 								/>
 							</div>

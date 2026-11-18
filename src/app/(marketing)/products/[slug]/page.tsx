@@ -1,12 +1,14 @@
 import { DownloadIcon } from "lucide-react"
 import type { Metadata } from "next"
-import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { SHOWROOM } from "@/constants/catalog"
-import { getPublicProduct } from "@/server/repositories/catalog"
+import { soldByLabel } from "@/lib/format/sold-by"
+import { getPublicProduct, lfPerPieceOf } from "@/server/repositories/catalog"
 import { Breadcrumbs } from "../../_components/Breadcrumbs"
 import { CoverageCalculator } from "../../_components/CoverageCalculator"
+import { firstLine, ProductDescription } from "../../_components/ProductDescription"
+import { ProductGallery } from "./_components/ProductGallery"
 import { SampleRequest } from "./_components/SampleRequest"
 import { SITE_URL } from "@/constants/site"
 
@@ -42,20 +44,28 @@ export async function generateMetadata({
 	const product = await getPublicProduct(slug)
 	if (!product) return {}
 
-	const specs = [
-		product.series.wearLayerMil && `${product.series.wearLayerMil} mil wear layer`,
-		product.series.widthIn && `${product.series.widthIn}" wide`,
-		product.series.sqFtPerBox && `${product.series.sqFtPerBox} sq ft a box`,
-	]
-		.filter(Boolean)
-		.join(", ")
+	const { series, category } = product
+	const shelf = series?.name ?? category.name
+
+	// Flooring describes itself from its series spec; everything else from the
+	// first line the client wrote for it.
+	const summary = series
+		? [
+				`${product.name} rigid core luxury vinyl flooring`,
+				series.wearLayerMil && `${series.wearLayerMil} mil wear layer`,
+				series.widthIn && `${series.widthIn}" wide`,
+				series.sqFtPerBox && `${series.sqFtPerBox} sq ft a box`,
+			]
+				.filter(Boolean)
+				.join(", ")
+		: (firstLine(product.description) ?? `${product.name}, ${category.name.toLowerCase()}`)
 
 	return {
-		title: `${product.name} — ${product.series.name}`,
-		description: `${product.name} rigid core luxury vinyl plank. ${specs}. In stock in High Point, North Carolina.`,
+		title: `${product.name} — ${shelf}`,
+		description: `${summary.replace(/\.$/, "")}. In stock in High Point, North Carolina.`,
 		alternates: { canonical: `/products/${product.slug}` },
 		openGraph: {
-			title: `${product.name} · ${product.series.name}`,
+			title: `${product.name} · ${shelf}`,
 			images: product.images[0] ? [product.images[0]] : undefined,
 		},
 	}
@@ -66,25 +76,34 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 	const product = await getPublicProduct(slug)
 	if (!product) notFound()
 
-	const { series } = product
-	const certifications = series.facts.filter((fact) => fact.kind === "CERTIFICATION")
-	const tests = series.facts.filter((fact) => fact.kind === "TEST_RESULT")
+	const { series, category } = product
+	const shelf = series?.name ?? category.name
+	const facts = series?.facts ?? []
+	const certifications = facts.filter((fact) => fact.kind === "CERTIFICATION")
+	const tests = facts.filter((fact) => fact.kind === "TEST_RESULT")
 
+	// Rows with no value are dropped below, so a product without a series shows
+	// only what it actually has: its category and how it is sold.
 	const spec: [string, string | null][] = [
-		["Series", series.name],
-		["Length", series.lengthIn ? `${series.lengthIn}"` : null],
-		["Width", series.widthIn ? `${series.widthIn}"` : null],
-		["Thickness", series.thicknessMm ? `${series.thicknessMm} mm` : null],
-		["Wear layer", series.wearLayerMil ? `${series.wearLayerMil} mil` : null],
-		["Finish", series.finishing],
-		["Edge", series.edgeProfile],
-		["Coverage", series.sqFtPerBox ? `${series.sqFtPerBox} sq ft per box` : null],
-		["Boxes per pallet", series.boxesPerPallet ? String(series.boxesPerPallet) : null],
-		["Box weight", series.lbPerBox ? `${series.lbPerBox} lb` : null],
+		["Category", category.name],
+		["Series", series?.name ?? null],
+		[
+			"Sold by",
+			soldByLabel(product.pricingUom, product.orderUoms, lfPerPieceOf(product.conversions)),
+		],
+		["Length", series?.lengthIn ? `${series.lengthIn}"` : null],
+		["Width", series?.widthIn ? `${series.widthIn}"` : null],
+		["Thickness", series?.thicknessMm ? `${series.thicknessMm} mm` : null],
+		["Wear layer", series?.wearLayerMil ? `${series.wearLayerMil} mil` : null],
+		["Finish", series?.finishing ?? null],
+		["Edge", series?.edgeProfile ?? null],
+		["Coverage", series?.sqFtPerBox ? `${series.sqFtPerBox} sq ft per box` : null],
+		["Boxes per pallet", series?.boxesPerPallet ? String(series.boxesPerPallet) : null],
+		["Box weight", series?.lbPerBox ? `${series.lbPerBox} lb` : null],
 	]
 
 	const calculatorSeries =
-		series.sqFtPerBox && series.boxesPerPallet
+		series?.sqFtPerBox && series.boxesPerPallet
 			? [
 					{
 						slug: series.slug,
@@ -111,7 +130,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 		name: product.name,
 		sku: product.sku,
 		url: new URL(`/products/${product.slug}`, origin).toString(),
-		category: `${series.name} rigid core luxury vinyl plank`,
+		category: series ? `${series.name} rigid core luxury vinyl flooring` : category.name,
 		image: product.images.map((src) => new URL(src, origin).toString()),
 		brand: { "@type": "Brand", name: "Overstock Discount Flooring" },
 		description: product.description ?? undefined,
@@ -130,7 +149,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 						trail={[
 							{ href: "/", label: "Home" },
 							{ href: "/products", label: "Catalog" },
-							{ href: `/products?series=${series.slug}`, label: series.name },
+							{ href: `/products?category=${category.slug}`, label: category.name },
+							...(series
+								? [
+										{
+											href: `/products?category=${category.slug}&series=${series.slug}`,
+											label: series.name,
+										},
+									]
+								: []),
 							{ label: product.name },
 						]}
 					/>
@@ -139,30 +166,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
 			<section className="bg-paper">
 				<div className="mx-auto grid max-w-[1280px] gap-12 px-5 pb-20 lg:grid-cols-2">
-					<div className="border-rule bg-band relative aspect-[4/5] border">
-						{product.images[0] && (
-							<Image
-								src={product.images[0]}
-								alt={`${product.name} — ${series.name} rigid core luxury vinyl plank`}
-								fill
-								priority
-								sizes="(min-width: 1024px) 50vw, 100vw"
-								className="object-cover"
-							/>
-						)}
-					</div>
+					<ProductGallery images={product.images} alt={`${product.name} — ${shelf}`} />
 
 					<div>
-						<p className="display text-muted-foreground text-xs uppercase">
-							{series.name}
-						</p>
+						<p className="display text-muted-foreground text-xs uppercase">{shelf}</p>
 						<h1 className="display text-ink mt-2 text-4xl uppercase">{product.name}</h1>
 						<p className="text-muted-foreground mt-2 font-mono text-sm">
 							{product.sku}
 						</p>
 
 						{product.description && (
-							<p className="mt-6 text-sm leading-relaxed">{product.description}</p>
+							<div className="mt-6">
+								<ProductDescription text={product.description} />
+							</div>
 						)}
 
 						{/* Prices are dealer-only by the client's own instruction, so the
@@ -206,7 +222,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 								))}
 						</dl>
 
-						{(series.warrantyPdfUrl || series.installationPdfUrl) && (
+						{series && (series.warrantyPdfUrl || series.installationPdfUrl) && (
 							<div className="mt-8 flex flex-wrap gap-3">
 								{series.installationPdfUrl && (
 									<a
@@ -241,8 +257,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 								<span className="font-bold">{product.name}?</span>
 							</h2>
 							<p className="text-muted-foreground mt-4 max-w-lg text-sm leading-relaxed">
-								{series.name} ships {series.sqFtPerBox?.toString()} square feet to a
-								box, so the answer is never quite the number you measured. Enter
+								{series?.name} ships {series?.sqFtPerBox?.toString()} square feet to
+								a box, so the answer is never quite the number you measured. Enter
 								your square footage and we round up to whole boxes.
 							</p>
 						</div>
@@ -252,23 +268,26 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 			)}
 
 			{/* A colour is hard to judge on a screen, and this is the cheapest
-			    way for somebody to be sure before they order a pallet of it. */}
-			<section className="bg-band">
-				<div className="mx-auto max-w-[1280px] px-5 py-20">
-					<h2 className="display text-ink text-2xl uppercase sm:text-3xl">
-						See it in person
-					</h2>
-					<p className="text-muted-foreground mt-4 max-w-lg text-sm leading-relaxed">
-						Screens lie about colour. We will post you a piece of {product.name} so you
-						can hold it against the cabinets before you commit to a floor.
-					</p>
-					<div className="mt-8">
-						<SampleRequest productId={product.id} productName={product.name} />
+			    way for somebody to be sure before they order a pallet of it.
+			    Flooring only: nobody needs a sample of a stair nose to judge it. */}
+			{series && (
+				<section className="bg-band">
+					<div className="mx-auto max-w-[1280px] px-5 py-20">
+						<h2 className="display text-ink text-2xl uppercase sm:text-3xl">
+							See it in person
+						</h2>
+						<p className="text-muted-foreground mt-4 max-w-lg text-sm leading-relaxed">
+							Screens lie about colour. We will post you a piece of {product.name} so
+							you can hold it against the cabinets before you commit to a floor.
+						</p>
+						<div className="mt-8">
+							<SampleRequest productId={product.id} productName={product.name} />
+						</div>
 					</div>
-				</div>
-			</section>
+				</section>
+			)}
 
-			{series.facts.length > 0 && (
+			{facts.length > 0 && (
 				<section className="bg-paper">
 					<div className="mx-auto max-w-[1280px] px-5 py-20">
 						<h2 className="display text-ink text-2xl uppercase sm:text-3xl">

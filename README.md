@@ -123,7 +123,5 @@ Four rules hold the shape together:
   to live books. Before it is trusted: connect a sandbox company, approve one
   order, and check the invoice against the order — particularly the tax, which
   is deliberately left to the customer record in QuickBooks rather than sent.
-- **Image upload.** Product images are URLs typed into admin. There is no
-  object storage wired up; `S3_*` in `.env.example` is a placeholder.
 - **Live carrier rates (TQL) and sample ordering.** Both Phase 2.
 - **Staging.** No staging deployment exists yet — see CUTOVER.md §3.

@@ -1,10 +1,11 @@
 import Link from "next/link"
 import { SHOWROOM } from "@/constants/catalog"
-import { listPublicSeries } from "@/server/repositories/catalog"
+import { listPublicCategories } from "@/server/repositories/catalog"
 
 /**
  * The columns that do not depend on the catalogue. The Catalog column is built
- * from the database instead — it used to list Bronze, Silver and Gold by hand,
+ * from the categories in the database instead — it used to list Bronze, Silver
+ * and Gold by hand,
  * which meant the footer kept pointing at series the client had renamed or
  * retired, on every page of the site.
  */
@@ -27,13 +28,13 @@ const COLUMNS = [
 ]
 
 export async function SiteFooter() {
-	const series = await listPublicSeries()
+	const categories = await listPublicCategories()
 
 	const columns = [
 		{
 			heading: "Catalog",
-			links: series.map((item) => ({
-				href: `/products?series=${item.slug}`,
+			links: categories.map((item) => ({
+				href: `/products?category=${item.slug}`,
 				label: item.name,
 			})),
 		},

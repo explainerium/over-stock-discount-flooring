@@ -4,59 +4,88 @@ import { notFound } from "next/navigation"
 import { SwatchGrid } from "../_components/SwatchGrid"
 import { Breadcrumbs } from "../_components/Breadcrumbs"
 import { CatalogControls } from "./_components/CatalogControls"
-import { SeriesFilter } from "./_components/SeriesFilter"
+import { FilterLinks } from "./_components/FilterLinks"
+import { FLOORING_CATEGORY } from "@/constants/catalog"
 import {
 	countPublicColours,
 	countPublicProducts,
+	listPublicCategories,
 	listPublicProducts,
 	listSpecFacets,
 	listPublicSeries,
 } from "@/server/repositories/catalog"
 
+type Params = {
+	category?: string
+	series?: string
+	q?: string
+	wear?: string
+	thickness?: string
+	sort?: string
+}
+
 export async function generateMetadata({
 	searchParams,
 }: {
-	searchParams: Promise<{ series?: string }>
+	searchParams: Promise<Params>
 }): Promise<Metadata> {
-	const { series } = await searchParams
-	const title = series
-		? `${series.charAt(0).toUpperCase()}${series.slice(1)} Series`
-		: "Rigid Core LVP Catalog"
+	const { category: categorySlug, series: seriesSlug } = await searchParams
+	const [categories, allSeries] = await Promise.all([listPublicCategories(), listPublicSeries()])
+	const category = categories.find((c) => c.slug === categorySlug)
+	const series = allSeries.find((s) => s.slug === seriesSlug)
 
 	return {
-		title,
+		title: series?.name ?? category?.name ?? "Flooring & Accessories Catalog",
 		description:
-			"Every rigid core luxury vinyl plank colour we stock in High Point, North Carolina. Factory direct, by the box or the pallet.",
-		alternates: { canonical: series ? `/products?series=${series}` : "/products" },
+			category?.blurb ??
+			"Rigid core luxury vinyl flooring, trim, stair products and more, in stock in High Point, North Carolina. By the box or the pallet.",
+		alternates: {
+			canonical: series
+				? `/products?series=${series.slug}`
+				: category
+					? `/products?category=${category.slug}`
+					: "/products",
+		},
 	}
 }
 
-export default async function ProductsPage({
-	searchParams,
-}: {
-	searchParams: Promise<{
-		series?: string
-		q?: string
-		wear?: string
-		thickness?: string
-		sort?: string
-	}>
-}) {
-	const { series: seriesSlug, q, wear, thickness, sort } = await searchParams
+/** "a", "a and b", "a, b and c". */
+function listOf(words: string[]): string {
+	if (words.length <= 1) return words.join("")
+	return `${words.slice(0, -1).join(", ")} and ${words.at(-1)}`
+}
 
-	const [allSeries, total, colours, facets] = await Promise.all([
-		listPublicSeries(),
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<Params> }) {
+	const {
+		category: categorySlug,
+		series: seriesSlug,
+		q,
+		wear,
+		thickness,
+		sort,
+	} = await searchParams
+
+	const [categories, total, colours] = await Promise.all([
+		listPublicCategories(),
 		countPublicProducts(),
 		countPublicColours(),
-		listSpecFacets(),
 	])
 
-	// An unknown series in the query string is a 404 rather than a silent
-	// fallback to everything — a wrong URL should say so, not quietly show
-	// something else and get itself indexed.
-	if (seriesSlug && !allSeries.some((s) => s.slug === seriesSlug)) notFound()
+	// An unknown category or series in the query string is a 404 rather than a
+	// silent fallback to everything — a wrong URL should say so, not quietly
+	// show something else and get itself indexed.
+	const activeCategory = categories.find((c) => c.slug === categorySlug)
+	if (categorySlug && !activeCategory) notFound()
+
+	const [seriesInView, facets] = await Promise.all([
+		listPublicSeries(categorySlug),
+		listSpecFacets(categorySlug),
+	])
+	const activeSeries = seriesInView.find((s) => s.slug === seriesSlug)
+	if (seriesSlug && !activeSeries) notFound()
 
 	const products = await listPublicProducts({
+		categorySlug,
 		seriesSlug,
 		search: q,
 		// Anything unparseable in the query string is ignored rather than
@@ -66,16 +95,31 @@ export default async function ProductsPage({
 		thicknessMm: thickness && /^\d+(\.\d+)?$/.test(thickness) ? thickness : undefined,
 		sort: sort === "name" || sort === "series" ? sort : "curated",
 	})
-	const active = allSeries.find((s) => s.slug === seriesSlug)
 
-	// Carried onto the series links so choosing one keeps whatever search or
-	// spec filter is already on. Series is excluded — that is what the link sets.
-	const keep = new URLSearchParams(
-		Object.entries({ q, wear, thickness, sort }).filter(([, v]) => Boolean(v)) as [
-			string,
-			string,
-		][],
-	).toString()
+	// Carried onto the filter links so choosing one keeps whatever search or
+	// spec filter is already on.
+	const keep = (extra: Record<string, string | undefined>) => {
+		const params = new URLSearchParams(
+			Object.entries({ ...extra, q, wear, thickness, sort }).filter(([, v]) =>
+				Boolean(v),
+			) as [string, string][],
+		).toString()
+		return params ? `/products?${params}` : "/products"
+	}
+
+	// The series row only makes sense inside a shelf that has series, and only
+	// when there is more than one to choose between. A series link that came
+	// from an old URL with no category still shows its row, so it can be undone.
+	const showSeries = (activeCategory || activeSeries) && seriesInView.length > 1
+
+	const otherShelves = categories
+		.filter((c) => c.slug !== FLOORING_CATEGORY)
+		.map((c) => c.name.toLowerCase())
+
+	// The stored name may already end in "Series" — appending another gave
+	// "Bronze Series Series". Split it instead: everything but the last word
+	// light, the last word bold.
+	const heading = activeSeries?.name ?? activeCategory?.name
 
 	return (
 		<>
@@ -85,7 +129,17 @@ export default async function ProductsPage({
 						trail={[
 							{ href: "/", label: "Home" },
 							{ href: "/products", label: "Catalog" },
-							...(active ? [{ label: active.name }] : []),
+							...(activeCategory
+								? [
+										activeSeries
+											? {
+													href: `/products?category=${activeCategory.slug}`,
+													label: activeCategory.name,
+												}
+											: { label: activeCategory.name },
+									]
+								: []),
+							...(activeSeries ? [{ label: activeSeries.name }] : []),
 						]}
 					/>
 				</div>
@@ -94,15 +148,12 @@ export default async function ProductsPage({
 			<section className="bg-paper">
 				<div className="mx-auto max-w-[1280px] px-5 pb-24 md:pb-32">
 					<h1 className="display text-ink text-3xl uppercase sm:text-4xl">
-						{active ? (
-							// The stored name already ends in 'Series' — appending another
-							// gave 'Bronze Series Series'. Split it instead: everything but
-							// the last word light, the last word bold.
+						{heading ? (
 							<>
 								<span className="font-light">
-									{active.name.split(" ").slice(0, -1).join(" ")}
+									{heading.split(" ").slice(0, -1).join(" ")}
 								</span>{" "}
-								<span className="font-bold">{active.name.split(" ").at(-1)}</span>
+								<span className="font-bold">{heading.split(" ").at(-1)}</span>
 							</>
 						) : (
 							<>
@@ -113,17 +164,26 @@ export default async function ProductsPage({
 					</h1>
 
 					<p className="text-muted-foreground mt-3 max-w-2xl text-sm">
-						{active ? (
+						{activeSeries ? (
 							<>
-								{active.wearLayerMil && `${active.wearLayerMil} mil wear layer · `}
-								{active.thicknessMm && `${active.thicknessMm} mm · `}
-								{active.widthIn && `${active.widthIn}" wide · `}
-								{active.sqFtPerBox && `${active.sqFtPerBox} sq ft a box`}
+								{activeSeries.wearLayerMil &&
+									`${activeSeries.wearLayerMil} mil wear layer · `}
+								{activeSeries.thicknessMm && `${activeSeries.thicknessMm} mm · `}
+								{activeSeries.widthIn && `${activeSeries.widthIn}" wide · `}
+								{activeSeries.sqFtPerBox &&
+									`${activeSeries.sqFtPerBox} sq ft a box`}
 							</>
+						) : activeCategory?.blurb ? (
+							activeCategory.blurb
 						) : (
 							<>
-								{colours} colours in stock in High Point, plus trim. Prices are for
-								dealers —{" "}
+								{colours > 0 &&
+									`${colours} flooring colours in stock in High Point`}
+								{colours > 0 &&
+									otherShelves.length > 0 &&
+									`, plus ${listOf(otherShelves)}`}
+								{colours > 0 && ". "}
+								Prices are for dealers —{" "}
 								<Link
 									href="/login"
 									className="text-ink underline underline-offset-4"
@@ -150,17 +210,38 @@ export default async function ProductsPage({
 						/>
 					</div>
 
-					<div className="mt-6">
-						<SeriesFilter
-							keep={keep}
-							total={total}
-							active={seriesSlug}
-							series={allSeries.map((s) => ({
-								slug: s.slug,
-								name: s.name,
-								count: s._count.products,
-							}))}
-						/>
+					<div className="border-rule mt-6 grid gap-4 border-y py-4">
+						{categories.length > 1 && (
+							<FilterLinks
+								label="Shop"
+								active={activeCategory?.slug}
+								all={{ label: "All", href: keep({}), count: total }}
+								items={categories.map((c) => ({
+									slug: c.slug,
+									name: c.name,
+									count: c._count.products,
+									href: keep({ category: c.slug }),
+								}))}
+							/>
+						)}
+
+						{showSeries && (
+							<FilterLinks
+								label="Series"
+								active={activeSeries?.slug}
+								all={{
+									label: activeCategory ? `All ${activeCategory.name}` : "All",
+									href: keep({ category: activeCategory?.slug }),
+									count: activeCategory?._count.products ?? total,
+								}}
+								items={seriesInView.map((s) => ({
+									slug: s.slug,
+									name: s.name,
+									count: s._count.products,
+									href: keep({ category: activeCategory?.slug, series: s.slug }),
+								}))}
+							/>
+						)}
 					</div>
 
 					<div className="mt-12">
@@ -168,7 +249,7 @@ export default async function ProductsPage({
 							<p className="text-muted-foreground py-16 text-center text-sm">
 								{q || wear || thickness
 									? "Nothing matches that. Try clearing a filter."
-									: "Nothing published in this series yet."}
+									: "Nothing published here yet."}
 							</p>
 						) : (
 							<SwatchGrid

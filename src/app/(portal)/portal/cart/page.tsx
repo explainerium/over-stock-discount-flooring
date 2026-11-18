@@ -1,5 +1,6 @@
 import Decimal from "decimal.js"
 import { AlertTriangleIcon, ShoppingCartIcon } from "lucide-react"
+import { piecesOf } from "@/lib/format/sold-by"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -83,11 +84,12 @@ export default async function CartPage() {
 							id: item.id,
 							name: item.productNameSnapshot,
 							sku: item.productSkuSnapshot,
-							seriesName: item.product.series.name,
+							seriesName: item.product.series?.name ?? item.product.category.name,
 							image: item.product.images[0] ?? null,
 							unitSelected: item.unitSelected,
 							qtyEntered: item.qtyEntered.toString(),
 							boxes: item.boxes,
+							pieces: piecesOf(item),
 							sqFt: item.sqFt?.toString() ?? null,
 							unitPrice: item.unitPrice.toString(),
 							pricingUom: item.product.pricingUom,

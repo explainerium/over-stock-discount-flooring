@@ -1,5 +1,6 @@
 import { formatCoverage } from "@/lib/format/coverage"
 import { formatMoney, formatUnitPrice } from "@/lib/format/money"
+import { formatPieces } from "@/lib/format/sold-by"
 
 export interface OrderLineView {
 	id: string
@@ -9,6 +10,8 @@ export interface OrderLineView {
 	unitSelected: string
 	qtyEntered: string
 	boxes: number | null
+	/** Whole pieces, for trim. Null for anything else. */
+	pieces: number | null
 	sqFt: string | null
 	unitPrice: string
 	unitPriceAtSubmit?: string | null
@@ -21,7 +24,7 @@ const UNIT_LABEL: Record<string, string> = {
 	BOX: "boxes",
 	PALLET: "pallets",
 	LF: "linear ft",
-	STICK: "sticks",
+	STICK: "pieces",
 	BUNDLE: "bundles",
 	EACH: "each",
 	ROLL: "rolls",
@@ -59,6 +62,14 @@ export function OrderLines({ lines }: { lines: OrderLineView[] }) {
 										{" → "}
 										<span className="text-foreground">
 											{line.boxes} {line.boxes === 1 ? "box" : "boxes"}
+										</span>
+									</>
+								)}
+								{line.pieces !== null && line.unitSelected !== "STICK" && (
+									<>
+										{" → "}
+										<span className="text-foreground">
+											{formatPieces(line.pieces)}
 										</span>
 									</>
 								)}

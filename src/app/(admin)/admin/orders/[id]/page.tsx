@@ -1,5 +1,6 @@
 import { AlertTriangleIcon, ArrowLeftIcon } from "lucide-react"
 import Link from "next/link"
+import { piecesOf } from "@/lib/format/sold-by"
 import { notFound } from "next/navigation"
 import { OrderLines } from "@/components/shared/OrderLines"
 import { OrderStatusBadge } from "@/components/shared/OrderStatusBadge"
@@ -158,11 +159,13 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
 										id: item.id,
 										name: item.productNameSnapshot,
 										sku: item.productSkuSnapshot,
-										seriesName: item.product.series.name,
+										seriesName:
+											item.product.series?.name ?? item.product.category.name,
 										unitSelected: item.unitSelected,
 										qtyEntered: item.qtyEntered.toString(),
 										wasteFactorPct: item.wasteFactorPct,
 										boxes: item.boxes,
+										pieces: piecesOf(item),
 										sqFt: item.sqFt?.toString() ?? null,
 										unitPrice: item.unitPrice.toString(),
 										unitPriceAtSubmit:
@@ -179,10 +182,11 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
 								id: item.id,
 								name: item.productNameSnapshot,
 								sku: item.productSkuSnapshot,
-								seriesName: item.product.series.name,
+								seriesName: item.product.series?.name ?? item.product.category.name,
 								unitSelected: item.unitSelected,
 								qtyEntered: item.qtyEntered.toString(),
 								boxes: item.boxes,
+								pieces: piecesOf(item),
 								sqFt: item.sqFt?.toString() ?? null,
 								unitPrice: item.unitPrice.toString(),
 								unitPriceAtSubmit: item.unitPriceAtSubmit?.toString() ?? null,

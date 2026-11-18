@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { formatCoverage } from "@/lib/format/coverage"
 import { differs } from "@/lib/format/dirty"
 import { formatMoney, formatUnitPrice, uomLabel } from "@/lib/format/money"
+import { formatPieces } from "@/lib/format/sold-by"
 import { removeOrderLineAction, updateOrderLineAction } from "../../_actions"
 
 export interface StaffLineData {
@@ -19,6 +20,8 @@ export interface StaffLineData {
 	qtyEntered: string
 	wasteFactorPct: number
 	boxes: number | null
+	/** Whole pieces, for trim. Null for anything else. */
+	pieces: number | null
 	sqFt: string | null
 	unitPrice: string
 	unitPriceAtSubmit: string | null
@@ -134,7 +137,9 @@ export function StaffLine({ orderId, line }: { orderId: string; line: StaffLineD
 				<span className="text-foreground">
 					{line.boxes !== null
 						? `${line.boxes} ${line.boxes === 1 ? "box" : "boxes"}`
-						: `${line.qtyEntered} ${uomLabel(line.unitSelected)}`}
+						: line.pieces !== null
+							? formatPieces(line.pieces)
+							: `${line.qtyEntered} ${uomLabel(line.unitSelected)}`}
 				</span>
 				{line.sqFt && <> · {formatCoverage(line.sqFt)} sq ft covered</>}
 				{changed && (

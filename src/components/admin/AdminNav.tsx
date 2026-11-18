@@ -18,6 +18,7 @@ const LINKS = [
 	{ href: "/admin/orders", label: "Orders" },
 	{ href: "/admin/dealers", label: "Dealers" },
 	{ href: "/admin/products", label: "Products" },
+	{ href: "/admin/categories", label: "Categories" },
 	{ href: "/admin/series", label: "Series" },
 	{ href: "/admin/leads", label: "Leads" },
 	{ href: "/admin/freight", label: "Freight" },

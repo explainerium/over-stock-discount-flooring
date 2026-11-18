@@ -65,7 +65,7 @@ left unset.
 | `EMAIL_ORDER_CC`                  | Optional                                | Superseded by Settings once the owner saves a value there                         |
 | `TWILIO_*` / `OWNER_ALERT_NUMBER` | Optional                                | Owner alerts fall to the sink. Email still goes                                   |
 | `QBO_*`                           | Live app credentials                    | `QBO_ENVIRONMENT` left at `sandbox` invoices a test company                       |
-| `MEDIA_URL`                       | Wherever images are served from         | Must match `remotePatterns` in `next.config.ts` or `next/image` refuses           |
+| `CLOUDINARY_*`                    | The client's Cloudinary keys            | Photos already saved still show; uploading new ones in admin is switched off      |
 
 Set `SITE_URL` to the **apex** or the **www** host, whichever the redirect at
 step 5 makes canonical. Both work; they must not disagree with each other.

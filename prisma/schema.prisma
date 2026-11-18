@@ -376,6 +376,29 @@ model DealerPrice {
 // Catalog
 // ---------------------------------------------------------------------------
 
+/// What shelf a product sits on: flooring, trim and moldings, stair products,
+/// butcher block, carpet padding.
+///
+/// Rows, not an enum, because the client said the list will keep growing
+/// (stocked carpet is next) and adding a shelf should be an admin form, not a
+/// deploy. Separate from Series on purpose: a series is a spec group that only
+/// flooring has, while every product has a category.
+model Category {
+  id    String  @id @default(cuid())
+  name  String  @unique
+  slug  String  @unique
+  blurb String?
+
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+
+  @@index([isActive, sortOrder])
+}
+
 /// Specs live here, not on products.
 ///
 /// Every colour inside a series shares identical dimensions and packaging.
@@ -450,8 +473,14 @@ model Product {
   slug String @unique
   sku  String @unique
 
-  seriesId String
-  series   Series @relation(fields: [seriesId], references: [id], onDelete: Restrict)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  /// Flooring only. A series carries the shared plank specs and packaging;
+  /// trim, stair parts, butcher block and padding have none, so they have no
+  /// series and describe themselves in `description`.
+  seriesId String?
+  series   Series? @relation(fields: [seriesId], references: [id], onDelete: Restrict)
 
   /// Groups the same print film across formats. "Brookfield" exists in both
   /// Gold (7.09") and Gold W (7.17") with different sq ft/box.
@@ -510,6 +539,7 @@ model Product {
   leads        Lead[]
   dealerAccess DealerProductAccess[]
 
+  @@index([categoryId])
   @@index([seriesId])
   @@index([isPublic, isActive])
   @@index([dealerRestricted])

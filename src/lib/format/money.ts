@@ -47,7 +47,7 @@ const UOM_LABEL: Record<string, string> = {
 	LF: "linear ft",
 	BOX: "box",
 	PALLET: "pallet",
-	STICK: "stick",
+	STICK: "piece",
 	BUNDLE: "bundle",
 	EACH: "each",
 	ROLL: "roll",

@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { requireStaff } from "@/server/auth/guards"
-import { listAllProducts } from "@/server/repositories/catalog"
+import { listAllCategories, listAllProducts } from "@/server/repositories/catalog"
+import { cn } from "@/lib/utils"
 import { StockBadge } from "./_components/StockBadge"
 
 export const metadata = { title: "Products" }
@@ -13,11 +14,14 @@ export const metadata = { title: "Products" }
 export default async function ProductsPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ q?: string }>
+	searchParams: Promise<{ q?: string; category?: string }>
 }) {
 	await requireStaff()
-	const { q } = await searchParams
-	const products = await listAllProducts({ search: q })
+	const { q, category } = await searchParams
+	const [products, categories] = await Promise.all([
+		listAllProducts({ search: q, categoryId: category }),
+		listAllCategories(),
+	])
 
 	const published = products.filter((p) => p.isPublic).length
 
@@ -37,6 +41,31 @@ export default async function ProductsPage({
 					</Link>
 				</Button>
 			</div>
+
+			{/* With a hundred products across several shelves, one long list is
+			    a scroll the owner should not have to do to find the trim. */}
+			<nav aria-label="Filter by category" className="flex flex-wrap gap-2">
+				{[{ id: "", name: "All" }, ...categories].map((item) => (
+					<Link
+						key={item.id || "all"}
+						href={item.id ? `/admin/products?category=${item.id}` : "/admin/products"}
+						aria-current={(category ?? "") === item.id ? "page" : undefined}
+						className={cn(
+							"rounded-md border px-3 py-1.5 text-sm transition-colors",
+							(category ?? "") === item.id
+								? "bg-foreground text-background border-foreground"
+								: "text-muted-foreground hover:bg-muted hover:text-foreground",
+						)}
+					>
+						{item.name}
+						{"_count" in item && (
+							<span className="ml-1.5 text-xs tabular-nums opacity-70">
+								{item._count.products}
+							</span>
+						)}
+					</Link>
+				))}
+			</nav>
 
 			{products.length === 0 ? (
 				<Card>
@@ -67,7 +96,8 @@ export default async function ProductsPage({
 								<div className="min-w-0 flex-1">
 									<p className="truncate font-medium">{product.name}</p>
 									<p className="text-muted-foreground truncate font-mono text-xs">
-										{product.sku} · {product.series.name}
+										{product.sku} · {product.category.name}
+										{product.series && ` · ${product.series.name}`}
 									</p>
 								</div>
 
