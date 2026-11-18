@@ -99,8 +99,10 @@ export default async function DealerPricingPage({ params }: { params: Promise<{ 
 							<>
 								{" "}
 								{withoutListPrice} product
-								{withoutListPrice === 1 ? " has" : "s have"} no list price yet and
-								cannot be priced until one is set.
+								{withoutListPrice === 1 ? " has" : "s have"} no list price, so the
+								flat rate and tier do not reach{" "}
+								{withoutListPrice === 1 ? "it" : "them"}: type a price on each one
+								this dealer should be able to order.
 							</>
 						)}
 					</CardDescription>

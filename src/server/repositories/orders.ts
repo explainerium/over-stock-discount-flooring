@@ -9,7 +9,7 @@ import {
 	type OrderStatus,
 } from "@/server/domain/orders"
 import { isQuotable } from "@/server/domain/addresses"
-import { lineTotal, resolvePrice, sumLines } from "@/server/domain/pricing"
+import { hasPrice, lineTotal, resolvePrice, sumLines } from "@/server/domain/pricing"
 import { resolve as resolveUom, type Uom } from "@/server/domain/uom"
 import { stampFreight } from "./freight"
 
@@ -233,22 +233,28 @@ async function buildLine(input: LineInput) {
 	if (!product || !product.isActive) {
 		throw new OrderError("That product is not available to order.", "PRODUCT_UNAVAILABLE")
 	}
-	if (!product.listPrice) {
+	const listing = {
+		listPrice: product.listPrice?.toString() ?? null,
+		pricingUom: product.pricingUom,
+	}
+	const own = {
+		price: override?.price?.toString(),
+		discountPct: override?.discountPct?.toString(),
+	}
+	// No list price is fine when this dealer has a price of their own on it.
+	if (!hasPrice(listing, own)) {
 		throw new OrderError("That product has no price set yet.", "NO_PRICE")
 	}
 
 	const conversion = convert(product, input.unit, input.quantity, input.wasteFactorPct ?? 0)
 
 	const price = resolvePrice(
-		{ listPrice: product.listPrice.toString(), pricingUom: product.pricingUom },
+		listing,
 		{
 			discountPct: dealer?.discountPct?.toString(),
 			tierDiscountPct: dealer?.priceTier?.discountPct.toString(),
 		},
-		{
-			price: override?.price?.toString(),
-			discountPct: override?.discountPct?.toString(),
-		},
+		own,
 	)
 
 	return {

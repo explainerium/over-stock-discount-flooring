@@ -216,6 +216,11 @@ export function splitImages(value: string): string[] {
 		.filter(Boolean)
 }
 
+/** A new series is just a name; its specs go on the edit screen it opens onto. */
+export const createSeriesSchema = z.object({
+	name: z.string().trim().min(1, "Name is required.").max(80),
+})
+
 export const updateSeriesSchema = z.object({
 	id: z.string().min(1),
 	name: z.string().trim().min(1, "Name is required.").max(80),
@@ -265,6 +270,7 @@ export const updateCategoryFormSchema = updateCategorySchema.omit({ id: true })
 export type UpdateCategoryFormInput = z.infer<typeof updateCategoryFormSchema>
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>
+export type CreateSeriesInput = z.infer<typeof createSeriesSchema>
 export type UpdateProductFormInput = z.infer<typeof updateProductFormSchema>
 export type UpdateSeriesFormInput = z.infer<typeof updateSeriesFormSchema>
 

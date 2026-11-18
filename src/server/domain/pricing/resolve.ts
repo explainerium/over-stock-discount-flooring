@@ -28,6 +28,11 @@ import {
  * A dealer's own rate beating their tier is the point of having both: the tier
  * is where everyone in that band starts, and an individual arrangement is the
  * exception that was agreed on top.
+ *
+ * A list price is optional. The client prices each dealer by hand — "they will
+ * all have different pricing" — so a price set on a product for a dealer
+ * stands on its own. Every other step is a percentage, and a percentage of
+ * nothing is not a price, so without a list price those steps cannot apply.
  */
 
 /** Per-unit prices carry four decimals — per-square-foot pricing genuinely runs that deep. */
@@ -62,37 +67,55 @@ function validPrice(value: Decimal.Value | null | undefined): Decimal | null {
 const applyDiscount = (list: Decimal, pct: Decimal): Decimal =>
 	list.times(new Decimal(100).minus(pct)).dividedBy(100).toDecimalPlaces(UNIT_DP)
 
+/**
+ * Whether `resolvePrice` has anything to work with: a list price, or a price
+ * set for this dealer. The catalogue and the order check this first, so an
+ * unpriced product reads as "not priced yet" rather than as an error.
+ */
+export function hasPrice(product: ProductPricing, override: ProductOverride = {}): boolean {
+	const set = (value: Decimal.Value | null | undefined) =>
+		value !== null && value !== undefined && value !== ""
+	return set(product.listPrice) || set(override.price)
+}
+
 export function resolvePrice(
 	product: ProductPricing,
 	dealer: DealerPricing = {},
 	override: ProductOverride = {},
 ): PriceResult {
 	const listPrice = validPrice(product.listPrice)
+	const overridePrice = validPrice(override.price)
+
+	if (overridePrice !== null) {
+		return {
+			listPrice,
+			pricingUom: product.pricingUom,
+			unitPrice: overridePrice.toDecimalPlaces(UNIT_DP),
+			source: "PRODUCT_PRICE",
+			// An override can be above list as well as below — a special order
+			// might cost more — so the saving is derived rather than assumed.
+			// With no list price there is nothing to have saved against.
+			discountPct:
+				listPrice === null || listPrice.isZero()
+					? new Decimal(0)
+					: listPrice
+							.minus(overridePrice)
+							.dividedBy(listPrice)
+							.times(100)
+							.toDecimalPlaces(2),
+		}
+	}
 
 	if (listPrice === null) {
 		// Deliberately loud. A product with no price is not a product priced at
 		// zero, and quietly returning zero is how a pallet ships for nothing.
 		throw new PricingError(
-			"This product has no list price set, so it cannot be priced.",
+			"This product has no list price and no price for this dealer, so it cannot be priced.",
 			"NO_LIST_PRICE",
 		)
 	}
 
 	const base = { listPrice, pricingUom: product.pricingUom }
-
-	const overridePrice = validPrice(override.price)
-	if (overridePrice !== null) {
-		return {
-			...base,
-			unitPrice: overridePrice.toDecimalPlaces(UNIT_DP),
-			source: "PRODUCT_PRICE",
-			// An override can be above list as well as below — a special order
-			// might cost more — so the saving is derived rather than assumed.
-			discountPct: listPrice.isZero()
-				? new Decimal(0)
-				: listPrice.minus(overridePrice).dividedBy(listPrice).times(100).toDecimalPlaces(2),
-		}
-	}
 
 	const overrideDiscount = validDiscount(override.discountPct)
 	if (overrideDiscount !== null) {

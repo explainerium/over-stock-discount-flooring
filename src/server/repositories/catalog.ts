@@ -542,6 +542,28 @@ export async function updateProduct(
 	return product
 }
 
+export async function findConflictingSeries(name: string, slug: string) {
+	return db.series.findFirst({
+		where: { OR: [{ name: { equals: name, mode: "insensitive" } }, { slug }] },
+		select: { id: true, name: true },
+	})
+}
+
+/**
+ * A series with a name and nothing else, placed after the existing ones.
+ *
+ * Until it has square feet per box it is a series with no specs, which the
+ * public catalogue does not list as a flooring line — so it stays out of
+ * sight while the owner fills it in.
+ */
+export async function createSeries(data: { name: string; slug: string }) {
+	const last = await db.series.aggregate({ _max: { sortOrder: true } })
+	return db.series.create({
+		data: { name: data.name, slug: data.slug, sortOrder: (last._max.sortOrder ?? 0) + 1 },
+		select: { id: true, name: true, slug: true },
+	})
+}
+
 export async function updateSeries(
 	id: string,
 	data: {

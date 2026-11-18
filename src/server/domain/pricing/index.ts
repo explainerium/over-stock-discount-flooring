@@ -1,4 +1,4 @@
-export { lineTotal, resolvePrice, sumLines } from "./resolve"
+export { hasPrice, lineTotal, resolvePrice, sumLines } from "./resolve"
 export {
 	PricingError,
 	type DealerPricing,

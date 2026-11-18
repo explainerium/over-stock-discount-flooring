@@ -200,7 +200,7 @@ export function EditProductForm({
 				<ProInput
 					name="listPrice"
 					label="List price"
-					description="In the unit above. Dealer pricing overrides this."
+					description="In the unit above. Optional: a price set for a dealer works without one, but a % off needs it."
 				/>
 				<PieceLengthField />
 			</div>

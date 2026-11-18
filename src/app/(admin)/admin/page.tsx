@@ -51,17 +51,17 @@ export default async function AdminHome() {
 				</>
 			),
 		})),
-		...(noPrice.length > 0
+		...(noPrice > 0
 			? [
 					{
 						blocking: true,
 						href: "/admin/products",
 						body: (
 							<>
-								<span className="text-foreground">{noPrice.length}</span>{" "}
-								{plural(noPrice.length, "product has", "products have")} no price
-								set, so {plural(noPrice.length, "it cannot", "they cannot")} be
-								ordered.
+								<span className="text-foreground">{noPrice}</span>{" "}
+								{plural(noPrice, "product has", "products have")} no list price and
+								no dealer price, so nobody can order {plural(noPrice, "it", "them")}{" "}
+								yet.
 							</>
 						),
 					},

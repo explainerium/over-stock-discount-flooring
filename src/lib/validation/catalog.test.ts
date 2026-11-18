@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { createProductSchema, NO_SERIES, updateProductFormSchema } from "./catalog"
+import {
+	createProductSchema,
+	createSeriesSchema,
+	NO_SERIES,
+	updateProductFormSchema,
+} from "./catalog"
 
 const product = {
 	name: "Primed White Quarter Round",
@@ -66,5 +71,14 @@ describe("piece length", () => {
 				.success,
 		).toBe(true)
 		expect(createProductSchema.safeParse({ ...base, seriesId: "series_ar" }).success).toBe(true)
+	})
+})
+
+describe("new series", () => {
+	it("needs a name, and trims it", () => {
+		expect(createSeriesSchema.safeParse({ name: "   " }).success).toBe(false)
+		expect(createSeriesSchema.parse({ name: "  BB - Builder Grade " }).name).toBe(
+			"BB - Builder Grade",
+		)
 	})
 })

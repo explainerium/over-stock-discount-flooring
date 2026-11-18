@@ -5,7 +5,7 @@ import type { ActionResult } from "@/lib/validation/dealers"
 import { blank, setDealerDiscountSchema, setDealerPriceSchema } from "@/lib/validation/pricing"
 import { requireStaff } from "@/server/auth/guards"
 import { audit } from "@/server/repositories/audit"
-import { setDealerDiscount, upsertDealerPrice } from "@/server/repositories/pricing"
+import { listPriceOf, setDealerDiscount, upsertDealerPrice } from "@/server/repositories/pricing"
 
 export async function setDealerDiscountAction(input: unknown): Promise<ActionResult> {
 	const staff = await requireStaff()
@@ -50,6 +50,16 @@ export async function setDealerPriceAction(input: unknown): Promise<ActionResult
 
 	const price = blank(parsed.data.price) ?? null
 	const discountPct = blank(parsed.data.discountPct) ?? null
+
+	// Saved, it would sit there doing nothing: the engine has no list to take it off.
+	if (discountPct && !price && (await listPriceOf(productId)) === null) {
+		return {
+			ok: false,
+			message:
+				"This product has no list price to take a percentage off. Type a price instead.",
+			field: "discountPct",
+		}
+	}
 
 	await upsertDealerPrice({ dealerId, productId, price, discountPct })
 

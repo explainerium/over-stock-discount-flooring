@@ -6,6 +6,7 @@ import {
 	blank,
 	createCategorySchema,
 	createProductSchema,
+	createSeriesSchema,
 	hasPieceLength,
 	seriesOrUndefined,
 	slugify,
@@ -22,8 +23,10 @@ import { audit } from "@/server/repositories/audit"
 import {
 	createCategory,
 	createProduct,
+	createSeries,
 	findConflicting,
 	findConflictingCategory,
+	findConflictingSeries,
 	getCategory,
 	setProductAccess,
 	updateCategory,
@@ -154,6 +157,43 @@ export async function updateProductAction(input: unknown): Promise<ActionResult>
 
 	revalidateCatalog()
 	return { ok: true, message: "Saved." }
+}
+
+/**
+ * A new flooring line. The client asked whether adding products would stay
+ * something he can do himself; a colour in an existing series always was, and
+ * this covers the case where the colour needs a series that does not exist.
+ */
+export async function createSeriesAction(input: unknown): Promise<ActionResult<{ id: string }>> {
+	const staff = await requireStaff()
+
+	const parsed = createSeriesSchema.safeParse(input)
+	if (!parsed.success) {
+		const issue = parsed.error.issues[0]
+		return { ok: false, message: issue.message, field: issue.path[0]?.toString() }
+	}
+	const { name } = parsed.data
+	const slug = slugify(name)
+
+	if (!slug) {
+		return { ok: false, message: "That name has no letters or numbers in it.", field: "name" }
+	}
+	if (await findConflictingSeries(name, slug)) {
+		return { ok: false, message: "A series with that name already exists.", field: "name" }
+	}
+
+	const series = await createSeries({ name, slug })
+
+	await audit({
+		entity: "Series",
+		entityId: series.id,
+		action: "created",
+		actorId: staff.id,
+		after: { name: series.name, slug: series.slug },
+	})
+
+	revalidatePath("/admin/series")
+	return { ok: true, data: { id: series.id } }
 }
 
 export async function updateSeriesAction(input: unknown): Promise<ActionResult> {

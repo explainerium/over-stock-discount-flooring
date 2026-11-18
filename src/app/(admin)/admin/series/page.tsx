@@ -2,8 +2,10 @@ import { AlertTriangleIcon } from "lucide-react"
 import Link from "next/link"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { requireStaff } from "@/server/auth/guards"
 import { listAllSeries } from "@/server/repositories/catalog"
+import { NewSeriesForm } from "./_components/NewSeriesForm"
 
 export const metadata = { title: "Series" }
 
@@ -66,6 +68,21 @@ export default async function SeriesPage() {
 					</li>
 				))}
 			</ul>
+
+			<Card className="max-w-xl">
+				<CardHeader>
+					<CardTitle className="tracking-wide uppercase">Add Series</CardTitle>
+					<CardDescription>
+						For a new flooring line. Thickness, size, packaging and freight go on the
+						next screen, and the public catalogue lists it as a series once it has
+						square feet per box. A new colour in an existing series is added under
+						Products instead.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<NewSeriesForm />
+				</CardContent>
+			</Card>
 		</div>
 	)
 }

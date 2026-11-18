@@ -50,8 +50,11 @@ export type PriceSource =
 export interface PriceResult {
 	/** What this dealer pays, per unit of `pricingUom`. Four decimal places. */
 	unitPrice: Decimal
-	/** What it would cost without any of the above. */
-	listPrice: Decimal
+	/**
+	 * What it would cost without any of the above. Null when the product has no
+	 * list price and this dealer has a price of their own on it.
+	 */
+	listPrice: Decimal | null
 	pricingUom: string
 	source: PriceSource
 	/** Effective saving against list, as a percentage. Zero when there is none. */

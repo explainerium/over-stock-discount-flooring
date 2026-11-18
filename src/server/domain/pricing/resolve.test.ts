@@ -1,7 +1,7 @@
 import Decimal from "decimal.js"
 import { describe, expect, it } from "vitest"
 import { resolve } from "../uom"
-import { lineTotal, resolvePrice, sumLines } from "./resolve"
+import { hasPrice, lineTotal, resolvePrice, sumLines } from "./resolve"
 import { PricingError } from "./types"
 
 const gold = { listPrice: "2.19", pricingUom: "SQFT" }
@@ -55,6 +55,33 @@ describe("guards", () => {
 		// Not zero. A pallet shipping for nothing is worse than an error.
 		expect(() => resolvePrice({ listPrice: null, pricingUom: "SQFT" })).toThrow(PricingError)
 		expect(() => resolvePrice({ pricingUom: "SQFT" })).toThrow(/no list price/)
+	})
+
+	it("takes a dealer's own price on a product with no list price", () => {
+		// The client prices every dealer by hand, so list is often never set.
+		const result = resolvePrice(
+			{ listPrice: null, pricingUom: "SQFT" },
+			{ discountPct: "15" },
+			{ price: "1.49" },
+		)
+
+		expect(result.unitPrice.toString()).toBe("1.49")
+		expect(result.source).toBe("PRODUCT_PRICE")
+		expect(result.listPrice).toBeNull()
+		expect(result.discountPct.toString()).toBe("0")
+	})
+
+	it("cannot take a percentage off a list price that does not exist", () => {
+		const unlisted = { listPrice: null, pricingUom: "SQFT" }
+		expect(() => resolvePrice(unlisted, {}, { discountPct: "10" })).toThrow(/no list price/)
+		expect(() => resolvePrice(unlisted, { discountPct: "10" })).toThrow(/no list price/)
+	})
+
+	it("knows when there is something to price", () => {
+		expect(hasPrice(gold)).toBe(true)
+		expect(hasPrice({ listPrice: null, pricingUom: "SQFT" }, { price: "1.49" })).toBe(true)
+		expect(hasPrice({ listPrice: null, pricingUom: "SQFT" }, { discountPct: "10" })).toBe(false)
+		expect(hasPrice({ listPrice: "", pricingUom: "SQFT" })).toBe(false)
 	})
 
 	it("rejects a discount outside 0–100", () => {

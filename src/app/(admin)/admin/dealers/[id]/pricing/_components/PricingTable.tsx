@@ -36,6 +36,9 @@ export interface Fallback {
  * The resulting price is shown live as he types. Per-square-foot pricing is
  * abstract enough that "$1.86" means less than "$1.86 a square foot" — and this
  * is the screen where a typo becomes a wrong invoice.
+ *
+ * A product with no list price takes a price only: a percentage needs
+ * something to come off, so that box is switched off rather than left to fail.
  */
 export function PricingTable({
 	dealerId,
@@ -83,9 +86,6 @@ function PricingRowForm({
 	 * two ever disagree the engine is right; this is a preview.
 	 */
 	const effective = (() => {
-		if (!row.listPrice) return null
-		const list = new Decimal(row.listPrice)
-
 		if (price.trim()) {
 			try {
 				return new Decimal(price)
@@ -93,6 +93,9 @@ function PricingRowForm({
 				return null
 			}
 		}
+		if (!row.listPrice) return null
+		const list = new Decimal(row.listPrice)
+
 		const pct = discount.trim() || fallback.pct
 		if (!pct) return list
 
@@ -154,10 +157,11 @@ function PricingRowForm({
 			<Input
 				value={discount}
 				onChange={(event) => setDiscount(event.target.value)}
-				placeholder="% off"
+				placeholder={row.listPrice ? "% off" : "No list"}
 				inputMode="decimal"
 				aria-label={`Discount for ${row.name}`}
-				disabled={pending}
+				title={row.listPrice ? undefined : "No list price to take a percentage off"}
+				disabled={pending || (!row.listPrice && !row.discountPct)}
 			/>
 
 			<p className="text-muted-foreground text-sm">
@@ -171,7 +175,7 @@ function PricingRowForm({
 						)}
 					</>
 				) : (
-					<span className="text-xs">—</span>
+					<span className="text-xs">{row.listPrice ? "—" : "Needs a price"}</span>
 				)}
 			</p>
 

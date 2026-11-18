@@ -1,7 +1,7 @@
 import "server-only"
 import { db } from "@/server/db/client"
 import type { Prisma } from "@/generated/prisma/client"
-import { resolvePrice, type PriceResult } from "@/server/domain/pricing"
+import { hasPrice, resolvePrice, type PriceResult } from "@/server/domain/pricing"
 import { lfPerPieceOf } from "./catalog"
 
 /**
@@ -86,10 +86,10 @@ function offeredTo(dealerId: string): Prisma.ProductWhereInput {
 /**
  * The whole catalogue at this dealer's prices.
  *
- * A product with no list price comes back with `price: null` rather than
- * throwing. The engine is right to refuse to price it, but a catalogue that
- * fails to render because one colour has not been priced yet would be worse
- * than one that shows the colour and says so.
+ * A product with neither a list price nor a price for this dealer comes back
+ * with `price: null` rather than throwing. The engine is right to refuse to
+ * price it, but a catalogue that fails to render because one colour has not
+ * been priced yet would be worse than one that shows the colour and says so.
  */
 
 export async function listPricedProducts(
@@ -138,17 +138,17 @@ export async function listPricedProducts(
 	return products.map((product) => {
 		const override = overrideByProduct.get(product.id)
 
-		let price: PriceResult | null = null
-		if (product.listPrice) {
-			price = resolvePrice(
-				{ listPrice: product.listPrice.toString(), pricingUom: product.pricingUom },
-				pricing,
-				{
-					price: override?.price?.toString() ?? null,
-					discountPct: override?.discountPct?.toString() ?? null,
-				},
-			)
+		const listing = {
+			listPrice: product.listPrice?.toString() ?? null,
+			pricingUom: product.pricingUom,
 		}
+		const own = {
+			price: override?.price?.toString() ?? null,
+			discountPct: override?.discountPct?.toString() ?? null,
+		}
+		const price: PriceResult | null = hasPrice(listing, own)
+			? resolvePrice(listing, pricing, own)
+			: null
 
 		return {
 			id: product.id,
@@ -185,16 +185,15 @@ export async function getPricedProduct(
 		select: { price: true, discountPct: true },
 	})
 
-	const price = product.listPrice
-		? resolvePrice(
-				{ listPrice: product.listPrice.toString(), pricingUom: product.pricingUom },
-				pricing,
-				{
-					price: override?.price?.toString() ?? null,
-					discountPct: override?.discountPct?.toString() ?? null,
-				},
-			)
-		: null
+	const listing = {
+		listPrice: product.listPrice?.toString() ?? null,
+		pricingUom: product.pricingUom,
+	}
+	const own = {
+		price: override?.price?.toString() ?? null,
+		discountPct: override?.discountPct?.toString() ?? null,
+	}
+	const price = hasPrice(listing, own) ? resolvePrice(listing, pricing, own) : null
 
 	return {
 		id: product.id,
@@ -254,6 +253,15 @@ export async function listDealerPricing(dealerId: string) {
 	])
 
 	return { dealer, products, overrides }
+}
+
+/** A product's list price, null when it has none, undefined when there is no such product. */
+export async function listPriceOf(productId: string): Promise<string | null | undefined> {
+	const product = await db.product.findUnique({
+		where: { id: productId },
+		select: { listPrice: true },
+	})
+	return product ? (product.listPrice?.toString() ?? null) : undefined
 }
 
 export async function upsertDealerPrice(data: {
