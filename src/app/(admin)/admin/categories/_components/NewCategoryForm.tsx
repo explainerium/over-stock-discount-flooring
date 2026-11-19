@@ -36,7 +36,7 @@ export function NewCategoryForm() {
 				name="blurb"
 				label="Short description"
 				rows={2}
-				description="Optional. One line under the heading on the catalogue page."
+				description="Optional. One line under the heading on the catalog page."
 			/>
 			<ProInput name="sortOrder" label="Position" placeholder="0" />
 			<ProSubmit className="justify-self-start">Add category</ProSubmit>

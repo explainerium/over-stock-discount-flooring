@@ -8,7 +8,7 @@ import { NewCategoryForm } from "./_components/NewCategoryForm"
 export const metadata = { title: "Categories" }
 
 /**
- * The shelves of the catalogue.
+ * The shelves of the catalog.
  *
  * The client said the range will keep growing — trim, stair parts, butcher
  * block, carpet padding, and stocked carpet after that — so a new shelf is a
@@ -23,8 +23,8 @@ export default async function CategoriesPage() {
 			<div>
 				<h1 className="text-xl font-semibold tracking-wide uppercase">Categories</h1>
 				<p className="text-muted-foreground text-sm">
-					How the public catalogue is grouped. A category only shows on the site once it
-					has a published product in it.
+					How the public catalog is grouped. A category only shows on the site once it has
+					a published product in it.
 				</p>
 			</div>
 
@@ -57,7 +57,7 @@ export default async function CategoriesPage() {
 				<CardHeader>
 					<CardTitle className="tracking-wide uppercase">Add Category</CardTitle>
 					<CardDescription>
-						Lower positions come first in the catalogue and the menu.
+						Lower positions come first in the catalog and the menu.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>

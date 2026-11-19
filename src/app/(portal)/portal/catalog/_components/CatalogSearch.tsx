@@ -6,7 +6,7 @@ import { useEffect, useState, useTransition } from "react"
 import { Input } from "@/components/ui/input"
 
 /**
- * Finding one colour among sixty-two.
+ * Finding one color among sixty-two.
  *
  * A counter person taking an order over the phone knows the name the customer
  * said, or the SKU off a sample. Scrolling a grid to find it is the difference
@@ -49,8 +49,8 @@ export function CatalogSearch({ resultCount, total }: { resultCount: number; tot
 					type="search"
 					value={value}
 					onChange={(event) => setValue(event.target.value)}
-					placeholder="Colour name or SKU"
-					aria-label="Search the catalogue"
+					placeholder="Color name or SKU"
+					aria-label="Search the catalog"
 					className="pl-9"
 				/>
 			</label>

@@ -169,7 +169,7 @@ const updateProductFields = z.object({
 	 *
 	 * A product carries a list — the plan asks for a swatch and a room shot — and
 	 * until now the only way to set any of them was the create form, which takes
-	 * one. So a colour photographed after it was added could never get its
+	 * one. So a color photographed after it was added could never get its
 	 * picture, and one added with the wrong URL kept it forever.
 	 *
 	 * A textarea rather than a repeating field: these are pasted, not typed, and

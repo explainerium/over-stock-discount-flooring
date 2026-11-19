@@ -104,7 +104,7 @@ export function CartLine({ line }: { line: CartLineData }) {
 					{formatUnitPrice(line.unitPrice, line.pricingUom)}
 				</p>
 
-				{/* Said on the line rather than only in the catalogue: a dealer
+				{/* Said on the line rather than only in the catalog: a dealer
 				    who added this a week ago has not looked at the badge since. */}
 				{isStockNotable(line.stockStatus) && (
 					<p className="mt-1 text-xs">{stockLabel(line.stockStatus)}</p>

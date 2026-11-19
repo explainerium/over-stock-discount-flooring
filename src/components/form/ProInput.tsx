@@ -16,6 +16,8 @@ export interface ProInputProps {
 	autoFocus?: boolean
 	/** -1 takes a field out of the tab order — used for the honeypot. */
 	tabIndex?: number
+	/** Which keyboard a phone shows: "numeric" for a ZIP code, "decimal" for a quantity. */
+	inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"]
 	className?: string
 }
 
@@ -38,6 +40,7 @@ export function ProInput({
 	autoComplete,
 	autoFocus,
 	tabIndex,
+	inputMode,
 	className,
 }: ProInputProps) {
 	const { control } = useFormContext()
@@ -65,6 +68,7 @@ export function ProInput({
 						autoComplete={autoComplete}
 						autoFocus={autoFocus}
 						tabIndex={tabIndex}
+						inputMode={inputMode}
 						aria-invalid={fieldState.error ? true : undefined}
 					/>
 				</FieldShell>

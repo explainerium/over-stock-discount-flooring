@@ -1,9 +1,10 @@
 import Link from "next/link"
-import { SHOWROOM } from "@/constants/catalog"
+import { FacebookIcon } from "@/components/shared/FacebookIcon"
+import { FACEBOOK_URL, SHOWROOM } from "@/constants/catalog"
 import { listPublicCategories } from "@/server/repositories/catalog"
 
 /**
- * The columns that do not depend on the catalogue. The Catalog column is built
+ * The columns that do not depend on the catalog. The Catalog column is built
  * from the categories in the database instead — it used to list Bronze, Silver
  * and Gold by hand,
  * which meant the footer kept pointing at series the client had renamed or
@@ -21,8 +22,8 @@ const COLUMNS = [
 	{
 		heading: "Trade",
 		links: [
-			{ href: "/become-a-dealer", label: "Become a dealer" },
-			{ href: "/login", label: "Dealer login" },
+			{ href: "/become-a-dealer", label: "Apply for a Dealer / Contractor Account" },
+			{ href: "/login", label: "Dealer / Contractor Log In" },
 		],
 	},
 ]
@@ -60,6 +61,16 @@ export async function SiteFooter() {
 							{SHOWROOM.phone}
 						</a>
 					</address>
+					{/* A 44px target around a 20px glyph, like every other tap target here. */}
+					<a
+						href={FACEBOOK_URL}
+						target="_blank"
+						rel="noopener noreferrer"
+						aria-label="Overstock Discount Flooring on Facebook"
+						className="-ml-3 mt-3 inline-flex size-11 items-center justify-center opacity-70 transition-opacity hover:opacity-100"
+					>
+						<FacebookIcon className="size-5" />
+					</a>
 				</div>
 
 				{columns.map((column) => (

@@ -1,6 +1,6 @@
 import "server-only"
 import { db } from "@/server/db/client"
-import type { LeadSource } from "@/generated/prisma/client"
+import type { CustomerType, LeadSource } from "@/generated/prisma/client"
 
 /**
  * Leads.
@@ -20,6 +20,8 @@ export async function createLead(data: {
 	productId?: string
 	calculatorSqFt?: string
 	shipTo?: string
+	customerType?: CustomerType
+	zip?: string
 }) {
 	return db.lead.create({
 		data: {
@@ -32,6 +34,8 @@ export async function createLead(data: {
 			productId: data.productId ?? null,
 			calculatorSqFt: data.calculatorSqFt ?? null,
 			shipTo: data.shipTo ?? null,
+			customerType: data.customerType ?? null,
+			zip: data.zip ?? null,
 		},
 		select: { id: true, source: true },
 	})
@@ -53,9 +57,11 @@ export async function listLeads(options: { handled?: boolean } = {}) {
 			message: true,
 			calculatorSqFt: true,
 			shipTo: true,
+			customerType: true,
+			zip: true,
 			handledAt: true,
 			createdAt: true,
-			product: { select: { name: true, slug: true } },
+			product: { select: { name: true, slug: true, sku: true } },
 		},
 		orderBy: { createdAt: "desc" },
 	})

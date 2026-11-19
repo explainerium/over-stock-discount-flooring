@@ -37,8 +37,8 @@ const CLAIMS = [
 		body: "Certified for indoor air quality and free of phthalates, formaldehyde and VOC emissions.",
 	},
 	{
-		title: "Resists mould and bacteria",
-		body: "Impedes microorganism growth — long-term protection against bacteria, fungi and moulds.",
+		title: "Resists mold and bacteria",
+		body: "Impedes microorganism growth — long-term protection against bacteria, fungi and molds.",
 	},
 	{
 		title: "Fire resistant",
@@ -109,7 +109,7 @@ export default function RigidCorePage() {
 					</p>
 					<div className="mt-10">
 						<Link href="/products" className="btn bg-ink text-paper">
-							See the colours
+							See the colors
 						</Link>
 					</div>
 				</div>

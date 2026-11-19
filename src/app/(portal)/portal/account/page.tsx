@@ -18,7 +18,7 @@ export default async function AccountPage() {
 			<div>
 				<h1 className="text-xl font-semibold tracking-wide uppercase">Your Account</h1>
 				<p className="text-muted-foreground text-sm">
-					How you sign in. Your company&rsquo;s details are ours to change — ring us.
+					How you sign in. Your company&rsquo;s details are ours to change — call us.
 				</p>
 			</div>
 

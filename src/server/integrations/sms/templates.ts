@@ -19,7 +19,8 @@ const LEAD_SOURCE: Record<string, string> = {
 	CONTACT_FORM: "Contact form",
 	COVERAGE_CALCULATOR: "Coverage calculator",
 	SAMPLE_REQUEST: "Sample request",
-	DEALER_APPLICATION: "Dealer application",
+	DEALER_APPLICATION: "Dealer / contractor application",
+	PRICE_INQUIRY: "Pricing inquiry",
 }
 
 export function newOrderSms(data: {

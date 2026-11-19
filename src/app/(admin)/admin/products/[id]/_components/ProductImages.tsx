@@ -27,7 +27,7 @@ interface CloudinaryReply {
  * for why), and only their addresses come back into the form, so nothing is
  * saved until the owner presses Save, the same as every other field.
  *
- * The first photo is the one the catalogue grid, the search results and the
+ * The first photo is the one the catalog grid, the search results and the
  * share preview use, hence "Make main" rather than drag-to-reorder: there is
  * exactly one position that matters.
  */
@@ -112,7 +112,7 @@ export function ProductImages() {
 		<FieldShell
 			name="images"
 			label="Photos"
-			description="The first photo is the main one, used in the catalogue and search results. JPG, PNG or WebP, up to 10 MB each."
+			description="The first photo is the main one, used in the catalog and search results. JPG, PNG or WebP, up to 10 MB each."
 			error={error ?? fieldState.error?.message}
 		>
 			<div className="grid gap-3">

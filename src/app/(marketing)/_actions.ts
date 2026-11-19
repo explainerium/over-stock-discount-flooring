@@ -1,10 +1,15 @@
 "use server"
 
-import { contactSchema, dealerApplicationSchema, sampleRequestSchema } from "@/lib/validation/leads"
+import {
+	contactSchema,
+	dealerApplicationSchema,
+	priceInquirySchema,
+	sampleRequestSchema,
+} from "@/lib/validation/leads"
 import type { ActionResult } from "@/lib/validation/dealers"
 import { notifyNewLead } from "@/server/notifications/orders"
 import { createLead } from "@/server/repositories/leads"
-import { getProductName } from "@/server/repositories/catalog"
+import { getInquiryProduct, getProductName } from "@/server/repositories/catalog"
 
 /**
  * Public form submissions.
@@ -106,7 +111,7 @@ export async function requestSampleAction(input: unknown): Promise<ActionResult>
 	}
 
 	const product = await getProductName(parsed.data.productId)
-	if (!product) return { ok: false, message: "That colour is no longer listed." }
+	if (!product) return { ok: false, message: "That color is no longer listed." }
 
 	const lead = {
 		source: "SAMPLE_REQUEST" as const,
@@ -122,4 +127,46 @@ export async function requestSampleAction(input: unknown): Promise<ActionResult>
 	await notifyNewLead({ ...lead, productName: product })
 
 	return { ok: true, message: "Thanks — we have your request." }
+}
+
+/**
+ * "Inquire About Pricing" from a product page.
+ *
+ * A lead like the others, tied to the product so the owner sees what it was
+ * about without asking. The product's name and SKU go in the notification:
+ * the client's "automatically populated".
+ */
+export async function submitPriceInquiryAction(input: unknown): Promise<ActionResult> {
+	const parsed = priceInquirySchema.safeParse(input)
+	if (!parsed.success) {
+		const issue = parsed.error.issues[0]
+		return { ok: false, message: issue.message, field: issue.path[0]?.toString() }
+	}
+
+	if (isBot(parsed.data.website)) {
+		return { ok: true, message: "Thanks, we will be in touch with pricing." }
+	}
+
+	const product = await getInquiryProduct(parsed.data.productId)
+	if (!product) return { ok: false, message: "That product is no longer listed." }
+
+	const { quantity, message } = parsed.data
+	const lead = {
+		source: "PRICE_INQUIRY" as const,
+		customerType: parsed.data.customerType,
+		name: parsed.data.name,
+		email: parsed.data.email,
+		phone: parsed.data.phone,
+		productId: parsed.data.productId,
+		calculatorSqFt: parsed.data.sqFt ? parsed.data.sqFt.replace(/,/g, "") : undefined,
+		zip: parsed.data.zip,
+		message:
+			[quantity && `Quantity needed: ${quantity}`, message].filter(Boolean).join("\n\n") ||
+			undefined,
+	}
+
+	await createLead(lead)
+	await notifyNewLead({ ...lead, productName: `${product.name} (${product.sku})` })
+
+	return { ok: true, message: "Thanks, we will be in touch with pricing." }
 }

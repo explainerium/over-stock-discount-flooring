@@ -313,7 +313,14 @@ const LEAD_SOURCE: Record<string, string> = {
 	CONTACT_FORM: "Contact form",
 	COVERAGE_CALCULATOR: "Coverage calculator",
 	SAMPLE_REQUEST: "Sample request",
-	DEALER_APPLICATION: "Dealer application",
+	DEALER_APPLICATION: "Dealer / contractor application",
+	PRICE_INQUIRY: "Pricing inquiry",
+}
+
+const CUSTOMER_TYPE: Record<string, string> = {
+	HOMEOWNER: "Homeowner",
+	CONTRACTOR: "Contractor",
+	DEALER: "Dealer",
 }
 
 /**
@@ -422,8 +429,11 @@ export function newLeadEmail(data: {
 	calculatorSqFt?: string | null
 	/** Where a sample should be posted. */
 	shipTo?: string | null
+	customerType?: string | null
+	zip?: string | null
 }): RenderedEmail {
 	const kind = LEAD_SOURCE[data.source] ?? "Enquiry"
+	const customer = data.customerType ? CUSTOMER_TYPE[data.customerType] : null
 	const who = data.company || data.name || "Someone"
 
 	const rows: [string, string][] = [
@@ -438,6 +448,7 @@ export function newLeadEmail(data: {
 		...((data.phone
 			? [["Phone", `<a href="tel:${escape(data.phone)}">${escape(data.phone)}</a>`]]
 			: []) as [string, string][]),
+		...((customer ? [["Customer", escape(customer)]] : []) as [string, string][]),
 		...((data.productName ? [["Product", escape(data.productName)]] : []) as [
 			string,
 			string,
@@ -446,6 +457,7 @@ export function newLeadEmail(data: {
 			string,
 			string,
 		][]),
+		...((data.zip ? [["ZIP", escape(data.zip)]] : []) as [string, string][]),
 		// Last, and on its own lines: it is the thing being copied onto a
 		// package rather than another attribute of the enquiry.
 		...((data.shipTo ? [["Post it to", escape(data.shipTo).replace(/\n/g, "<br />")]] : []) as [
@@ -463,8 +475,10 @@ export function newLeadEmail(data: {
 			...(data.name && data.company ? [`Contact: ${data.name}`] : []),
 			...(data.email ? [`Email: ${data.email}`] : []),
 			...(data.phone ? [`Phone: ${data.phone}`] : []),
+			...(customer ? [`Customer: ${customer}`] : []),
 			...(data.productName ? [`Product: ${data.productName}`] : []),
 			...(data.calculatorSqFt ? [`Square feet: ${data.calculatorSqFt}`] : []),
+			...(data.zip ? [`ZIP: ${data.zip}`] : []),
 			...(data.shipTo ? ["", "Post it to:", data.shipTo] : []),
 			...(data.message ? ["", data.message] : []),
 			``,

@@ -21,9 +21,12 @@ import {
  *   1. A price set on this product for this dealer. Somebody typed a number
  *      against a name; nothing should quietly override that.
  *   2. A discount set on this product for this dealer.
- *   3. The dealer's own flat discount. Negotiated with them directly.
- *   4. Their tier's discount. The default they were negotiated away from.
- *   5. List.
+ *   3. A price set on this product's series for this dealer. How the client
+ *      actually prices flooring — "we set pricing by the series" — so every
+ *      color in a series costs a dealer the same, including colors added later.
+ *   4. The dealer's own flat discount. Negotiated with them directly.
+ *   5. Their tier's discount. The default they were negotiated away from.
+ *   6. List.
  *
  * A dealer's own rate beating their tier is the point of having both: the tier
  * is where everyone in that band starts, and an individual arrangement is the
@@ -69,13 +72,20 @@ const applyDiscount = (list: Decimal, pct: Decimal): Decimal =>
 
 /**
  * Whether `resolvePrice` has anything to work with: a list price, or a price
- * set for this dealer. The catalogue and the order check this first, so an
+ * set for this dealer. The catalog and the order check this first, so an
  * unpriced product reads as "not priced yet" rather than as an error.
  */
 export function hasPrice(product: ProductPricing, override: ProductOverride = {}): boolean {
 	const set = (value: Decimal.Value | null | undefined) =>
 		value !== null && value !== undefined && value !== ""
-	return set(product.listPrice) || set(override.price)
+	return set(product.listPrice) || set(override.price) || set(override.seriesPrice)
+}
+
+/** The saving a fixed price represents against list, or zero with no list to compare. */
+function savingAgainst(listPrice: Decimal | null, price: Decimal): Decimal {
+	return listPrice === null || listPrice.isZero()
+		? new Decimal(0)
+		: listPrice.minus(price).dividedBy(listPrice).times(100).toDecimalPlaces(2)
 }
 
 export function resolvePrice(
@@ -95,14 +105,31 @@ export function resolvePrice(
 			// An override can be above list as well as below — a special order
 			// might cost more — so the saving is derived rather than assumed.
 			// With no list price there is nothing to have saved against.
-			discountPct:
-				listPrice === null || listPrice.isZero()
-					? new Decimal(0)
-					: listPrice
-							.minus(overridePrice)
-							.dividedBy(listPrice)
-							.times(100)
-							.toDecimalPlaces(2),
+			discountPct: savingAgainst(listPrice, overridePrice),
+		}
+	}
+
+	// A percentage on this product needs a list to come off; without one it is
+	// skipped rather than fatal, so a series price can still apply.
+	const overrideDiscount = validDiscount(override.discountPct)
+	if (overrideDiscount !== null && listPrice !== null) {
+		return {
+			listPrice,
+			pricingUom: product.pricingUom,
+			unitPrice: applyDiscount(listPrice, overrideDiscount),
+			source: "PRODUCT_DISCOUNT",
+			discountPct: overrideDiscount,
+		}
+	}
+
+	const seriesPrice = validPrice(override.seriesPrice)
+	if (seriesPrice !== null) {
+		return {
+			listPrice,
+			pricingUom: product.pricingUom,
+			unitPrice: seriesPrice.toDecimalPlaces(UNIT_DP),
+			source: "SERIES_PRICE",
+			discountPct: savingAgainst(listPrice, seriesPrice),
 		}
 	}
 
@@ -116,16 +143,6 @@ export function resolvePrice(
 	}
 
 	const base = { listPrice, pricingUom: product.pricingUom }
-
-	const overrideDiscount = validDiscount(override.discountPct)
-	if (overrideDiscount !== null) {
-		return {
-			...base,
-			unitPrice: applyDiscount(listPrice, overrideDiscount),
-			source: "PRODUCT_DISCOUNT",
-			discountPct: overrideDiscount,
-		}
-	}
 
 	const dealerDiscount = validDiscount(dealer.discountPct)
 	if (dealerDiscount !== null) {

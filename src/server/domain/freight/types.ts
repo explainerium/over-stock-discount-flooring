@@ -65,7 +65,7 @@ export interface Shipment {
 	/**
 	 * Whole pallets across the whole order, already rounded up once — the order
 	 * repository sums the fractions per product before rounding, because five
-	 * colours of ten boxes travel as one pallet and not as five.
+	 * colors of ten boxes travel as one pallet and not as five.
 	 */
 	pallets: number
 	/** Boxes across the order. Zero for anything that does not ship in boxes. */

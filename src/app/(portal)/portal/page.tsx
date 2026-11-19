@@ -89,7 +89,7 @@ export default async function PortalHome() {
 					{draftLines === 0 ? (
 						<div className="flex flex-wrap items-center justify-between gap-4">
 							<p className="text-muted-foreground text-sm">
-								Your pricing is applied as you add colours.
+								Your pricing is applied as you add colors.
 							</p>
 							<Button asChild size="sm" variant="outline">
 								<Link href="/portal/catalog">Browse the catalog</Link>

@@ -60,6 +60,46 @@ export const sampleRequestSchema = z.object({
 /** The product id comes from the page, so the form never registers it. */
 export const sampleRequestFormSchema = sampleRequestSchema.omit({ productId: true })
 
+/**
+ * "Inquire About Pricing", on every product page.
+ *
+ * The fields are the client's list, 19 November: who is asking, a name, phone
+ * and email, roughly how much, and a ZIP code. Square feet means nothing for a
+ * butcher block, so a product that is not flooring asks how much in words
+ * instead, and either is optional: a rough guess should not block the ask.
+ */
+export const CUSTOMER_TYPES = ["HOMEOWNER", "CONTRACTOR", "DEALER"] as const
+
+export const priceInquirySchema = z.object({
+	productId: z.string().min(1),
+	customerType: z.enum(CUSTOMER_TYPES, {
+		message: "Are you a homeowner, a contractor or a dealer?",
+	}),
+	name,
+	phone: z.string().trim().min(7, "A phone number, please.").max(40),
+	email,
+	sqFt: z
+		.string()
+		.trim()
+		.max(20)
+		.optional()
+		.refine(
+			(value) => !value || /^\d+(\.\d+)?$/.test(value.replace(/,/g, "")),
+			"Square feet as a number, like 1200.",
+		),
+	quantity: z.string().trim().max(120).optional(),
+	zip: z
+		.string()
+		.trim()
+		.regex(/^\d{5}(-\d{4})?$/, "A 5-digit ZIP code, please."),
+	message: z.string().trim().max(1000).optional(),
+	website: z.string().max(0).optional(),
+})
+
+export const priceInquiryFormSchema = priceInquirySchema.omit({ productId: true })
+
+export type PriceInquiryFormInput = z.infer<typeof priceInquiryFormSchema>
+
 export type SampleRequestInput = z.infer<typeof sampleRequestSchema>
 export type SampleRequestFormInput = z.infer<typeof sampleRequestFormSchema>
 

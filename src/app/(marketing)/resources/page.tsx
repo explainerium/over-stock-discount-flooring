@@ -19,7 +19,7 @@ export const revalidate = 3600
  *
  * On the current site the warranty and installation PDFs sit loose under
  * /upload/prod/… with nothing linking to them but the product pages, so nobody
- * finds them unless they already know the colour they want.
+ * finds them unless they already know the color they want.
  */
 export default async function ResourcesPage() {
 	const series = await listPublicSeries()

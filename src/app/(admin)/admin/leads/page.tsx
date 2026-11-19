@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import type { LeadSource } from "@/generated/prisma/client"
+import type { CustomerType, LeadSource } from "@/generated/prisma/client"
 import { requireStaff } from "@/server/auth/guards"
 import { listLeads } from "@/server/repositories/leads"
 import { LeadHandledToggle } from "./_components/LeadHandledToggle"
@@ -12,7 +12,14 @@ const SOURCE: Record<LeadSource, string> = {
 	CONTACT_FORM: "Contact form",
 	COVERAGE_CALCULATOR: "Calculator",
 	SAMPLE_REQUEST: "Sample request",
-	DEALER_APPLICATION: "Dealer application",
+	DEALER_APPLICATION: "Dealer / contractor application",
+	PRICE_INQUIRY: "Pricing inquiry",
+}
+
+const CUSTOMER: Record<CustomerType, string> = {
+	HOMEOWNER: "Homeowner",
+	CONTRACTOR: "Contractor",
+	DEALER: "Dealer",
 }
 
 /**
@@ -99,6 +106,23 @@ export default async function LeadsPage() {
 													)}
 												</p>
 
+												{/* A pricing inquiry's answers, on one line: who, how much, where. */}
+												{(lead.customerType ||
+													lead.calculatorSqFt ||
+													lead.zip) && (
+													<p className="mt-2 text-sm">
+														{[
+															lead.customerType &&
+																CUSTOMER[lead.customerType],
+															lead.calculatorSqFt &&
+																`${lead.calculatorSqFt.toString()} sq ft`,
+															lead.zip && `ZIP ${lead.zip}`,
+														]
+															.filter(Boolean)
+															.join(" · ")}
+													</p>
+												)}
+
 												{lead.message && (
 													<p className="mt-3 text-sm whitespace-pre-wrap">
 														{lead.message}
@@ -126,7 +150,10 @@ export default async function LeadsPage() {
 															className="underline underline-offset-4"
 														>
 															{lead.product.name}
-														</Link>
+														</Link>{" "}
+														<span className="font-mono">
+															{lead.product.sku}
+														</span>
 													</p>
 												)}
 

@@ -41,6 +41,37 @@ describe("precedence", () => {
 		expect(result.unitPrice.toString()).toBe("1.752")
 	})
 
+	it("prices a whole series for a dealer, ahead of their flat rate and tier", () => {
+		const result = resolvePrice(
+			gold,
+			{ discountPct: "15", tierDiscountPct: "20" },
+			{ seriesPrice: "1.65" },
+		)
+
+		expect(result.source).toBe("SERIES_PRICE")
+		expect(result.unitPrice.toString()).toBe("1.65")
+		expect(result.discountPct.toString()).toBe("24.66")
+	})
+
+	it("lets a product's own price or discount beat its series price", () => {
+		expect(resolvePrice(gold, {}, { price: "1.50", seriesPrice: "1.65" }).source).toBe(
+			"PRODUCT_PRICE",
+		)
+		expect(resolvePrice(gold, {}, { discountPct: "30", seriesPrice: "1.65" }).source).toBe(
+			"PRODUCT_DISCOUNT",
+		)
+	})
+
+	it("takes a series price with no list price, and skips a percentage that cannot apply", () => {
+		const unlisted = { listPrice: null, pricingUom: "SQFT" }
+		const result = resolvePrice(unlisted, {}, { discountPct: "10", seriesPrice: "1.39" })
+
+		expect(result.source).toBe("SERIES_PRICE")
+		expect(result.unitPrice.toString()).toBe("1.39")
+		expect(result.listPrice).toBeNull()
+		expect(hasPrice(unlisted, { seriesPrice: "1.39" })).toBe(true)
+	})
+
 	it("charges list when nothing is set", () => {
 		const result = resolvePrice(gold)
 

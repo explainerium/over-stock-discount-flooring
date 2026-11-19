@@ -59,6 +59,13 @@ export const setDealerPriceSchema = z
 		path: ["price"],
 	})
 
+/** A dealer's price on a whole series. Empty clears it. */
+export const setDealerSeriesPriceSchema = z.object({
+	dealerId: z.string().min(1),
+	seriesId: z.string().min(1),
+	price: decimalText("Price"),
+})
+
 export type SetDealerDiscountInput = z.infer<typeof setDealerDiscountSchema>
 export type SetDealerPriceInput = z.infer<typeof setDealerPriceSchema>
 

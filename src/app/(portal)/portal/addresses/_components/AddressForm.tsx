@@ -70,7 +70,7 @@ export function AddressForm({
 				name="label"
 				label="Name it"
 				placeholder="Warehouse, Wesley Heights, Mike's jobsite…"
-				description="How you will recognise it in a list. Optional."
+				description="How you will recognize it in a list. Optional."
 			/>
 
 			<ProInput name="line1" label="Street address" required />

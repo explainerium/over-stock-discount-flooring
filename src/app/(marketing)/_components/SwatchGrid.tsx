@@ -9,11 +9,11 @@ export interface SwatchCard {
 }
 
 /**
- * The catalogue preview, following the reference site's product library: a tile
+ * The catalog preview, following the reference site's product library: a tile
  * of the material, the name in bold beneath it, and the SKU under that in
  * smaller grey type.
  *
- * The SKU line matters more here than it looks. The current ODF catalogue shows
+ * The SKU line matters more here than it looks. The current ODF catalog shows
  * no codes at all and dealers order by code, so the scheme has to be settled
  * before this ships — what renders below is the provisional one from the seed.
  */

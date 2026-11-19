@@ -7,7 +7,7 @@ export interface SeriesCard {
 	name: string
 	/** The row's own line. Editable in admin, so a rename keeps its copy. */
 	blurb: string | null
-	colourCount: number
+	colorCount: number
 	wearLayerMil: number | null
 	sqFtPerBox: string | null
 	image: string | null
@@ -20,11 +20,11 @@ export interface SeriesCard {
  *
  * That site fills the image slot with lifestyle photography. This client owns
  * none, so the slot takes the material instead — the factory's print film for a
- * colour in that series. It is the honest substitute, and it is worth telling
+ * color in that series. It is the honest substitute, and it is worth telling
  * him plainly that photographs would do more here.
  *
  * The count is not fixed. This was three cards in a hard `md:grid-cols-3`, back
- * when Bronze, Silver and Gold were the whole catalogue; the client is dropping
+ * when Bronze, Silver and Gold were the whole catalog; the client is dropping
  * those names and bringing more lines, so the column count is chosen from how
  * many there actually are. Four across would make the cards too narrow to read
  * the spec line, so anything past three wraps into rows of three.
@@ -64,7 +64,7 @@ export function SeriesCards({ series }: { series: SeriesCard[] }) {
 							</p>
 						)}
 						<p className="text-muted-foreground mt-4 text-xs">
-							{item.colourCount} colours
+							{item.colorCount} colors
 							{item.wearLayerMil && ` · ${item.wearLayerMil} mil`}
 							{item.sqFtPerBox && ` · ${item.sqFtPerBox} sq ft a box`}
 						</p>

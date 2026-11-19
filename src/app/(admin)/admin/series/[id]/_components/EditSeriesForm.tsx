@@ -19,7 +19,7 @@ import {
 import { updateSeriesAction } from "../../../products/_actions"
 
 /**
- * Editing a series edits every colour under it.
+ * Editing a series edits every color under it.
  *
  * That is the whole point of holding specs here — 62 products, five sets of
  * numbers — but it also means a typo in sq ft per box changes what every dealer
@@ -71,7 +71,7 @@ export function EditSeriesForm({
 			<fieldset className="grid gap-4 border-t pt-5">
 				<legend className="sr-only">Plank</legend>
 				<p className="text-muted-foreground text-sm">
-					Plank — shared by all {productCount} colours in this series.
+					Plank — shared by all {productCount} colors in this series.
 				</p>
 				<div className="grid gap-4 sm:grid-cols-3">
 					<ProInput name="lengthIn" label="Length (in)" />

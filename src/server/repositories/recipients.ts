@@ -1,6 +1,6 @@
 import "server-only"
 import { db } from "@/server/db/client"
-import { getOrderMailCc } from "./settings"
+import { getLeadMailTo, getOrderMailCc } from "./settings"
 
 /**
  * Who gets told.
@@ -51,6 +51,19 @@ export async function staffRecipients(): Promise<Recipients> {
 	]
 
 	return { to: owner.email, cc: [...new Set(cc)].filter((email) => email !== owner.email) }
+}
+
+/**
+ * Who hears about a lead from the public site.
+ *
+ * The client named two addresses for inquiries and applications (19 November),
+ * which are not the owner's login. Set in admin settings; until they are, leads
+ * go where order mail goes.
+ */
+export async function leadRecipients(): Promise<Recipients> {
+	const configured = await getLeadMailTo()
+	if (configured.length > 0) return { to: configured[0], cc: configured.slice(1) }
+	return staffRecipients()
 }
 
 /**

@@ -11,7 +11,7 @@ import { requestSampleAction } from "../../../_actions"
 /**
  * Asking for a sample.
  *
- * Closed until it is wanted. A product page's job is to sell the colour, and a
+ * Closed until it is wanted. A product page's job is to sell the color, and a
  * form sitting open underneath every one of sixty-two pages is noise on all of
  * them.
  *
@@ -74,7 +74,7 @@ export function SampleRequest({
 			<div>
 				<p className="font-medium">Request a {productName} sample</p>
 				<p className="text-muted-foreground mt-1 text-sm">
-					We post these out by hand, so give us a day or two.
+					We mail these out by hand, so give us a day or two.
 				</p>
 			</div>
 

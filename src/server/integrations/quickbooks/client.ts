@@ -66,7 +66,7 @@ export async function createInvoice(
 
 	const id = body.Invoice?.Id
 	if (!id) {
-		// Accepted but unrecognisable. Better to say so than to record success
+		// Accepted but unrecognizable. Better to say so than to record success
 		// with nothing to point at — an invoice we cannot name is one nobody can
 		// find again.
 		throw new QboError("QuickBooks accepted the invoice but returned no id.", "REFUSED")

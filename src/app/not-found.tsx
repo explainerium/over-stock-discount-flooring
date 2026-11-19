@@ -21,8 +21,8 @@ export default function NotFound() {
 			</h1>
 
 			<p className="mt-6 max-w-md text-sm opacity-80">
-				It may have moved, or the link may be out of date. The catalogue is the best place
-				to start.
+				It may have moved, or the link may be out of date. The catalog is the best place to
+				start.
 			</p>
 
 			<div className="mt-10 flex flex-wrap justify-center gap-3">

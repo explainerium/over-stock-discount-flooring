@@ -31,7 +31,7 @@ export default async function ProductsPage({
 				<div>
 					<h1 className="text-xl font-semibold tracking-wide uppercase">Products</h1>
 					<p className="text-muted-foreground text-sm">
-						{products.length} in the catalogue · {published} published
+						{products.length} in the catalog · {published} published
 					</p>
 				</div>
 				<Button asChild>
@@ -70,7 +70,7 @@ export default async function ProductsPage({
 			{products.length === 0 ? (
 				<Card>
 					<CardContent className="text-muted-foreground py-10 text-center text-sm">
-						Nothing in the catalogue yet.
+						Nothing in the catalog yet.
 					</CardContent>
 				</Card>
 			) : (

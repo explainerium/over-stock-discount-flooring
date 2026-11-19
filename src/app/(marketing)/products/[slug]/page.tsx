@@ -1,4 +1,4 @@
-import { DownloadIcon } from "lucide-react"
+import { DownloadIcon, TruckIcon } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -8,14 +8,15 @@ import { getPublicProduct, lfPerPieceOf } from "@/server/repositories/catalog"
 import { Breadcrumbs } from "../../_components/Breadcrumbs"
 import { CoverageCalculator } from "../../_components/CoverageCalculator"
 import { firstLine, ProductDescription } from "../../_components/ProductDescription"
+import { PriceInquiry } from "./_components/PriceInquiry"
 import { ProductGallery } from "./_components/ProductGallery"
 import { SampleRequest } from "./_components/SampleRequest"
 import { SITE_URL } from "@/constants/site"
 
 /**
- * One URL per colour.
+ * One URL per color.
  *
- * The current site has thirty-four colours living at three URLs, which means
+ * The current site has thirty-four colors living at three URLs, which means
  * nothing to link to, nothing to rank and nothing for a dealer to send someone.
  * These pages are the fix, and they are the largest single SEO gain available
  * in the rebuild.
@@ -26,8 +27,8 @@ import { SITE_URL } from "@/constants/site"
  *
  * Deliberately not `generateStaticParams`. Pre-rendering all thirty-four at
  * build time would be faster on paper, but it ties every deploy to the database
- * being reachable and — worse for this client — a colour he publishes would not
- * appear until somebody redeployed. The catalogue is his to edit, so the page
+ * being reachable and — worse for this client — a color he publishes would not
+ * appear until somebody redeployed. The catalog is his to edit, so the page
  * has to follow him.
  *
  * `revalidatePath` in the product actions clears these on save, so the hour is
@@ -116,7 +117,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
 	/**
 	 * Product schema. The current site has no structured data of any kind, and
-	 * for a catalogue this size it is the cheapest SEO available.
+	 * for a catalog this size it is the cheapest SEO available.
 	 *
 	 * No `offers` block: prices are only shown to signed-in dealers, and
 	 * publishing one here would both contradict that and be wrong for most
@@ -181,26 +182,30 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 							</div>
 						)}
 
-						{/* Prices are dealer-only by the client's own instruction, so the
-						    public page says where they are rather than showing nothing. */}
-						<div className="bg-band mt-8 p-6">
+						{/* Prices stay off the public site, so this is where anyone asks
+						    for one: the client's "Inquire About Pricing", with "Nationwide
+						    Shipping Available" beside it (revision list, 19 November). */}
+						<div className="bg-band mt-8 grid gap-5 p-6">
 							<p className="display text-ink text-sm uppercase">Pricing</p>
-							<p className="text-muted-foreground mt-2 text-sm">
-								Dealer pricing is shown after you sign in.{" "}
+							<PriceInquiry
+								productId={product.id}
+								productName={product.name}
+								sku={product.sku}
+								isFlooring={Boolean(series)}
+							/>
+							<p className="display text-ink flex items-center gap-2 text-sm uppercase">
+								<TruckIcon className="size-5 shrink-0" aria-hidden />
+								Nationwide Shipping Available
+							</p>
+							<p className="text-muted-foreground text-xs">
+								Have a dealer or contractor account?{" "}
 								<Link
 									href="/login"
 									className="text-ink underline underline-offset-4"
 								>
-									Sign in
+									Log in
 								</Link>{" "}
-								or{" "}
-								<Link
-									href="/become-a-dealer"
-									className="text-ink underline underline-offset-4"
-								>
-									apply for an account
-								</Link>
-								. Buying for your own home? Call{" "}
+								to see your pricing. Or call{" "}
 								<a href={SHOWROOM.phoneHref} className="text-ink">
 									{SHOWROOM.phone}
 								</a>
@@ -267,7 +272,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 				</section>
 			)}
 
-			{/* A colour is hard to judge on a screen, and this is the cheapest
+			{/* A color is hard to judge on a screen, and this is the cheapest
 			    way for somebody to be sure before they order a pallet of it.
 			    Flooring only: nobody needs a sample of a stair nose to judge it. */}
 			{series && (
@@ -277,7 +282,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 							See it in person
 						</h2>
 						<p className="text-muted-foreground mt-4 max-w-lg text-sm leading-relaxed">
-							Screens lie about colour. We will post you a piece of {product.name} so
+							Screens lie about color. We will mail you a piece of {product.name} so
 							you can hold it against the cabinets before you commit to a floor.
 						</p>
 						<div className="mt-8">

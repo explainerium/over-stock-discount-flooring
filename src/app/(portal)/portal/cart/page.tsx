@@ -48,8 +48,8 @@ export default async function CartPage() {
 					/>
 					<p className="mt-5 font-medium">Nothing on this order yet</p>
 					<p className="text-muted-foreground mx-auto mt-2 max-w-sm text-sm">
-						Add colours from the catalogue. Type a square footage and we will round it
-						to whole boxes for you.
+						Add colors from the catalog. Type a square footage and we will round it to
+						whole boxes for you.
 					</p>
 					<Button asChild className="mt-8">
 						<Link href="/portal/catalog">Browse the catalog</Link>

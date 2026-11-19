@@ -4,7 +4,7 @@
  * Deliberately plain. Mail clients are twenty years behind browsers — Outlook
  * still renders through Word — so this is tables-free, single-column, inline
  * styles only, with no webfont and no image. The site's look survives as the
- * things that actually carry it: uppercase display type, no accent colour, no
+ * things that actually carry it: uppercase display type, no accent color, no
  * rounded corners, hairline rules.
  *
  * A dealer reading this on a phone in a truck is the case to design for, not a

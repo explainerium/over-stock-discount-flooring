@@ -14,7 +14,12 @@ import {
 } from "@/server/integrations/email"
 import { alertOwner, newLeadSms, newOrderSms } from "@/server/integrations/sms"
 import { db } from "@/server/db/client"
-import { dealerRecipients, orderSubmitter, staffRecipients } from "@/server/repositories/recipients"
+import {
+	dealerRecipients,
+	leadRecipients,
+	orderSubmitter,
+	staffRecipients,
+} from "@/server/repositories/recipients"
 
 /**
  * Telling people what happened.
@@ -186,9 +191,11 @@ export async function notifyNewLead(lead: {
 	productName?: string | null
 	calculatorSqFt?: string | null
 	shipTo?: string | null
+	customerType?: string | null
+	zip?: string | null
 }): Promise<void> {
 	try {
-		const staff = await staffRecipients()
+		const staff = await leadRecipients()
 
 		// The flood guard now covers the text as well as the mail, and it matters
 		// more there: a form under attack fills an inbox, which is a nuisance, and

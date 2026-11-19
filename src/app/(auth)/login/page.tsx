@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/server/auth/guards"
 import { LoginForm } from "./_components/LoginForm"
 
 export const metadata: Metadata = {
-	title: "Dealer Sign In",
+	title: "Dealer / Contractor Log In",
 	robots: { index: false, follow: false },
 }
 
@@ -23,7 +23,9 @@ export default async function LoginPage({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle className="text-xl tracking-wide uppercase">Dealer Sign In</CardTitle>
+				<CardTitle className="text-xl tracking-wide uppercase">
+					Dealer / Contractor Log In
+				</CardTitle>
 				<CardDescription>Sign in to see your pricing and place an order.</CardDescription>
 			</CardHeader>
 			<CardContent className="grid gap-4">

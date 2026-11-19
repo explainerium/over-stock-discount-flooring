@@ -17,6 +17,8 @@ export interface PricingRow {
 	listPrice: string | null
 	price: string
 	discountPct: string
+	/** This dealer's price on the product's series, if one is set. */
+	seriesPrice: string | null
 }
 
 /** What a product falls back to when it has no exception of its own. */
@@ -85,22 +87,19 @@ function PricingRowForm({
 	 * lives on the server and this needs to update on every keystroke. If the
 	 * two ever disagree the engine is right; this is a preview.
 	 */
-	const effective = (() => {
-		if (price.trim()) {
-			try {
-				return new Decimal(price)
-			} catch {
-				return null
-			}
-		}
-		if (!row.listPrice) return null
-		const list = new Decimal(row.listPrice)
+	const off = (list: Decimal, pct: string) =>
+		list.times(new Decimal(100).minus(pct)).dividedBy(100).toDecimalPlaces(4)
 
-		const pct = discount.trim() || fallback.pct
-		if (!pct) return list
-
+	const effective = ((): { value: Decimal; from?: string } | null => {
 		try {
-			return list.times(new Decimal(100).minus(pct)).dividedBy(100).toDecimalPlaces(4)
+			if (price.trim()) return { value: new Decimal(price) }
+			const list = row.listPrice ? new Decimal(row.listPrice) : null
+			if (discount.trim() && list) return { value: off(list, discount.trim()) }
+			if (row.seriesPrice) return { value: new Decimal(row.seriesPrice), from: "series" }
+			if (!list) return null
+			return fallback.pct
+				? { value: off(list, fallback.pct), from: fallback.label }
+				: { value: list }
 		} catch {
 			return null
 		}
@@ -168,11 +167,9 @@ function PricingRowForm({
 				{effective ? (
 					<>
 						<span className="text-foreground font-medium">
-							{formatUnitPrice(effective, row.pricingUom)}
+							{formatUnitPrice(effective.value, row.pricingUom)}
 						</span>
-						{!price.trim() && !discount.trim() && fallback.pct && (
-							<span className="ml-1 text-xs">({fallback.label})</span>
-						)}
+						{effective.from && <span className="ml-1 text-xs">({effective.from})</span>}
 					</>
 				) : (
 					<span className="text-xs">{row.listPrice ? "—" : "Needs a price"}</span>

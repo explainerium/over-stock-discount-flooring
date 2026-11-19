@@ -16,7 +16,28 @@ import { db } from "@/server/db/client"
 export const SETTINGS = {
 	/** Addresses copied on every order notification. */
 	orderMailCc: "order_mail_cc",
+	/** Where inquiries, applications and messages from the site are sent. */
+	leadMailTo: "lead_mail_to",
 } as const
+
+/** Empty means "the owner and admins", the same as order mail. */
+export async function getLeadMailTo(): Promise<string[]> {
+	const row = await db.setting.findUnique({
+		where: { key: SETTINGS.leadMailTo },
+		select: { value: true },
+	})
+	return row && Array.isArray(row.value)
+		? row.value.filter((v): v is string => typeof v === "string")
+		: []
+}
+
+export async function setLeadMailTo(addresses: string[]): Promise<void> {
+	await db.setting.upsert({
+		where: { key: SETTINGS.leadMailTo },
+		create: { key: SETTINGS.leadMailTo, value: addresses },
+		update: { value: addresses },
+	})
+}
 
 /**
  * Reads a list of addresses.

@@ -62,7 +62,7 @@ export async function transitionOrderAction(input: unknown): Promise<ActionResul
 	const staff = await requireStaff()
 
 	const parsed = transitionOrderSchema.safeParse(input)
-	if (!parsed.success) return { ok: false, message: "That is not a move we recognise." }
+	if (!parsed.success) return { ok: false, message: "That is not a move we recognize." }
 
 	const order = await getOrderForStaff(parsed.data.orderId)
 	if (!order) return { ok: false, message: "That order does not exist." }

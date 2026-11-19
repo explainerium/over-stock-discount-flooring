@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { FACTS, FLOORING_CATEGORY, SHOWROOM } from "@/constants/catalog"
 import {
-	countPublicColours,
+	countPublicColors,
 	listPublicCategories,
 	listPublicProducts,
 	listPublicSeries,
@@ -19,8 +19,8 @@ import { SwatchGrid } from "./_components/SwatchGrid"
  * alternating white and #EFEFEF at roughly 130px of vertical padding, each
  * opening with a heading that mixes one bold word against one light one.
  *
- * The content is this client's. Everything factual on this page — the colour
- * count, the coverage figures, the 89 checkpoints — comes off his own catalogue.
+ * The content is this client's. Everything factual on this page — the color
+ * count, the coverage figures, the 89 checkpoints — comes off his own catalog.
  */
 
 const RIGID_CORE = [
@@ -28,42 +28,19 @@ const RIGID_CORE = [
 	"IXPE padding attached, so no separate underlayment.",
 	"ScratchGuard surface — rated against indentation and stains.",
 	"FloorScore certified. No phthalates, formaldehyde or VOC emissions.",
-	"Resists microorganism growth — bacteria, fungi and mould.",
+	"Resists microorganism growth — bacteria, fungi and mold.",
 	"Fire resistant. Won't help a fire spread.",
 ]
-
-/**
- * The series count, set in a display heading rather than a sentence, so it is
- * spelled out. Was the literal "Three series." until the client said he is
- * dropping the Bronze/Silver/Gold names and adding lines — a heading that
- * contradicts the cards under it is worse than one that just counts them.
- * Past ten it falls back to digits, which no real catalogue should reach.
- */
-const NUMBER_WORD = [
-	"No",
-	"One",
-	"Two",
-	"Three",
-	"Four",
-	"Five",
-	"Six",
-	"Seven",
-	"Eight",
-	"Nine",
-	"Ten",
-]
-
-const countWord = (n: number) => NUMBER_WORD[n] ?? String(n)
 
 export default async function HomePage() {
 	// One fetch at the page, handed down. The calculator is a client component
 	// and cannot query; the cards and the grid could, but three round trips for
 	// one screen is three round trips.
-	const [series, products, colourCount, categories] = await Promise.all([
+	const [series, products, colorCount, categories] = await Promise.all([
 		listPublicSeries(),
-		// Colours means flooring: a baseboard is not a colour on the shelf.
+		// Colors means flooring: a baseboard is not a color on the shelf.
 		listPublicProducts({ categorySlug: FLOORING_CATEGORY, take: 12 }),
-		countPublicColours(),
+		countPublicColors(),
 		listPublicCategories(),
 	])
 
@@ -82,7 +59,7 @@ export default async function HomePage() {
 			slug: s.slug,
 			name: s.name,
 			blurb: s.blurb,
-			colourCount: s._count.products,
+			colorCount: s._count.products,
 			wearLayerMil: s.wearLayerMil,
 			sqFtPerBox: s.sqFtPerBox?.toString() ?? null,
 			image: s.products[0]?.images[0] ?? null,
@@ -120,7 +97,7 @@ export default async function HomePage() {
 							Why rigid core
 						</Link>
 						<Link href="/become-a-dealer" className="btn bg-paper text-ink">
-							Become a dealer
+							Apply for a Dealer / Contractor Account
 						</Link>
 					</div>
 				</div>
@@ -130,8 +107,8 @@ export default async function HomePage() {
 			<section className="bg-paper">
 				<div className="mx-auto max-w-[1280px] px-5 py-24 md:py-32">
 					<h2 className="display text-ink text-center text-3xl uppercase sm:text-4xl">
-						<span className="font-bold">{countWord(seriesCards.length)} series.</span>{" "}
-						<span className="font-light">One warehouse.</span>
+						<span className="font-bold">Quality Floors.</span>{" "}
+						<span className="font-light">Discount Prices.</span>
 					</h2>
 					{/* Derived, not asserted.
 
@@ -140,7 +117,7 @@ export default async function HomePage() {
 					    and written as though it would go on being true of whatever
 					    replaced them. The first real series has neither a plank length nor
 					    an edge profile on file, so the sentence was making a claim the
-					    catalogue could not back — and "what changes between them" read as
+					    catalog could not back — and "what changes between them" read as
 					    nonsense above a single card.
 
 					    What is left is what the warehouse can say whatever it stocks, and
@@ -163,10 +140,10 @@ export default async function HomePage() {
 				<div className="mx-auto max-w-[1280px] px-5 py-24 md:py-32">
 					<h2 className="display text-ink text-3xl uppercase sm:text-4xl">
 						<span className="font-light">Overstock</span>{" "}
-						<span className="font-bold">Colours</span>
+						<span className="font-bold">Colors</span>
 					</h2>
 					<p className="text-muted-foreground mt-3 text-sm">
-						{colourCount} on the shelf today. Come and stand on any of them.
+						{colorCount} on the shelf today. Come and stand on any of them.
 					</p>
 
 					<div className="mt-12">
@@ -185,7 +162,7 @@ export default async function HomePage() {
 							href={`/products?category=${FLOORING_CATEGORY}`}
 							className="btn bg-ink text-paper"
 						>
-							See all {colourCount} colours
+							See all {colorCount} colors
 						</Link>
 					</div>
 
@@ -273,16 +250,16 @@ export default async function HomePage() {
 						</h2>
 						<p className="mt-4 max-w-xl text-sm opacity-80">
 							Dealers get their own pricing, order by the box, pallet or square foot,
-							and send an order straight through instead of ringing for a quote.
+							and send an order straight through instead of calling for a quote.
 							Accounts are set up by invitation.
 						</p>
 					</div>
 					<div className="flex flex-wrap gap-3">
 						<Link href="/become-a-dealer" className="btn bg-paper text-ink">
-							Apply for an account
+							Apply for a Dealer / Contractor Account
 						</Link>
 						<Link href="/login" className="btn border border-white/40">
-							Dealer login
+							Dealer / Contractor Log In
 						</Link>
 					</div>
 				</div>
@@ -296,7 +273,7 @@ export default async function HomePage() {
 						<span className="font-bold">stand on it</span>
 					</h2>
 					<p className="text-muted-foreground mx-auto mt-4 max-w-2xl text-center text-sm">
-						A family-owned business in High Point, North Carolina. Every colour we stock
+						A family-owned business in High Point, North Carolina. Every color we stock
 						is on the rack, full length, under real light.
 					</p>
 
@@ -319,6 +296,8 @@ export default async function HomePage() {
 								{SHOWROOM.weekdays}
 								<br />
 								{SHOWROOM.saturday}
+								<br />
+								{SHOWROOM.sunday}
 							</dd>
 						</div>
 						<div>

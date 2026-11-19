@@ -38,7 +38,8 @@ export function ShowroomMap() {
 							{SHOWROOM.city}, {SHOWROOM.state} {SHOWROOM.zip}
 						</address>
 						<p className="text-muted-foreground mt-3 text-sm">
-							{SHOWROOM.weekdays} &middot; {SHOWROOM.saturday}
+							{SHOWROOM.weekdays} &middot; {SHOWROOM.saturday} &middot;{" "}
+							{SHOWROOM.sunday}
 						</p>
 					</div>
 				</div>

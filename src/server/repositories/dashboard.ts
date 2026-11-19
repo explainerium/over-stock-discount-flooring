@@ -43,17 +43,23 @@ async function dealersPending() {
 }
 
 /**
- * Products nobody can buy: no list price, and no price for any dealer either.
+ * Products nobody can buy: no list price, no price for any dealer, and no
+ * dealer price on their series either.
  *
  * The engine refuses to price those rather than quietly selling at zero, which
  * is the right behaviour and a poor discovery mechanism — the dealer meets it
- * as "not priced yet" in the catalogue. A product with no list price but a
+ * as "not priced yet" in the catalog. A product with no list price but a
  * price for some dealers is how the client works, so it is not counted.
  * A count, not a list: the overview only ever said how many.
  */
 async function productsWithoutPrice() {
 	return db.product.count({
-		where: { isActive: true, listPrice: null, prices: { none: { price: { not: null } } } },
+		where: {
+			isActive: true,
+			listPrice: null,
+			prices: { none: { price: { not: null } } },
+			OR: [{ seriesId: null }, { series: { dealerPrices: { none: {} } } }],
+		},
 	})
 }
 

@@ -4,7 +4,7 @@ import { familyOf, resolve, sellableUomOf } from "./convert"
 import { UomError, type ProductSpec } from "./types"
 
 /**
- * The specs below are the real ones, taken from the live catalogue and checked
+ * The specs below are the real ones, taken from the live catalog and checked
  * against themselves — boxes × sq ft/box matches the published sq ft/pallet in
  * every case, and pallets × lb/pallet lands just under the ~44,000 lb truckload
  * cap. They are not example numbers.

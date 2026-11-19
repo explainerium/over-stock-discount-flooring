@@ -20,7 +20,7 @@ export interface CatalogControlsProps {
  * message.
  *
  * Tone is not offered. The plan lists it, but there is no tone on any product —
- * classifying sixty-two colours as light or dark would be us inventing product
+ * classifying sixty-two colors as light or dark would be us inventing product
  * data, and a filter built on a guess is worse than one that is absent.
  */
 export function CatalogControls({ wearLayers, thicknesses, resultCount }: CatalogControlsProps) {
@@ -83,7 +83,7 @@ export function CatalogControls({ wearLayers, thicknesses, resultCount }: Catalo
 						value={search}
 						onChange={(event) => setSearch(event.target.value)}
 						placeholder="Name or SKU"
-						aria-label="Search the catalogue"
+						aria-label="Search the catalog"
 						className="border-rule focus-visible:border-ink w-full border py-2 pr-3 pl-9 text-base outline-none md:text-sm"
 					/>
 				</label>
@@ -100,7 +100,7 @@ export function CatalogControls({ wearLayers, thicknesses, resultCount }: Catalo
 						}
 						className="border-rule text-ink border bg-transparent px-2 py-2 text-base md:text-sm"
 					>
-						<option value="curated">Our order</option>
+						<option value="curated">By wear layer</option>
 						<option value="series">By series, then name</option>
 						<option value="name">Name, A–Z</option>
 					</select>

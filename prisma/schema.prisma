@@ -129,6 +129,15 @@ enum LeadSource {
   COVERAGE_CALCULATOR
   SAMPLE_REQUEST
   DEALER_APPLICATION
+  /// "Inquire About Pricing" on a product page.
+  PRICE_INQUIRY
+}
+
+/// Who is asking, on a pricing inquiry. The client routes each kind differently.
+enum CustomerType {
+  HOMEOWNER
+  CONTRACTOR
+  DEALER
 }
 
 enum JobStatus {
@@ -285,6 +294,7 @@ model Dealer {
   invites       Invite[]
   addresses     Address[]
   prices        DealerPrice[]
+  seriesPrices  DealerSeriesPrice[]
   orders        Order[]
   productAccess DealerProductAccess[]
 
@@ -372,6 +382,27 @@ model DealerPrice {
   @@index([productId])
 }
 
+/// A dealer's price for a whole series, per square foot.
+///
+/// The client prices flooring by series (19 November): every color in a series
+/// costs a dealer the same. One row here prices them all, including colors
+/// added later. A product row in DealerPrice still wins, for the odd exception.
+model DealerSeriesPrice {
+  id       String @id @default(cuid())
+  dealerId String
+  dealer   Dealer @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+  seriesId String
+  series   Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  price Decimal @db.Decimal(12, 4)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([dealerId, seriesId])
+  @@index([seriesId])
+}
+
 // ---------------------------------------------------------------------------
 // Catalog
 // ---------------------------------------------------------------------------
@@ -444,6 +475,8 @@ model Series {
 
   products Product[]
   facts    SeriesFact[]
+
+  dealerPrices DealerSeriesPrice[]
 
   @@index([isActive, sortOrder])
 }
@@ -759,8 +792,13 @@ model Lead {
   productId String?
   product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
-  /// Calculator captures are worth far more with the number they typed.
+  /// Calculator captures are worth far more with the number they typed. A
+  /// pricing inquiry fills it too, with the square footage they need.
   calculatorSqFt Decimal? @db.Decimal(12, 2)
+
+  /// Pricing inquiries only.
+  customerType CustomerType?
+  zip          String?
 
   /// Where to post a sample. Its own column rather than buried in `message`,
   /// because the owner has to read it off the screen and write it on a package.

@@ -59,6 +59,7 @@ const catalogSelect = {
 	orderUoms: true,
 	stockStatus: true,
 	listPrice: true,
+	seriesId: true,
 	category: { select: { name: true } },
 	series: {
 		select: { name: true, sqFtPerBox: true, boxesPerPallet: true, lbPerBox: true },
@@ -72,11 +73,11 @@ const catalogSelect = {
  * Most products are offered to everyone — `dealerRestricted` is false by
  * default and stays that way unless somebody narrows it deliberately. Only the
  * narrowed ones consult the grant table, so a dealer with no rows at all sees
- * the whole catalogue, which is what the portal did before any of this
+ * the whole catalog, which is what the portal did before any of this
  * existed.
  *
  * Written once and used by both the listing and the count. Two copies of this
- * predicate is how a catalogue ends up saying "12 of 46" over twelve rows.
+ * predicate is how a catalog ends up saying "12 of 46" over twelve rows.
  */
 function offeredTo(dealerId: string): Prisma.ProductWhereInput {
 	return {
@@ -84,22 +85,22 @@ function offeredTo(dealerId: string): Prisma.ProductWhereInput {
 	}
 }
 /**
- * The whole catalogue at this dealer's prices.
+ * The whole catalog at this dealer's prices.
  *
  * A product with neither a list price nor a price for this dealer comes back
  * with `price: null` rather than throwing. The engine is right to refuse to
- * price it, but a catalogue that fails to render because one colour has not
- * been priced yet would be worse than one that shows the colour and says so.
+ * price it, but a catalog that fails to render because one color has not
+ * been priced yet would be worse than one that shows the color and says so.
  */
 
 export async function listPricedProducts(
 	dealerId: string,
-	/** Matches a colour name or a SKU. Both are how a dealer refers to one. */
+	/** Matches a color name or a SKU. Both are how a dealer refers to one. */
 	search?: string,
 ): Promise<PricedProduct[]> {
 	const q = search?.trim()
 
-	const [pricing, products, overrides] = await Promise.all([
+	const [pricing, products, overrides, seriesPrices] = await Promise.all([
 		pricingFor(dealerId),
 		db.product.findMany({
 			where: {
@@ -131,6 +132,7 @@ export async function listPricedProducts(
 			where: { dealerId },
 			select: { productId: true, price: true, discountPct: true },
 		}),
+		seriesPricesFor(dealerId),
 	])
 
 	const overrideByProduct = new Map(overrides.map((row) => [row.productId, row]))
@@ -145,6 +147,7 @@ export async function listPricedProducts(
 		const own = {
 			price: override?.price?.toString() ?? null,
 			discountPct: override?.discountPct?.toString() ?? null,
+			seriesPrice: product.seriesId ? (seriesPrices.get(product.seriesId) ?? null) : null,
 		}
 		const price: PriceResult | null = hasPrice(listing, own)
 			? resolvePrice(listing, pricing, own)
@@ -180,10 +183,18 @@ export async function getPricedProduct(
 
 	if (!product) return null
 
-	const override = await db.dealerPrice.findUnique({
-		where: { dealerId_productId: { dealerId, productId: product.id } },
-		select: { price: true, discountPct: true },
-	})
+	const [override, seriesPrice] = await Promise.all([
+		db.dealerPrice.findUnique({
+			where: { dealerId_productId: { dealerId, productId: product.id } },
+			select: { price: true, discountPct: true },
+		}),
+		product.seriesId
+			? db.dealerSeriesPrice.findUnique({
+					where: { dealerId_seriesId: { dealerId, seriesId: product.seriesId } },
+					select: { price: true },
+				})
+			: null,
+	])
 
 	const listing = {
 		listPrice: product.listPrice?.toString() ?? null,
@@ -192,6 +203,7 @@ export async function getPricedProduct(
 	const own = {
 		price: override?.price?.toString() ?? null,
 		discountPct: override?.discountPct?.toString() ?? null,
+		seriesPrice: seriesPrice?.price.toString() ?? null,
 	}
 	const price = hasPrice(listing, own) ? resolvePrice(listing, pricing, own) : null
 
@@ -219,7 +231,7 @@ export async function getPricedProduct(
 
 /** Everything the owner needs to set one dealer's prices. */
 export async function listDealerPricing(dealerId: string) {
-	const [dealer, products, overrides] = await Promise.all([
+	const [dealer, products, overrides, series, seriesPrices] = await Promise.all([
 		db.dealer.findUnique({
 			where: { id: dealerId },
 			select: {
@@ -237,6 +249,7 @@ export async function listDealerPricing(dealerId: string) {
 				sku: true,
 				listPrice: true,
 				pricingUom: true,
+				seriesId: true,
 				category: { select: { name: true } },
 				series: { select: { name: true, sortOrder: true } },
 			},
@@ -250,9 +263,46 @@ export async function listDealerPricing(dealerId: string) {
 			where: { dealerId },
 			select: { productId: true, price: true, discountPct: true },
 		}),
+		// Flooring series only: a series price is per square foot.
+		db.series.findMany({
+			where: { isActive: true, sqFtPerBox: { not: null } },
+			select: {
+				id: true,
+				name: true,
+				_count: { select: { products: { where: { isActive: true } } } },
+			},
+			orderBy: { sortOrder: "asc" },
+		}),
+		seriesPricesFor(dealerId),
 	])
 
-	return { dealer, products, overrides }
+	return { dealer, products, overrides, series, seriesPrices }
+}
+
+/** This dealer's series prices, by series id. */
+async function seriesPricesFor(dealerId: string): Promise<Map<string, string>> {
+	const rows = await db.dealerSeriesPrice.findMany({
+		where: { dealerId },
+		select: { seriesId: true, price: true },
+	})
+	return new Map(rows.map((row) => [row.seriesId, row.price.toString()]))
+}
+
+/** Sets, or with no price clears, one dealer's price on a whole series. */
+export async function setDealerSeriesPrice(
+	dealerId: string,
+	seriesId: string,
+	price: string | null,
+) {
+	if (!price) {
+		await db.dealerSeriesPrice.deleteMany({ where: { dealerId, seriesId } })
+		return
+	}
+	await db.dealerSeriesPrice.upsert({
+		where: { dealerId_seriesId: { dealerId, seriesId } },
+		create: { dealerId, seriesId, price },
+		update: { price },
+	})
 }
 
 /** A product's list price, null when it has none, undefined when there is no such product. */

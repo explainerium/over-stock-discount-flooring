@@ -1,6 +1,7 @@
 import { ClockIcon, MailIcon, MapPinIcon, PhoneIcon } from "lucide-react"
 import type { Metadata } from "next"
-import { SHOWROOM } from "@/constants/catalog"
+import { FacebookIcon } from "@/components/shared/FacebookIcon"
+import { FACEBOOK_URL, SHOWROOM } from "@/constants/catalog"
 import { PageHeader } from "../_components/PageHeader"
 import { ContactForm } from "./_components/ContactForm"
 import { ShowroomMap } from "./_components/ShowroomMap"
@@ -35,6 +36,7 @@ const jsonLd = {
 		postalCode: SHOWROOM.zip,
 		addressCountry: "US",
 	},
+	sameAs: [FACEBOOK_URL],
 	openingHoursSpecification: [
 		{
 			"@type": "OpeningHoursSpecification",
@@ -57,7 +59,11 @@ const DETAILS = [
 		label: "Showroom",
 		lines: [SHOWROOM.street, `${SHOWROOM.city}, ${SHOWROOM.state} ${SHOWROOM.zip}`],
 	},
-	{ Icon: ClockIcon, label: "Open", lines: [SHOWROOM.weekdays, SHOWROOM.saturday] },
+	{
+		Icon: ClockIcon,
+		label: "Open",
+		lines: [SHOWROOM.weekdays, SHOWROOM.saturday, SHOWROOM.sunday],
+	},
 	{ Icon: PhoneIcon, label: "Phone", lines: [SHOWROOM.phone], href: SHOWROOM.phoneHref },
 ]
 
@@ -126,6 +132,25 @@ export default function ContactPage() {
 									    reliable route in the meantime. */}
 									<dd className="text-muted-foreground mt-1.5 text-sm">
 										Use the form and it reaches us.
+									</dd>
+								</div>
+							</div>
+
+							<div className="flex gap-4">
+								<FacebookIcon className="text-muted-foreground mt-0.5 size-5 shrink-0" />
+								<div>
+									<dt className="display text-muted-foreground text-xs uppercase">
+										Facebook
+									</dt>
+									<dd className="mt-1.5 text-sm">
+										<a
+											href={FACEBOOK_URL}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="inline-block py-1 underline underline-offset-4"
+										>
+											Follow us on Facebook
+										</a>
 									</dd>
 								</div>
 							</div>

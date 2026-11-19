@@ -1,10 +1,11 @@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { requireStaff } from "@/server/auth/guards"
-import { getOrderMailCc } from "@/server/repositories/settings"
+import { getLeadMailTo, getOrderMailCc } from "@/server/repositories/settings"
 import { isConfigured } from "@/server/integrations/quickbooks"
 import { getItemRefs, qboStatus } from "@/server/repositories/quickbooks"
 import { AccountSettings } from "@/components/shared/AccountSettings"
+import { LeadMailForm } from "./_components/LeadMailForm"
 import { OrderMailCcForm } from "./_components/OrderMailCcForm"
 import { QuickBooksPanel } from "./_components/QuickBooksPanel"
 
@@ -27,7 +28,12 @@ export default async function SettingsPage({
 	// than Intuit's.
 	const { qbo } = await searchParams
 	const user = await requireStaff()
-	const [cc, status, items] = await Promise.all([getOrderMailCc(), qboStatus(), getItemRefs()])
+	const [cc, leadTo, status, items] = await Promise.all([
+		getOrderMailCc(),
+		getLeadMailTo(),
+		qboStatus(),
+		getItemRefs(),
+	])
 
 	return (
 		<div className="grid max-w-2xl gap-6">
@@ -56,6 +62,19 @@ export default async function SettingsPage({
 				</CardHeader>
 				<CardContent>
 					<OrderMailCcForm addresses={cc} />
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle className="text-base">Inquiry email</CardTitle>
+					<CardDescription>
+						Pricing inquiries, dealer / contractor applications, messages and sample
+						requests from the website. Every one is also kept under Leads.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<LeadMailForm addresses={leadTo} />
 				</CardContent>
 			</Card>
 

@@ -210,7 +210,7 @@ export class OrderError extends Error {
  * than the coverage they receive is the error this ordering prevents.
  */
 async function buildLine(input: LineInput) {
-	const [product, dealer, override] = await Promise.all([
+	const [product, dealer, override, seriesPrice] = await Promise.all([
 		productSpec(input.productId),
 		db.dealer.findUnique({
 			where: { id: input.dealerId },
@@ -228,6 +228,14 @@ async function buildLine(input: LineInput) {
 			},
 			select: { price: true, discountPct: true },
 		}),
+		// Through the product, so it runs alongside the rest instead of after it.
+		db.dealerSeriesPrice.findFirst({
+			where: {
+				dealerId: input.dealerId,
+				series: { products: { some: { id: input.productId } } },
+			},
+			select: { price: true },
+		}),
 	])
 
 	if (!product || !product.isActive) {
@@ -240,6 +248,7 @@ async function buildLine(input: LineInput) {
 	const own = {
 		price: override?.price?.toString(),
 		discountPct: override?.discountPct?.toString(),
+		seriesPrice: seriesPrice?.price.toString(),
 	}
 	// No list price is fine when this dealer has a price of their own on it.
 	if (!hasPrice(listing, own)) {
@@ -960,7 +969,7 @@ export interface ReorderResult {
  * Lines are re-priced and re-converted at today's figures rather than copied.
  * A price the dealer paid in March is not a price we are offering in August,
  * and a box count depends on specs the owner can correct — so what is reused
- * is the intent (this colour, this much, in this unit), not the arithmetic.
+ * is the intent (this color, this much, in this unit), not the arithmetic.
  *
  * Anything that cannot be added is named rather than silently dropped. A dealer
  * who reorders six lines and gets five has to be told which one is missing, or
@@ -1001,7 +1010,7 @@ export async function reorder(dealerId: string, sourceOrderId: string): Promise<
 			})
 			added++
 		} catch (error) {
-			// One unavailable colour must not lose the other five lines.
+			// One unavailable color must not lose the other five lines.
 			const reason = error instanceof OrderError ? error.message : "could not be added"
 			skipped.push(`${item.productNameSnapshot} — ${reason.toLowerCase().replace(/\.$/, "")}`)
 		}

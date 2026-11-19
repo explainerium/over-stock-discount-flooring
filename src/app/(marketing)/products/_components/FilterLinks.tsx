@@ -9,7 +9,7 @@ export interface FilterItem {
 }
 
 /**
- * One row of catalogue filters — categories, or the series inside one — as
+ * One row of catalog filters — categories, or the series inside one — as
  * links rather than client state.
  *
  * Links give every filtered view its own URL, which matters here: "the trim"

@@ -44,17 +44,17 @@ export function EditCategoryForm({ defaults }: { defaults: UpdateCategoryInput }
 				name="blurb"
 				label="Short description"
 				rows={2}
-				description="Optional. One line under the heading on the catalogue page."
+				description="Optional. One line under the heading on the catalog page."
 			/>
 			<ProInput
 				name="sortOrder"
 				label="Position"
-				description="Lower comes first in the catalogue and the menu."
+				description="Lower comes first in the catalog and the menu."
 			/>
 			<ProCheckbox
 				name="isActive"
 				label="Show on the site"
-				description="Off hides the whole shelf from the public catalogue without touching its products."
+				description="Off hides the whole shelf from the public catalog without touching its products."
 			/>
 			<ProSubmit className="justify-self-start">Save category</ProSubmit>
 		</ProForm>

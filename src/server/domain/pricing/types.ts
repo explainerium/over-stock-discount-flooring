@@ -4,7 +4,7 @@ import type Decimal from "decimal.js"
  * Per-dealer pricing.
  *
  * Plain values, no Prisma types — same rule as the UOM engine. The pricing
- * layer is called from the portal catalogue, the cart, the order, the admin
+ * layer is called from the portal catalog, the cart, the order, the admin
  * editor and the invoice, and only some of those have a database row to hand.
  */
 
@@ -28,6 +28,8 @@ export interface ProductOverride {
 	price?: Decimal.Value | null
 	/** Or a percentage off list, for this product only. */
 	discountPct?: Decimal.Value | null
+	/** A price set for this dealer on the product's whole series. */
+	seriesPrice?: Decimal.Value | null
 }
 
 export interface ProductPricing {
@@ -45,7 +47,12 @@ export interface ProductPricing {
  * different conversation from "it is the price you set on that product".
  */
 export type PriceSource =
-	"PRODUCT_PRICE" | "PRODUCT_DISCOUNT" | "DEALER_DISCOUNT" | "TIER_DISCOUNT" | "LIST"
+	| "PRODUCT_PRICE"
+	| "PRODUCT_DISCOUNT"
+	| "SERIES_PRICE"
+	| "DEALER_DISCOUNT"
+	| "TIER_DISCOUNT"
+	| "LIST"
 
 export interface PriceResult {
 	/** What this dealer pays, per unit of `pricingUom`. Four decimal places. */

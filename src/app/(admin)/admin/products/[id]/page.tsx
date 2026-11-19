@@ -25,7 +25,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 		listSeriesOptions(),
 		// Every dealer, suspended ones included: withdrawing access is a separate
 		// decision from suspending an account, and a suspended dealer that comes
-		// back should find their catalogue as they left it.
+		// back should find their catalog as they left it.
 		listDealers(),
 		getProductAccess(id),
 	])

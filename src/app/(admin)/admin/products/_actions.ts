@@ -35,13 +35,13 @@ import {
 } from "@/server/repositories/catalog"
 
 /**
- * Catalogue administration.
+ * Catalog administration.
  *
  * Same shape as the dealer actions: check the caller, validate, call a
  * repository, write an audit line, revalidate. Nothing here calculates.
  */
 
-/** Public pages read the catalogue, so a change has to clear their caches too. */
+/** Public pages read the catalog, so a change has to clear their caches too. */
 function revalidateCatalog(slug?: string) {
 	revalidatePath("/admin/products")
 	revalidatePath("/")
@@ -101,7 +101,7 @@ export async function createProductAction(
 		after: { name: product.name, sku: data.sku },
 	})
 
-	// Created unpublished. A new colour appearing on the public site the instant
+	// Created unpublished. A new color appearing on the public site the instant
 	// it is typed is not what anyone wants — it goes live when he says so.
 	revalidateCatalog()
 	return { ok: true, data: { id: product.id, slug: product.slug } }
@@ -161,8 +161,8 @@ export async function updateProductAction(input: unknown): Promise<ActionResult>
 
 /**
  * A new flooring line. The client asked whether adding products would stay
- * something he can do himself; a colour in an existing series always was, and
- * this covers the case where the colour needs a series that does not exist.
+ * something he can do himself; a color in an existing series always was, and
+ * this covers the case where the color needs a series that does not exist.
  */
 export async function createSeriesAction(input: unknown): Promise<ActionResult<{ id: string }>> {
 	const staff = await requireStaff()
@@ -225,7 +225,7 @@ export async function updateSeriesAction(input: unknown): Promise<ActionResult> 
 		isActive: data.isActive,
 	})
 
-	// Specs live on the series, so one edit here moves every colour under it —
+	// Specs live on the series, so one edit here moves every color under it —
 	// which is the point, and also why it is worth logging.
 	await audit({
 		entity: "Series",
@@ -241,7 +241,7 @@ export async function updateSeriesAction(input: unknown): Promise<ActionResult> 
 
 	revalidatePath("/admin/series")
 	revalidateCatalog()
-	return { ok: true, message: "Saved. Every colour in this series follows these specs." }
+	return { ok: true, message: "Saved. Every color in this series follows these specs." }
 }
 
 // ---------------------------------------------------------------------------

@@ -23,7 +23,7 @@ export default async function SeriesPage() {
 			<div>
 				<h1 className="text-xl font-semibold tracking-wide uppercase">Series</h1>
 				<p className="text-muted-foreground text-sm">
-					Specs live here. Change a figure once and every colour in the series follows.
+					Specs live here. Change a figure once and every color in the series follows.
 				</p>
 			</div>
 
@@ -74,9 +74,9 @@ export default async function SeriesPage() {
 					<CardTitle className="tracking-wide uppercase">Add Series</CardTitle>
 					<CardDescription>
 						For a new flooring line. Thickness, size, packaging and freight go on the
-						next screen, and the public catalogue lists it as a series once it has
-						square feet per box. A new colour in an existing series is added under
-						Products instead.
+						next screen, and the public catalog lists it as a series once it has square
+						feet per box. A new color in an existing series is added under Products
+						instead.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>

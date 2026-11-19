@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache"
 import { orderMailCcSchema, parseAddressList, type ActionResult } from "@/lib/validation/dealers"
 import { requireStaff } from "@/server/auth/guards"
 import { audit } from "@/server/repositories/audit"
-import { getOrderMailCc, setOrderMailCc } from "@/server/repositories/settings"
+import {
+	getLeadMailTo,
+	getOrderMailCc,
+	setLeadMailTo,
+	setOrderMailCc,
+} from "@/server/repositories/settings"
 import { qboItemsSchema } from "@/lib/validation/quickbooks"
 import {
 	checkConnection,
@@ -47,6 +52,43 @@ export async function setOrderMailCcAction(input: unknown): Promise<ActionResult
 		ok: true,
 		message:
 			after.length === 0 ? "Nobody is copied now." : `${after.length} copied on order mail.`,
+	}
+}
+
+/**
+ * Where inquiries and applications from the site are sent. Audited for the
+ * same reason as order mail: an address added here receives customer details.
+ */
+export async function setLeadMailToAction(input: unknown): Promise<ActionResult> {
+	const staff = await requireStaff()
+
+	const parsed = orderMailCcSchema.safeParse(input)
+	if (!parsed.success) {
+		const issue = parsed.error.issues[0]
+		return { ok: false, message: issue.message, field: issue.path[0]?.toString() }
+	}
+
+	const before = await getLeadMailTo()
+	const after = parseAddressList(parsed.data.addresses)
+
+	await setLeadMailTo(after)
+
+	await audit({
+		entity: "Setting",
+		entityId: "lead_mail_to",
+		action: "update",
+		actorId: staff.id,
+		before: { addresses: before },
+		after: { addresses: after },
+	})
+
+	revalidatePath("/admin/settings")
+	return {
+		ok: true,
+		message:
+			after.length === 0
+				? "Inquiries go to you and any admins now."
+				: `Inquiries go to ${after.length} ${after.length === 1 ? "address" : "addresses"}.`,
 	}
 }
 

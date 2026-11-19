@@ -52,7 +52,9 @@ export function DealerApplicationForm() {
 				rows={3}
 				description="Optional — what you install, roughly how much you buy, where you are."
 			/>
-			<ProSubmit className="justify-self-start">Apply for an account</ProSubmit>
+			<ProSubmit className="justify-self-start">
+				Apply for a Dealer / Contractor Account
+			</ProSubmit>
 		</ProForm>
 	)
 }

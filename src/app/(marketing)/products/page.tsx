@@ -6,8 +6,8 @@ import { Breadcrumbs } from "../_components/Breadcrumbs"
 import { CatalogControls } from "./_components/CatalogControls"
 import { FilterLinks } from "./_components/FilterLinks"
 import { FLOORING_CATEGORY } from "@/constants/catalog"
+import { groupByWearLayer } from "@/lib/catalog/groups"
 import {
-	countPublicColours,
 	countPublicProducts,
 	listPublicCategories,
 	listPublicProducts,
@@ -49,6 +49,13 @@ export async function generateMetadata({
 	}
 }
 
+const toSwatch = (p: { slug: string; name: string; sku: string; images: string[] }) => ({
+	slug: p.slug,
+	name: p.name,
+	sku: p.sku,
+	image: p.images[0] ?? null,
+})
+
 /** "a", "a and b", "a, b and c". */
 function listOf(words: string[]): string {
 	if (words.length <= 1) return words.join("")
@@ -65,11 +72,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 		sort,
 	} = await searchParams
 
-	const [categories, total, colours] = await Promise.all([
-		listPublicCategories(),
-		countPublicProducts(),
-		countPublicColours(),
-	])
+	const [categories, total] = await Promise.all([listPublicCategories(), countPublicProducts()])
 
 	// An unknown category or series in the query string is a 404 rather than a
 	// silent fallback to everything — a wrong URL should say so, not quietly
@@ -95,6 +98,11 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 		thicknessMm: thickness && /^\d+(\.\d+)?$/.test(thickness) ? thickness : undefined,
 		sort: sort === "name" || sort === "series" ? sort : "curated",
 	})
+
+	// The default order groups flooring by wear layer (the client's request);
+	// the A–Z and by-series sorts stay one flat grid, since that is what was
+	// asked for when someone picks them.
+	const groups = sort === "name" || sort === "series" ? [] : groupByWearLayer(products)
 
 	// Carried onto the filter links so choosing one keeps whatever search or
 	// spec filter is already on.
@@ -177,25 +185,15 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 							activeCategory.blurb
 						) : (
 							<>
-								{colours > 0 &&
-									`${colours} flooring colours in stock in High Point`}
-								{colours > 0 &&
-									otherShelves.length > 0 &&
-									`, plus ${listOf(otherShelves)}`}
-								{colours > 0 && ". "}
-								Prices are for dealers —{" "}
+								Over 2 Million Square Feet in Stock
+								{otherShelves.length > 0 && `, plus ${listOf(otherShelves)}`}.{" "}
+								{/* The client's words. Each product page has its own inquiry
+								    form; from the catalog, the contact form is the nearest. */}
 								<Link
-									href="/login"
+									href="/contact"
 									className="text-ink underline underline-offset-4"
 								>
-									sign in
-								</Link>{" "}
-								or{" "}
-								<Link
-									href="/become-a-dealer"
-									className="text-ink underline underline-offset-4"
-								>
-									apply for an account
+									Inquire About Pricing
 								</Link>
 								.
 							</>
@@ -213,7 +211,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 					<div className="border-rule mt-6 grid gap-4 border-y py-4">
 						{categories.length > 1 && (
 							<FilterLinks
-								label="Shop"
+								label="Browse Products"
 								active={activeCategory?.slug}
 								all={{ label: "All", href: keep({}), count: total }}
 								items={categories.map((c) => ({
@@ -251,15 +249,25 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 									? "Nothing matches that. Try clearing a filter."
 									: "Nothing published here yet."}
 							</p>
+						) : groups.length > 1 ? (
+							<div className="grid gap-16">
+								{groups.map((group) => (
+									<section key={group.key} aria-labelledby={group.key}>
+										<h2
+											id={group.key}
+											className="display text-ink border-rule mb-8 flex items-baseline justify-between gap-4 border-b pb-3 text-xl uppercase"
+										>
+											{group.title}
+											<span className="text-muted-foreground font-mono text-xs normal-case">
+												{group.products.length}
+											</span>
+										</h2>
+										<SwatchGrid products={group.products.map(toSwatch)} />
+									</section>
+								))}
+							</div>
 						) : (
-							<SwatchGrid
-								products={products.map((p) => ({
-									slug: p.slug,
-									name: p.name,
-									sku: p.sku,
-									image: p.images[0] ?? null,
-								}))}
-							/>
+							<SwatchGrid products={products.map(toSwatch)} />
 						)}
 					</div>
 				</div>

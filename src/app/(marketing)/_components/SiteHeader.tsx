@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils"
 const UTILITY = [
 	{ href: "/products", label: "Search", Icon: SearchIcon },
 	{ href: "/products", label: "Samples", Icon: SquareStackIcon },
-	{ href: "/login", label: "Dealer Login", Icon: UserIcon },
+	{ href: "/login", label: "Dealer / Contractor Log In", Icon: UserIcon },
 ]
 
 const NAV = [
@@ -200,7 +200,7 @@ function MobileMenu() {
 						{SHOWROOM.street}, {SHOWROOM.city}, {SHOWROOM.state} {SHOWROOM.zip}
 					</p>
 					<p className="text-muted-foreground text-xs">
-						{SHOWROOM.weekdays} · {SHOWROOM.saturday}
+						{SHOWROOM.weekdays} · {SHOWROOM.saturday} · {SHOWROOM.sunday}
 					</p>
 				</div>
 			</SheetContent>
@@ -248,8 +248,8 @@ export function SiteHeader() {
 			{!dismissed && (
 				<div className="relative bg-black py-2.5 pr-14 pl-5 text-center sm:px-14">
 					<p className="text-[0.8rem] text-white">
-						Open to the public — {SHOWROOM.weekdays}, {SHOWROOM.saturday}. Walk in and
-						see every colour we stock.
+						Open to the public — {SHOWROOM.weekdays}, {SHOWROOM.saturday}, closed
+						Sunday. Walk in and see every color we stock.
 					</p>
 					{/* Sized to the 44px touch target rather than to the glyph: this is
 					    the control that buys back a quarter of a phone screen, and at

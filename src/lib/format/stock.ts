@@ -1,8 +1,8 @@
 /**
  * Stock status, as a dealer reads it.
  *
- * Shared rather than restated per screen, because the catalogue and the order
- * have to agree: a colour badged "Special order" on one page and "Out" on the
+ * Shared rather than restated per screen, because the catalog and the order
+ * have to agree: a color badged "Special order" on one page and "Out" on the
  * next is a dealer ringing up to ask which is true.
  */
 

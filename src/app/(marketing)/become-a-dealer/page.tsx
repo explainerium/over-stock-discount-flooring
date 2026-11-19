@@ -4,7 +4,7 @@ import { PageHeader } from "../_components/PageHeader"
 import { DealerApplicationForm } from "./_components/DealerApplicationForm"
 
 export const metadata: Metadata = {
-	title: "Become a Dealer",
+	title: "Apply for a Dealer / Contractor Account",
 	description:
 		"Trade accounts with your own pricing, ordering by the box, pallet or square foot, and orders submitted online instead of by phone.",
 	alternates: { canonical: "/become-a-dealer" },
@@ -42,9 +42,9 @@ export default function BecomeADealerPage() {
 	return (
 		<>
 			<PageHeader
-				trail={[{ href: "/", label: "Home" }, { label: "Become a Dealer" }]}
-				light="Buying for a"
-				bold="flooring business?"
+				trail={[{ href: "/", label: "Home" }, { label: "Dealer / Contractor Accounts" }]}
+				light="Dealer / Contractor"
+				bold="accounts"
 				intro="Trade accounts are set up by invitation. Tell us about your business and we will get back to you."
 			/>
 

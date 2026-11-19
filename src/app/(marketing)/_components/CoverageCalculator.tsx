@@ -65,7 +65,7 @@ export function CoverageCalculator({ series: SERIES }: { series: CalculatorSerie
 	}, [input, series, waste])
 
 	// Guarded after the hooks, never before: an early return above a useState is
-	// a rules-of-hooks violation waiting for the first empty catalogue.
+	// a rules-of-hooks violation waiting for the first empty catalog.
 	if (!series) return null
 
 	return (
@@ -95,7 +95,7 @@ export function CoverageCalculator({ series: SERIES }: { series: CalculatorSerie
 				</label>
 
 				{/* Three across was right when Bronze, Silver and Gold were the whole
-				    catalogue. The client is bringing more lines, and a fixed three
+				    catalog. The client is bringing more lines, and a fixed three
 				    would either squash them or leave a ragged last row — so the
 				    track count comes from how many fit at a readable width, in this
 				    box and in the wider one on the resources page alike. */}

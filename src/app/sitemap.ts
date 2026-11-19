@@ -4,9 +4,9 @@ import { publishedProducts } from "@/server/repositories/catalog"
 import { SITE_URL } from "@/constants/site"
 
 /**
- * Every public URL, including one per colour.
+ * Every public URL, including one per color.
  *
- * The point of the product pages is that thirty-four colours stop sharing three
+ * The point of the product pages is that thirty-four colors stop sharing three
  * URLs; the point of this file is that a crawler is told about all of them
  * rather than having to find them. The current site has neither.
  */
@@ -14,7 +14,7 @@ import { SITE_URL } from "@/constants/site"
  * Rendered per request, not at build.
  *
  * Same call as the product pages: a sitemap generated at build time would be
- * stale the moment the owner publishes a colour, and it would make every deploy
+ * stale the moment the owner publishes a color, and it would make every deploy
  * depend on the database being reachable. Crawlers fetch this a handful of
  * times a day, so building it on demand costs nothing worth measuring.
  */

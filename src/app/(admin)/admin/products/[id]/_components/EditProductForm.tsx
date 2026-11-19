@@ -77,7 +77,7 @@ function DealerAccessFields({ dealers }: { dealers: { value: string; label: stri
 			name="dealerIds"
 			label="Offered to"
 			options={dealers}
-			description="Everyone else sees the catalogue without it."
+			description="Everyone else sees the catalog without it."
 		/>
 	)
 }
@@ -165,7 +165,7 @@ export function EditProductForm({
 			<ProInput
 				name="designName"
 				label="Design name"
-				description="Groups the same print film across formats, where one colour is stocked in more than one plank size."
+				description="Groups the same print film across formats, where one color is stocked in more than one plank size."
 			/>
 
 			<ProTextarea
@@ -215,13 +215,13 @@ export function EditProductForm({
 			<div className="grid gap-3 border-t pt-5">
 				<ProCheckbox
 					name="isPublic"
-					label="Show on the public catalogue"
+					label="Show on the public catalog"
 					description="Prices stay hidden publicly either way."
 				/>
 				<ProCheckbox
 					name="isActive"
 					label="Available to order"
-					description="Turn off to retire a colour without deleting its order history."
+					description="Turn off to retire a color without deleting its order history."
 				/>
 			</div>
 

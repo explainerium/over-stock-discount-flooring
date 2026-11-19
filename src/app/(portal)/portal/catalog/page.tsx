@@ -11,7 +11,7 @@ import { CatalogSearch } from "./_components/CatalogSearch"
 export const metadata = { title: "Catalog" }
 
 /**
- * The dealer catalogue: everything, at their prices.
+ * The dealer catalog: everything, at their prices.
  *
  * This is the first screen in the build where the two engines meet a real
  * dealer — the price comes from the pricing engine at their rate, and the box
@@ -37,7 +37,7 @@ export default async function PortalCatalogPage({
 			<div>
 				<h1 className="text-xl font-semibold tracking-wide uppercase">Catalog</h1>
 				<p className="text-muted-foreground text-sm">
-					{/* The catalogue total, not the filtered one. What the search is
+					{/* The catalog total, not the filtered one. What the search is
 					    showing is said next to the search, where it belongs. */}
 					{total} {total === 1 ? "product" : "products"} at {user.dealerName}&rsquo;s
 					pricing.
@@ -49,7 +49,7 @@ export default async function PortalCatalogPage({
 
 			{products.length === 0 && (
 				<p className="text-muted-foreground py-12 text-center text-sm">
-					Nothing matches &ldquo;{q}&rdquo;. Try part of a colour name, or a SKU.
+					Nothing matches &ldquo;{q}&rdquo;. Try part of a color name, or a SKU.
 				</p>
 			)}
 

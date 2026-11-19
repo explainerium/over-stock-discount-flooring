@@ -6,33 +6,27 @@ import { PageHeader } from "../_components/PageHeader"
 export const metadata: Metadata = {
 	title: "About Us",
 	description:
-		"Family-owned in High Point, North Carolina. Our own made-in-USA luxury vinyl plank, more than two million square feet in stock, shipped coast to coast.",
+		"Family-owned in High Point, North Carolina, with over 2 million square feet of flooring in stock, our own private-label LVP and nationwide shipping.",
 	alternates: { canonical: "/about" },
 }
 
 /**
- * The client's approved About copy, word for word — `About_Us_Approved.txt` in
- * his November handover. Its opening line is the heading, the one-stop-shop
- * sentence is set as a list, and its closing line leads into the showroom
- * details. Edit the wording only with his say-so.
+ * The client's About copy, word for word — the "About Us Page" section of his
+ * 19 November revision list, which replaced the shorter approved text from the
+ * handover. His headings are the section headings. Edit the wording only with
+ * his say-so.
  *
- * Still open with him: the testimonials are from his current site and carry
- * initials only, which is a weak trust signal. Real Google reviews would do
- * more, and he has a Google Business Profile to pull them from.
+ * Photos are coming from him: one main picture and some smaller ones. The
+ * opening section is one column until then so there is no empty frame.
+ *
+ * Reviews: none may name Will or Jerry — they have left the company under
+ * separation agreements (client, 19 November). The review that thanked them
+ * was swapped for SH's, from the same page of his current site.
  */
-const RANGE = [
-	"Luxury vinyl plank and tile",
-	"Carpet",
-	"Stair products",
-	"Trim",
-	"Accessories",
-	"Butcher block countertops",
-]
-
 const TESTIMONIALS = [
 	{
-		initials: "AB",
-		quote: "Thank you Nick, Steve, Will and Jerry for the beautiful flooring. Each of them is super responsive, professional, and you cannot beat the price for both materials and installation.",
+		initials: "SH",
+		quote: "The absolute best prices, customer service and quality products. Steve & his team are the very best at providing customers with the best experience possible. 10/10 recommend!",
 	},
 	{
 		initials: "PT",
@@ -49,44 +43,82 @@ export default function AboutPage() {
 		<>
 			<PageHeader
 				trail={[{ href: "/", label: "Home" }, { label: "Company" }]}
-				light="Flooring is our business."
-				bold="Family is our foundation."
+				light="Flooring Is Our Business."
+				bold="Family Is Our Foundation."
 			/>
 
 			<section className="bg-paper">
-				<div className="mx-auto grid max-w-[1280px] gap-12 px-5 pb-20 md:grid-cols-2 md:pb-24">
-					<div className="grid content-start gap-5 text-sm leading-relaxed">
+				<div className="mx-auto max-w-[1280px] px-5 pb-20 md:pb-24">
+					<div className="grid max-w-3xl gap-5 text-base leading-relaxed">
 						<p>
-							Steve and Ashley started our family-owned business with a simple goal:
-							offer quality flooring, fair prices, and the personal service customers
-							deserve. Their son Nick joined the team in 2022, and we’ve never looked
-							back.
+							At Overstock Discount Flooring, family is at the heart of everything we
+							do. Steve and Ashley started our family-owned business in High Point,
+							North Carolina, with a simple goal: provide quality flooring at
+							affordable prices while treating every customer like family. Their son
+							Nick joined the business in 2022, helping continue that same commitment
+							to honest service, great products, and unbeatable value.
 						</p>
 						<p>
-							From our home in High Point, North Carolina, we’ve grown from one
-							truckload of flooring to more than two million square feet in stock,
-							shipping to customers from coast to coast every day.
-						</p>
-						<p>
-							We manufacture our own private-label luxury vinyl plank flooring right
-							here in the United States, with quality as our mission every step of the
-							way—from the products we put our name on to the way we care for our
-							customers.
+							What began with a single truckload of flooring has grown into one of the
+							largest suppliers of luxury vinyl plank (LVP) flooring in North
+							Carolina, with{" "}
+							<strong>over 2 million square feet of flooring in stock</strong>. While
+							our business has grown tremendously, our values haven’t changed. We
+							still believe every homeowner deserves beautiful, durable flooring
+							without having to spend a fortune.
 						</p>
 					</div>
+				</div>
+			</section>
 
-					<div className="bg-band p-8">
-						<h2 className="display text-ink text-lg uppercase">What we carry</h2>
-						<p className="text-muted-foreground mt-3 text-sm">
-							We’re your one-stop shop for flooring, offering:
+			<section className="bg-band">
+				<div className="mx-auto grid max-w-[1280px] gap-10 px-5 py-20 md:grid-cols-[1fr_1.4fr] md:py-24">
+					<h2 className="display text-ink text-2xl uppercase sm:text-3xl">
+						<span className="font-light">Pursuit of Excellence</span>{" "}
+						<span className="font-bold">Is in Our Genes</span>
+					</h2>
+					<div className="grid gap-5 text-sm leading-relaxed">
+						<p>
+							We understand that choosing new flooring is an important part of making
+							your house feel like home. Whether you’re renovating a single room,
+							remodeling your entire home, or building something new, our team is here
+							to help you every step of the way.
 						</p>
-						<ul className="mt-5 grid gap-3 text-sm">
-							{RANGE.map((item) => (
-								<li key={item} className="border-rule border-t pt-3">
-									{item}
-								</li>
-							))}
-						</ul>
+						<p>
+							We take pride in offering a wide selection of flooring styles, colors,
+							and products to fit different tastes and budgets. By manufacturing our
+							own private-label luxury vinyl plank flooring and working directly with
+							manufacturers, we’re able to provide exceptional value without
+							sacrificing quality.
+						</p>
+						<p>
+							More importantly, we believe in personal service. When you visit our
+							showroom, you’ll find real people who care about your project, take the
+							time to answer your questions, and help you find flooring you’ll love
+							for years to come.
+						</p>
+					</div>
+				</div>
+			</section>
+
+			<section className="bg-paper">
+				<div className="mx-auto grid max-w-[1280px] gap-10 px-5 py-20 md:grid-cols-[1fr_1.4fr] md:py-24">
+					<h2 className="display text-ink text-2xl uppercase sm:text-3xl">
+						<span className="font-light">More Than Just a</span>{" "}
+						<span className="font-bold">Flooring Store</span>
+					</h2>
+					<div className="grid gap-5 text-sm leading-relaxed">
+						<p>
+							From luxury vinyl plank and tile to carpet, stair products, trim,
+							accessories, and butcher block countertops, we strive to be your
+							one-stop shop for flooring and home improvement materials.
+						</p>
+						<p>
+							We’re proud to serve homeowners throughout North Carolina, along with
+							contractors and dealers across the country. Nationwide shipping is
+							available, but our roots and our commitment to personal service will
+							always remain right here in High Point.
+						</p>
 					</div>
 				</div>
 			</section>
@@ -116,17 +148,19 @@ export default function AboutPage() {
 			<section className="bg-paper">
 				<div className="mx-auto max-w-[1280px] px-5 py-20 text-center md:py-24">
 					<h2 className="display text-ink text-2xl uppercase sm:text-3xl">
-						<span className="font-light">Part of</span>{" "}
-						<span className="font-bold">the family</span>
+						<span className="font-light">Come See the</span>{" "}
+						<span className="font-bold">Difference</span>
 					</h2>
 					<p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed">
-						Whether you need one box of flooring or enough for an entire neighborhood,
-						you’re part of the family now, too.
+						Whether you’re shopping for one room or an entire home, we invite you to
+						stop by, meet our family, and see why so many customers trust Overstock
+						Discount Flooring.
 					</p>
-					<p className="text-muted-foreground mx-auto mt-4 max-w-xl text-sm">
-						Open to the public at {SHOWROOM.street}, {SHOWROOM.city}, {SHOWROOM.state}{" "}
-						{SHOWROOM.zip}. {SHOWROOM.weekdays} and {SHOWROOM.saturday}.
-					</p>
+					<address className="text-muted-foreground mx-auto mt-6 max-w-xl text-sm leading-relaxed not-italic">
+						{SHOWROOM.street}, {SHOWROOM.city}, {SHOWROOM.state} {SHOWROOM.zip}
+						<br />
+						Monday–Friday: 8 AM–5 PM · Saturday: 8 AM–12 PM · Sunday: Closed
+					</address>
 					<div className="mt-10 flex flex-wrap justify-center gap-3">
 						<Link href="/contact" className="btn bg-ink text-paper">
 							Get in touch
@@ -135,6 +169,9 @@ export default function AboutPage() {
 							See the catalog
 						</Link>
 					</div>
+					<p className="display text-ink mt-14 text-lg font-bold uppercase">
+						Quality Floors. Discount Prices.
+					</p>
 				</div>
 			</section>
 		</>

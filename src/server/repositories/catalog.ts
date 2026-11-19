@@ -22,7 +22,10 @@ const productCard = {
 	pricingUom: true,
 	orderUoms: true,
 	category: { select: { id: true, name: true, slug: true } },
-	series: { select: { id: true, name: true, slug: true } },
+	// Wear layer and box coverage so the catalog can group flooring by wear layer.
+	series: {
+		select: { id: true, name: true, slug: true, wearLayerMil: true, sqFtPerBox: true },
+	},
 } satisfies Prisma.ProductSelect
 
 export type ProductCard = Prisma.ProductGetPayload<{ select: typeof productCard }>
@@ -50,7 +53,7 @@ export function publishedProducts(categorySlug?: string) {
  * Categories that have at least one published product, in the owner's order.
  *
  * An empty shelf is left out rather than shown with a zero beside it: "Carpet
- * (0)" in the menu is a promise the catalogue does not keep yet.
+ * (0)" in the menu is a promise the catalog does not keep yet.
  */
 export async function listPublicCategories() {
 	return db.category.findMany({
@@ -75,7 +78,7 @@ export async function listPublicCategories() {
 /**
  * A series is a flooring spec group, so only a series with square feet per
  * box counts. The old spec-less "Accessories" series predates categories and
- * is kept only until the catalogue import retires it.
+ * is kept only until the catalog import retires it.
  */
 const flooringSeries = {
 	isActive: true,
@@ -106,7 +109,7 @@ export async function listPublicSeries(categorySlug?: string) {
 			boxesPerPallet: true,
 			_count: { select: { products: { where: published } } },
 			// One swatch per series, so a card never renders an empty image slot
-			// because its colours happened to fall outside a paged list.
+			// because its colors happened to fall outside a paged list.
 			products: {
 				where: { ...published, NOT: { images: { isEmpty: true } } },
 				select: { images: true },
@@ -119,7 +122,7 @@ export async function listPublicSeries(categorySlug?: string) {
 }
 
 /**
- * How the catalogue can be ordered.
+ * How the catalog can be ordered.
  *
  * The default is the owner's own arrangement — series order, then his sort
  * order within it. That is a merchandising decision he makes in admin, and
@@ -140,7 +143,7 @@ const SORTS: Record<CatalogSort, Prisma.ProductOrderByWithRelationInput[]> = {
 export interface CatalogFilters {
 	categorySlug?: string
 	seriesSlug?: string
-	/** Matches a colour name or a SKU. Dealers know both; the public knows one. */
+	/** Matches a color name or a SKU. Dealers know both; the public knows one. */
 	search?: string
 	/** Series-level specs. A buyer matching a commercial spec knows the number,
 	 *  not which series happens to carry it. */
@@ -181,7 +184,7 @@ export async function listPublicProducts(options: CatalogFilters = {}) {
 }
 
 /**
- * The spec values actually present in the catalogue.
+ * The spec values actually present in the catalog.
  *
  * Read from the data rather than hardcoded, so a filter never offers "20 mil"
  * when nothing on the site has it — an empty result the visitor asked for is
@@ -320,7 +323,7 @@ export async function createCategory(data: {
 /**
  * The slug is not edited with the name.
  *
- * It is the address of a catalogue page someone may have bookmarked or a
+ * It is the address of a catalog page someone may have bookmarked or a
  * search engine indexed. Renaming "Trim" to "Trim & Moldings" should not move
  * the page.
  */
@@ -367,7 +370,7 @@ export async function getSeries(id: string) {
 		include: {
 			facts: { orderBy: [{ kind: "asc" }, { sortOrder: "asc" }] },
 			// A count rather than the rows: the edit screen only needs to say how
-			// many colours a spec change will move.
+			// many colors a spec change will move.
 			_count: { select: { products: true } },
 		},
 	})
@@ -553,7 +556,7 @@ export async function findConflictingSeries(name: string, slug: string) {
  * A series with a name and nothing else, placed after the existing ones.
  *
  * Until it has square feet per box it is a series with no specs, which the
- * public catalogue does not list as a flooring line — so it stays out of
+ * public catalog does not list as a flooring line — so it stays out of
  * sight while the owner fills it in.
  */
 export async function createSeries(data: { name: string; slug: string }) {
@@ -621,13 +624,13 @@ export async function findConflicting(slug: string, sku: string, exceptId?: stri
 }
 
 /**
- * How many colours are on the public catalogue.
+ * How many colors are on the public catalog.
  *
  * Flooring only. Baseboard and quarter round are published products but they
- * are not colours, and counting them made the home page claim three more than
+ * are not colors, and counting them made the home page claim three more than
  * the client actually stocks.
  */
-export async function countPublicColours(): Promise<number> {
+export async function countPublicColors(): Promise<number> {
 	return db.product.count({
 		where: { ...publishedProducts(), series: { sqFtPerBox: { not: null } } },
 	})
@@ -636,9 +639,9 @@ export async function countPublicColours(): Promise<number> {
 /**
  * Everything published, including trim.
  *
- * Distinct from `countPublicColours`, which is flooring only. The catalogue
+ * Distinct from `countPublicColors`, which is flooring only. The catalog
  * filter counts products — a dealer buying baseboard is buying from the same
- * catalogue — while the "colours in stock" claim on the home page means colours.
+ * catalog — while the "colors in stock" claim on the home page means colors.
  * Using one number for both made "All (34)" sit above six filters adding to 37.
  */
 export async function countPublicProducts(): Promise<number> {
@@ -649,9 +652,17 @@ export async function countPublicProducts(): Promise<number> {
  * Just the name, and only if it is published.
  *
  * Used by the sample request. Checking `isActive` here is what stops somebody
- * posting a product id for a colour that was pulled from the catalogue and
+ * posting a product id for a color that was pulled from the catalog and
  * getting a sample request logged against it.
  */
+/** The product a pricing inquiry is about: published, so the form cannot be pointed elsewhere. */
+export async function getInquiryProduct(productId: string) {
+	return db.product.findFirst({
+		where: { id: productId, ...publishedProducts() },
+		select: { name: true, sku: true },
+	})
+}
+
 export async function getProductName(productId: string): Promise<string | null> {
 	const product = await db.product.findFirst({
 		where: { id: productId, isActive: true },

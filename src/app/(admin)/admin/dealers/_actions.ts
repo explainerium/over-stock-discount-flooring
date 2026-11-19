@@ -44,7 +44,7 @@ async function getDealerName(dealerId: string): Promise<string | null> {
 	return dealer?.companyName ?? null
 }
 
-/** Who the invite is from, as the recipient would recognise them. */
+/** Who the invite is from, as the recipient would recognize them. */
 function staffName(staff: { firstName?: string | null; lastName?: string | null }): string | null {
 	return [staff.firstName, staff.lastName].filter(Boolean).join(" ") || null
 }
