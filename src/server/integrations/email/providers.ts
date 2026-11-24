@@ -6,9 +6,9 @@ import type { EmailMessage, EmailProvider } from "./types"
 /**
  * Where mail actually goes.
  *
- * Two providers today: Postmark for production, and a sink for everywhere
- * else. There is no third "do nothing" mode — a message that is neither sent
- * nor recorded is a bug nobody can see.
+ * Two providers: Resend for production, and a sink for everywhere else. There
+ * is no third "do nothing" mode — a message that is neither sent nor recorded
+ * is a bug nobody can see.
  */
 
 /**
@@ -20,42 +20,48 @@ import type { EmailMessage, EmailProvider } from "./types"
  */
 const writable = process.env.NODE_ENV !== "production"
 
-/** Postmark. Chosen because the plan already names it and the env vars exist. */
-class PostmarkProvider implements EmailProvider {
-	readonly name = "postmark"
+/**
+ * Resend. Its free tier (3,000 a month, 100 a day) covers this site's volume —
+ * inquiries, applications and dealer order mail — with room to spare.
+ *
+ * Called over plain fetch rather than through its SDK: one endpoint, and no
+ * dependency to keep up to date for it.
+ */
+class ResendProvider implements EmailProvider {
+	readonly name = "resend"
 
 	constructor(private readonly apiKey: string) {}
 
 	async send(message: EmailMessage & { from: string | null }): Promise<void> {
-		// Postmark cannot be asked to send from nowhere, and this is the layer
+		// Resend cannot be asked to send from nowhere, and this is the layer
 		// that actually knows it matters.
 		if (!message.from) {
 			throw new Error("EMAIL_FROM is not set, so there is no address to send from.")
 		}
 
-		const response = await fetch("https://api.postmarkapp.com/email", {
+		const response = await fetch("https://api.resend.com/emails", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				Accept: "application/json",
-				"X-Postmark-Server-Token": this.apiKey,
+				Authorization: `Bearer ${this.apiKey}`,
+				// Resend turns away requests that carry no User-Agent.
+				"User-Agent": "transactional-mail/1.0",
 			},
 			body: JSON.stringify({
-				From: message.from,
-				To: message.to,
-				Cc: message.cc?.length ? message.cc.join(",") : undefined,
-				ReplyTo: message.replyTo,
-				Subject: message.subject,
-				TextBody: message.text,
-				HtmlBody: message.html,
-				MessageStream: "outbound",
+				from: message.from,
+				to: [message.to],
+				cc: message.cc?.length ? message.cc : undefined,
+				reply_to: message.replyTo,
+				subject: message.subject,
+				text: message.text,
+				html: message.html,
 			}),
 		})
 
 		if (!response.ok) {
-			// Postmark puts the useful part in the body, not the status line.
+			// Resend puts the useful part in the body, not the status line.
 			const detail = await response.text().catch(() => "")
-			throw new Error(`Postmark rejected the message (${response.status}): ${detail}`)
+			throw new Error(`Resend rejected the message (${response.status}): ${detail}`)
 		}
 	}
 }
@@ -127,19 +133,17 @@ class SinkProvider implements EmailProvider {
 /**
  * Picks one.
  *
- * Falls back to the sink whenever the provider is not fully configured, which
- * is the state the project is in until the client's mailbox exists. In
- * production that fallback is logged loudly rather than passed over: silently
- * not emailing dealers is exactly the failure this system cannot afford.
+ * Resend whenever its key is set, the sink otherwise — the state the project is
+ * in until the client's sending domain is verified. In production that
+ * fallback is logged loudly rather than passed over: silently not emailing
+ * dealers is exactly the failure this system cannot afford.
  */
 export function resolveProvider(): EmailProvider {
-	// Trimmed to null first. Every one of these arrives as an empty string when
-	// somebody creates the variable in a dashboard and leaves the value blank,
-	// and an empty string is not a configuration.
+	// Trimmed to null first. A variable created in a dashboard and left blank
+	// arrives as an empty string, and an empty string is not a configuration.
 	const apiKey = process.env.EMAIL_API_KEY?.trim() || null
-	const provider = process.env.EMAIL_PROVIDER?.trim() || "postmark"
 
-	if (provider === "postmark" && apiKey) return new PostmarkProvider(apiKey)
+	if (apiKey) return new ResendProvider(apiKey)
 
 	if (process.env.NODE_ENV === "production") {
 		console.error(

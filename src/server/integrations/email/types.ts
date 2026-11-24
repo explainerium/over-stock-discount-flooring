@@ -7,7 +7,7 @@
  * so the messages are written and testable now, and the delivery is one
  * environment variable away.
  *
- * That is also why the provider is an interface rather than a Postmark import
+ * That is also why the provider is an interface rather than a Resend import
  * scattered through the actions. If the client already has a Google Workspace
  * or wants to keep mail with their registrar, only this folder changes.
  */

@@ -27,7 +27,7 @@ of which most is waiting for DNS.
 | Privacy Policy and Terms text                               | Footer links going back      |
 | Confirmation the 2 PDFs on file are current                 | Warranty links being honest  |
 
-A gmail.com address cannot send this mail. Postmark and every other sender will
+A gmail.com address cannot send this mail. Resend and every other sender will
 refuse it, and the messages that fail are the invite and password-reset links —
 which are the only way a dealer gets into an account.
 
@@ -61,7 +61,7 @@ left unset.
 | `DATABASE_URL` / `DIRECT_URL`     | Production Postgres                     | Staging writes into production, or the reverse                                    |
 | `CRON_SECRET`                     | A fresh random string                   | Unset closes the cron endpoint entirely — the jobs never run                      |
 | `GA_MEASUREMENT_ID`               | The GA4 property                        | No analytics on the new site                                                      |
-| `EMAIL_API_KEY` / `EMAIL_FROM`    | Postmark token, business mailbox        | Mail silently falls to the sink; invite links only exist in the log               |
+| `EMAIL_API_KEY` / `EMAIL_FROM`    | Resend API key, verified domain address | Mail silently falls to the sink; invite links only exist in the log               |
 | `EMAIL_ORDER_CC`                  | Optional                                | Superseded by Settings once the owner saves a value there                         |
 | `TWILIO_*` / `OWNER_ALERT_NUMBER` | Optional                                | Owner alerts fall to the sink. Email still goes                                   |
 | `QBO_*`                           | Live app credentials                    | `QBO_ENVIRONMENT` left at `sandbox` invoices a test company                       |
