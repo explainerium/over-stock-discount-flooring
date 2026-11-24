@@ -48,7 +48,7 @@ export function ShowroomMap() {
 					href={directions}
 					target="_blank"
 					rel="noreferrer noopener"
-					className="btn bg-ink text-paper flex items-center gap-2"
+					className="btn bg-brand text-paper flex items-center gap-2"
 				>
 					Get directions
 					<ExternalLinkIcon className="size-4" aria-hidden />

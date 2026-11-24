@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { FacebookIcon } from "@/components/shared/FacebookIcon"
 import { FACEBOOK_URL, SHOWROOM } from "@/constants/catalog"
@@ -43,15 +44,19 @@ export async function SiteFooter() {
 	]
 
 	return (
-		<footer className="bg-ink text-paper">
+		<footer className="bg-ink text-paper border-brand-bright border-t-4">
 			<div className="mx-auto grid max-w-[1280px] gap-10 px-5 py-16 md:grid-cols-[1.4fr_repeat(3,1fr)]">
 				<div>
-					<p className="display text-xl">
-						Overstock
-						<span className="mt-1 block text-[0.55rem] font-normal tracking-[0.3em] opacity-60">
-							Discount Flooring
-						</span>
-					</p>
+					{/* The logo reads on the dark ground: its white band carries the
+					    lettering, so no inverted version is needed. */}
+					<Image
+						src="/brand/logo.svg"
+						alt="Overstock Discount Flooring"
+						width={784}
+						height={664}
+						unoptimized
+						className="h-24 w-auto"
+					/>
 					<address className="display mt-6 text-xs leading-relaxed not-italic opacity-70">
 						{SHOWROOM.street}
 						<br />

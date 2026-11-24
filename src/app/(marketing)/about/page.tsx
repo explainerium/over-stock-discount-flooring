@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import { SHOWROOM } from "@/constants/catalog"
 import { PageHeader } from "../_components/PageHeader"
@@ -16,13 +17,44 @@ export const metadata: Metadata = {
  * handover. His headings are the section headings. Edit the wording only with
  * his say-so.
  *
- * Photos are coming from him: one main picture and some smaller ones. The
- * opening section is one column until then so there is no empty frame.
+ * Photos are his (Drive folder, 24 November): "The main one is labeled, other
+ * can be smaller." The family photo sits beside the opening text, the team
+ * photos in a row beneath it. They live in public/about, already sized for the
+ * web, because the image loader only resizes Cloudinary images. No names in the
+ * alt text: we have not been told who is who.
  *
  * Reviews: none may name Will or Jerry — they have left the company under
  * separation agreements (client, 19 November). The review that thanked them
  * was swapped for SH's, from the same page of his current site.
  */
+const TEAM_PHOTOS = [
+	{
+		src: "/about/warehouse-stock.jpg",
+		width: 720,
+		height: 1057,
+		alt: "Carrying flooring through the warehouse",
+	},
+	{
+		src: "/about/storefront.jpg",
+		width: 720,
+		height: 916,
+		alt: "Carrying planks outside the showroom",
+	},
+	{ src: "/about/office.jpg", width: 720, height: 1030, alt: "At work in the office" },
+	{
+		src: "/about/forklift.jpg",
+		width: 720,
+		height: 775,
+		alt: "On the forklift in the warehouse",
+	},
+	{
+		src: "/about/warehouse-team.jpg",
+		width: 720,
+		height: 802,
+		alt: "Part of the warehouse team",
+	},
+]
+
 const TESTIMONIALS = [
 	{
 		initials: "SH",
@@ -49,25 +81,55 @@ export default function AboutPage() {
 
 			<section className="bg-paper">
 				<div className="mx-auto max-w-[1280px] px-5 pb-20 md:pb-24">
-					<div className="grid max-w-3xl gap-5 text-base leading-relaxed">
-						<p>
-							At Overstock Discount Flooring, family is at the heart of everything we
-							do. Steve and Ashley started our family-owned business in High Point,
-							North Carolina, with a simple goal: provide quality flooring at
-							affordable prices while treating every customer like family. Their son
-							Nick joined the business in 2022, helping continue that same commitment
-							to honest service, great products, and unbeatable value.
-						</p>
-						<p>
-							What began with a single truckload of flooring has grown into one of the
-							largest suppliers of luxury vinyl plank (LVP) flooring in North
-							Carolina, with{" "}
-							<strong>over 2 million square feet of flooring in stock</strong>. While
-							our business has grown tremendously, our values haven’t changed. We
-							still believe every homeowner deserves beautiful, durable flooring
-							without having to spend a fortune.
-						</p>
+					<div className="grid gap-10 md:grid-cols-[1.2fr_1fr] md:items-center">
+						<div className="grid gap-5 text-base leading-relaxed">
+							<p>
+								At Overstock Discount Flooring, family is at the heart of everything
+								we do. Steve and Ashley started our family-owned business in High
+								Point, North Carolina, with a simple goal: provide quality flooring
+								at affordable prices while treating every customer like family.
+								Their son Nick joined the business in 2022, helping continue that
+								same commitment to honest service, great products, and unbeatable
+								value.
+							</p>
+							<p>
+								What began with a single truckload of flooring has grown into one of
+								the largest suppliers of luxury vinyl plank (LVP) flooring in North
+								Carolina, with{" "}
+								<strong>over 2 million square feet of flooring in stock</strong>.
+								While our business has grown tremendously, our values haven’t
+								changed. We still believe every homeowner deserves beautiful,
+								durable flooring without having to spend a fortune.
+							</p>
+						</div>
+
+						<Image
+							src="/about/family.jpg"
+							alt="The family behind Overstock Discount Flooring"
+							width={1200}
+							height={1285}
+							priority
+							sizes="(min-width: 768px) 40vw, 100vw"
+							className="h-auto w-full"
+						/>
 					</div>
+
+					<ul className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+						{TEAM_PHOTOS.map((photo) => (
+							<li
+								key={photo.src}
+								className="bg-band relative aspect-[4/5] overflow-hidden"
+							>
+								<Image
+									src={photo.src}
+									alt={photo.alt}
+									fill
+									sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
+									className="object-cover"
+								/>
+							</li>
+						))}
+					</ul>
 				</div>
 			</section>
 
@@ -162,7 +224,7 @@ export default function AboutPage() {
 						Monday–Friday: 8 AM–5 PM · Saturday: 8 AM–12 PM · Sunday: Closed
 					</address>
 					<div className="mt-10 flex flex-wrap justify-center gap-3">
-						<Link href="/contact" className="btn bg-ink text-paper">
+						<Link href="/contact" className="btn bg-brand text-paper">
 							Get in touch
 						</Link>
 						<Link href="/products" className="btn border-rule text-ink border">

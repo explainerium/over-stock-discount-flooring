@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises"
+import { join } from "node:path"
 import { ImageResponse } from "next/og"
 import { SHOWROOM } from "@/constants/catalog"
 
@@ -9,15 +11,16 @@ import { SHOWROOM } from "@/constants/catalog"
  * has never been an image behind it. This is the fallback for the whole site;
  * a route that wants its own puts an `opengraph-image` in its own segment.
  *
- * Drawn in code rather than exported from a design file for the same reason as
- * the touch icon: there is no logo yet, and a generated card stays in step with
- * the mark on the page instead of drifting from it. It becomes a real photograph
- * the day the client has one — which, per the plan, is the single asset that
- * would do most for this site.
+ * His logo (from his current site, public/brand/logo.png) over his own line,
+ * "Quality Floors. Discount Prices.", in the site's heading colors: the light
+ * half in wood, the bold half in teal.
  */
-export const alt = "Overstock Discount Flooring — rigid core LVP, stocked by the pallet"
+export const alt = "Overstock Discount Flooring — Quality Floors. Discount Prices."
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
+
+// Read once: the asset does not change between requests.
+const logo = `data:image/png;base64,${await readFile(join(process.cwd(), "public/brand/logo.png"), "base64")}`
 
 export default function OpenGraphImage() {
 	return new ImageResponse(
@@ -33,40 +36,15 @@ export default function OpenGraphImage() {
 				padding: 72,
 			}}
 		>
-			<div style={{ display: "flex", flexDirection: "column" }}>
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						width: 132,
-						height: 76,
-						border: "4px solid #231f20",
-						fontSize: 40,
-						fontWeight: 700,
-						letterSpacing: 1,
-					}}
-				>
-					ODF
-				</div>
-				<div
-					style={{
-						marginTop: 12,
-						fontSize: 15,
-						fontWeight: 600,
-						letterSpacing: 6,
-					}}
-				>
-					OVERSTOCK
-				</div>
-			</div>
+			{/* eslint-disable-next-line @next/next/no-img-element -- ImageResponse renders plain img only */}
+			<img src={logo} alt="" width={200} height={169} />
 
 			<div style={{ display: "flex", flexDirection: "column" }}>
-				<div style={{ fontSize: 68, fontWeight: 300, lineHeight: 1.15 }}>
-					Rigid core LVP,
+				<div style={{ fontSize: 68, fontWeight: 300, lineHeight: 1.15, color: "#8a5d3b" }}>
+					Quality Floors.
 				</div>
-				<div style={{ fontSize: 68, fontWeight: 700, lineHeight: 1.15 }}>
-					stocked by the pallet
+				<div style={{ fontSize: 68, fontWeight: 700, lineHeight: 1.15, color: "#2e7d68" }}>
+					Discount Prices.
 				</div>
 			</div>
 

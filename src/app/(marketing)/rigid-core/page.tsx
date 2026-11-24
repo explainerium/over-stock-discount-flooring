@@ -108,7 +108,7 @@ export default function RigidCorePage() {
 						to make a rigid core floor that looks like one.
 					</p>
 					<div className="mt-10">
-						<Link href="/products" className="btn bg-ink text-paper">
+						<Link href="/products" className="btn bg-brand text-paper">
 							See the colors
 						</Link>
 					</div>

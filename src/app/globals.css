@@ -12,6 +12,9 @@
 	--color-paper: var(--paper);
 	--color-band: var(--band);
 	--color-rule: var(--rule);
+	--color-brand: var(--brand);
+	--color-brand-bright: var(--brand-bright);
+	--color-wood: var(--wood);
 
 	--font-display: var(--font-poppins);
 	--font-body: var(--font-open-sans);
@@ -65,13 +68,21 @@
 	--band: #efefef;
 	--rule: #d9d9d9;
 
+	/* The client's colors, from the logo on his current site (24 Nov: "match the
+	   website's color scheme to our other company website"). The logo's own teal,
+	   #4cae94, is too light to carry white text (2.7:1), so buttons and text use
+	   the same hue darkened to 4.9:1; the bright one is for lines and accents. */
+	--brand: #2e7d68;
+	--brand-bright: #4cae94;
+	--wood: #8a5d3b;
+
 	--background: var(--paper);
 	--foreground: var(--ink);
 	--card: var(--paper);
 	--card-foreground: oklch(0.145 0 0);
 	--popover: oklch(1 0 0);
 	--popover-foreground: oklch(0.145 0 0);
-	--primary: var(--ink);
+	--primary: var(--brand);
 	--primary-foreground: oklch(0.985 0 0);
 	--secondary: var(--band);
 	--secondary-foreground: oklch(0.205 0 0);
@@ -82,7 +93,7 @@
 	--destructive: oklch(0.577 0.245 27.325);
 	--border: var(--rule);
 	--input: var(--rule);
-	--ring: oklch(0.708 0 0);
+	--ring: var(--brand-bright);
 	--chart-1: oklch(0.87 0 0);
 	--chart-2: oklch(0.556 0 0);
 	--chart-3: oklch(0.439 0 0);
@@ -212,6 +223,16 @@
 	}
 	.no-scrollbar::-webkit-scrollbar {
 		display: none;
+	}
+	/* Headings set light-then-bold take the client's two colors, the way his
+	   current site sets "WHY CHOOSE" in wood and "RIGID CORE LUXURY VINYL
+	   FLOORS?" in teal. Only headings on a light ground (text-ink): the ones on
+	   the dark and teal bands set their own color and are left alone. */
+	.display.text-ink > .font-light {
+		color: var(--wood);
+	}
+	.display.text-ink > .font-bold {
+		color: var(--brand);
 	}
 	/* Poppins 700 with a hair of tracking and a 1.2 line — the reference site's
      heading setting, measured rather than approximated. */

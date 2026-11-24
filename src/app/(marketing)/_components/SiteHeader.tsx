@@ -1,6 +1,7 @@
 "use client"
 
 import { MenuIcon, PhoneIcon, SearchIcon, SquareStackIcon, UserIcon, XIcon } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useSyncExternalStore } from "react"
@@ -267,13 +268,18 @@ export function SiteHeader() {
 
 			<div className="border-rule border-b">
 				<div className="mx-auto flex max-w-[1280px] items-center gap-x-8 px-5 py-4">
+					{/* The client's logo, from his current site. An SVG, so it is
+					    served as it is rather than through the image loader. */}
 					<Link href="/" className="shrink-0">
-						<span className="display border-ink block border-2 px-3 py-1 text-lg leading-none">
-							ODF
-						</span>
-						<span className="display text-ink mt-1.5 block text-[0.6rem] font-semibold tracking-[0.2em]">
-							OVERSTOCK
-						</span>
+						<Image
+							src="/brand/logo.svg"
+							alt="Overstock Discount Flooring — home"
+							width={784}
+							height={664}
+							priority
+							unoptimized
+							className="h-14 w-auto sm:h-16"
+						/>
 					</Link>
 
 					<div className="ml-auto flex min-w-0 items-center gap-4 sm:flex-col sm:items-end sm:gap-3">
@@ -308,7 +314,7 @@ export function SiteHeader() {
 								<Link
 									key={item.href}
 									href={item.href}
-									className="display text-ink text-base font-bold whitespace-nowrap transition-opacity hover:opacity-70"
+									className="display text-ink hover:text-brand text-base font-bold whitespace-nowrap transition-colors"
 								>
 									{item.label}
 								</Link>

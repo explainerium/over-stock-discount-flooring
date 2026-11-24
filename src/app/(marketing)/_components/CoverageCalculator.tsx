@@ -114,7 +114,7 @@ export function CoverageCalculator({ series: SERIES }: { series: CalculatorSerie
 								aria-pressed={active}
 								className={`display border px-2 py-2 text-[0.65rem] tracking-widest uppercase transition-colors ${
 									active
-										? "border-ink bg-ink text-paper"
+										? "border-brand bg-brand text-paper"
 										: "border-rule text-muted-foreground hover:border-ink/40 hover:text-ink"
 								}`}
 							>

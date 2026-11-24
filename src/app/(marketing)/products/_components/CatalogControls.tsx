@@ -123,7 +123,7 @@ export function CatalogControls({ wearLayers, thicknesses, resultCount }: Catalo
 									}
 									className={cn(
 										chip,
-										wear === String(mil) ? "bg-ink text-paper" : chipOff,
+										wear === String(mil) ? "bg-brand text-paper" : chipOff,
 									)}
 								>
 									{mil} mil
@@ -144,7 +144,7 @@ export function CatalogControls({ wearLayers, thicknesses, resultCount }: Catalo
 									onClick={() => set("thickness", thickness === mm ? null : mm)}
 									className={cn(
 										chip,
-										thickness === mm ? "bg-ink text-paper" : chipOff,
+										thickness === mm ? "bg-brand text-paper" : chipOff,
 									)}
 								>
 									{mm} mm

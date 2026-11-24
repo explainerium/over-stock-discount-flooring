@@ -28,7 +28,7 @@ export function FilterLinks({
 	all: { label: string; href: string; count: number }
 }) {
 	const base = "display px-4 py-2 text-xs uppercase transition-colors"
-	const on = "bg-ink text-paper"
+	const on = "bg-brand text-paper"
 	const off = "border-rule text-ink border hover:bg-band"
 
 	return (

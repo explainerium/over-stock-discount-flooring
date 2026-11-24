@@ -79,7 +79,7 @@ export default async function HomePage() {
 			{/* ---------------------------------------------------------------- */}
 			{/* Hero — solid, centred, no image. Straight from the reference.     */}
 			{/* ---------------------------------------------------------------- */}
-			<section className="bg-ink text-paper">
+			<section className="bg-brand text-paper">
 				<div className="mx-auto max-w-[1280px] px-5 py-28 text-center md:py-36">
 					<h1 className="display text-4xl uppercase sm:text-5xl lg:text-6xl">
 						Rigid Core
@@ -160,7 +160,7 @@ export default async function HomePage() {
 					<div className="mt-12">
 						<Link
 							href={`/products?category=${FLOORING_CATEGORY}`}
-							className="btn bg-ink text-paper"
+							className="btn bg-brand text-paper"
 						>
 							See all {colorCount} colors
 						</Link>
@@ -233,7 +233,7 @@ export default async function HomePage() {
 					</ul>
 
 					<div className="mt-14 text-center">
-						<Link href="/rigid-core" className="btn bg-ink text-paper">
+						<Link href="/rigid-core" className="btn bg-brand text-paper">
 							The full specification
 						</Link>
 					</div>
